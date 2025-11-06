@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>تسجيل الدخول - Smart Dorm Expenses</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        /* أنماط مخصصة لصفحة تسجيل الدخول */
+        body {
+            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); /* خلفية زرقاء جذابة */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            padding: 40px;
+            max-width: 400px;
+            width: 90%;
+            animation: fadeIn 0.6s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #E5E7EB;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #F9FAFB;
+        }
+        .input-group input:focus {
+            border-color: #3B82F6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            background: white;
+        }
+        .btn-login {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            width: 100%;
+        }
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
+        .error-message {
+            color: #EF4444;
+            background-color: #FEE2E2;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-2">
+            <i class="fas fa-lock text-blue-500"></i> تسجيل الدخول
+        </h1>
+        <p class="text-center text-gray-500 mb-8">الرجاء إدخال بياناتك للمتابعة.</p>
+
+        <div id="errorMessage" class="error-message">
+            <i class="fas fa-exclamation-circle"></i> اسم المستخدم أو كلمة المرور غير صحيحة.
+        </div>
+
+        <form id="loginForm" onsubmit="event.preventDefault(); handleLogin();">
+            <div class="input-group mb-6">
+                <label for="username" class="block font-medium text-gray-700 mb-2">اسم المستخدم</label>
+                <input type="text" id="username" placeholder="مثال: khalid" required>
+            </div>
+
+            <div class="input-group mb-8">
+                <label for="password" class="block font-medium text-gray-700 mb-2">كلمة المرور</label>
+                <input type="password" id="password" placeholder="********" required>
+            </div>
+
+            <button type="submit" class="btn-login">
+                <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
+            </button>
+        </form>
+    </div>
+
+    <script type="module">
+        // يمكننا استخدام نفس بيانات المستخدمين من ملف app.js (بافتراض نفس الهيكلة)
+        // في تطبيقك الفعلي، ستقوم بالتحقق من Firebase Authentication!
+
+        const USERS_CREDENTIALS = [
+            { id: 1, name: 'خالد', username: 'khalid', password: '123' },
+            { id: 2, name: 'محمد', username: 'mohammed', password: '123' },
+            { id: 3, name: 'علي', username: 'ali', password: '123' }
+        ];
+
+        function handleLogin() {
+            const usernameInput = document.getElementById('username').value.trim();
+            const passwordInput = document.getElementById('password').value.trim();
+            const errorMessage = document.getElementById('errorMessage');
+
+            // 1. البحث عن المستخدم في القائمة
+            const user = USERS_CREDENTIALS.find(u => 
+                u.username === usernameInput && u.password === passwordInput
+            );
+
+            if (user) {
+                // 2. نجاح تسجيل الدخول
+                errorMessage.style.display = 'none';
+
+                // 3. حفظ بيانات المستخدم في الجلسة (يمكن استبدالها لاحقًا بـ Firebase Auth)
+                sessionStorage.setItem('currentUserID', user.id);
+                sessionStorage.setItem('currentUserName', user.name);
+
+                alert(`مرحباً بك يا ${user.name}! جاري تحويلك...`);
+
+                // 4. التوجيه إلى صفحة إدارة المصروفات (index.html)
+                window.location.href = 'index.html'; 
+
+            } else {
+                // 5. فشل تسجيل الدخول
+                errorMessage.style.display = 'block';
+            }
+        }
+
+        // إتاحة الدالة للنموذج
+        window.handleLogin = handleLogin;
+    </script>
+</body>
+</html>
