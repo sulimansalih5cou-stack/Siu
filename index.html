@@ -274,45 +274,59 @@
         </div>
     </div>
 
-    <script>
-        // 💾 1. هيكلة البيانات (تم التحسين)
-        // هذا يمثل جدول users
+    <script type="module">
+        // 🚀 1. ربط وتهيئة Firebase (استبدل بالروابط والإعدادات الصحيحة لمشروعك)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA2GNsXj4DzWyCYLKuVT3i1XBKfjX3ccuM",
+            authDomain: "siu-students.firebaseapp.com",
+            projectId: "siu-students",
+            storageBucket: "siu-students.firebasestorage.app",
+            messagingSenderId: "76007314543",
+            appId: "1:76007314543:web:60296d876ecf0393dc699a",
+            measurementId: "G-8BS9882K04"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // 💾 2. هيكلة البيانات الأولية (ستُقرأ من Firestore لاحقاً)
+        // سنستخدم هذه القائمة الأولية للعرض والعمليات حتى نقوم بدمج قراءة البيانات من Firestore.
         let allUsers = [
-            { id: 1, name: 'خالد', balance: 3750.00, totalSpent: 0 }, // المستخدم الحالي (الدافع الافتراضي)
+            { id: 1, name: 'خالد', balance: 3750.00, totalSpent: 0 },
             { id: 2, name: 'محمد', balance: -1200.00, totalSpent: 0 },
             { id: 3, name: 'علي', balance: -1250.00, totalSpent: 0 },
             { id: 4, name: 'عوض', balance: -1300.00, totalSpent: 0 },
             { id: 5, name: 'سارة', balance: 0.00, totalSpent: 0 }
         ];
 
-        let expenses = []; // هذا يمثل جدول expenses
-
         // ID للمستخدم الحالي (لنفترض أنه خالد)
         const currentUserID = 1;
         let currentUser = allUsers.find(u => u.id === currentUserID);
 
-        // تحميل البيانات من localStorage إذا كانت موجودة
+        // هنا نستخدم localStorage كاحتياطي مؤقت للأرصدة
         if (localStorage.getItem('allUsers')) {
             allUsers = JSON.parse(localStorage.getItem('allUsers'));
             currentUser = allUsers.find(u => u.id === currentUserID);
-            expenses = JSON.parse(localStorage.getItem('expenses')) || [];
         }
 
+        let expenses = []; // قائمة المصروفات المحلية (ستُملأ من Firestore)
 
-        // 🖼️ 2. تحديث الواجهة والـ DOM
 
-        // وظيفة تحديث عرض الرصيد
+        // 🖼️ 3. تحديث الواجهة والـ DOM (لم تتغير)
+
         function updateBalanceDisplay() {
             const balanceCard = document.getElementById('currentBalanceCard');
             const balanceElement = document.getElementById('currentBalance');
             
             const balanceValue = currentUser.balance;
             const sign = balanceValue >= 0 ? '+' : '';
-            const formattedBalance = sign + Math.abs(balanceValue).toLocaleString('en-US');
+            const formattedBalance = sign + Math.abs(balanceValue).toLocaleString('en-US', { minimumFractionDigits: 2 });
 
             balanceElement.textContent = formattedBalance;
             
-            // تغيير لون الكارد بناءً على الرصيد
             balanceCard.classList.remove('negative');
             if (balanceValue < 0) {
                 balanceCard.classList.add('negative');
@@ -321,21 +335,17 @@
             }
         }
 
-        // وظيفة تنسيق الأرقام مع فاصلة الآلاف
         function formatNumber(input) {
             let value = input.value.replace(/,/g, '');
             if (!isNaN(value) && value !== '') {
-                // استخدام Intl.NumberFormat للحصول على فاصلة الآلاف بدقة
                 input.value = parseFloat(value).toLocaleString('en-US'); 
             }
         }
 
-        // وظيفة ملء خانات المشاركين
         function populateParticipants() {
             const participantsContainer = document.getElementById('participantsCheckboxes');
             participantsContainer.innerHTML = '';
             
-            // عرض الجميع ما عدا المستخدم الحالي
             allUsers.filter(u => u.id !== currentUserID).forEach(user => {
                 const label = document.createElement('label');
                 label.className = 'checkbox-item';
@@ -347,21 +357,33 @@
             });
         }
 
-        // وظيفة اختيار جميع المشاركين
         function selectAllParticipants() {
             const checkboxes = document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]');
             checkboxes.forEach(cb => cb.checked = true);
         }
 
-        // ⚙️ 3. منطق الحساب والخوارزمية (تم التحديث)
+        // ⚙️ 4. منطق العمليات (تم تعديل `previewExpense` و `saveExpense`)
 
-        // معاينة المصروف
-        function previewExpense() {
+        // وظيفة جلب المصروفات من Firestore للتأكد من عدم التكرار
+        async function fetchExpenses() {
+            expenses = []; // تفريغ القائمة المحلية
+            try {
+                const querySnapshot = await getDocs(collection(db, "expenses"));
+                querySnapshot.forEach((doc) => {
+                    expenses.push({ id: doc.id, ...doc.data() });
+                });
+            } catch (e) {
+                console.error("خطأ في جلب المصروفات: ", e);
+            }
+        }
+
+        // معاينة المصروف (تم إضافة انتظار جلب البيانات)
+        async function previewExpense() {
+            await fetchExpenses(); // جلب المصروفات للتحقق من التكرار
+
             const title = document.getElementById('expenseTitle').value;
-            // يجب إزالة الفواصل قبل تحويل المبلغ إلى رقم
             const amount = parseFloat(document.getElementById('expenseAmount').value.replace(/,/g, ''));
             
-            // جلب ID المشاركين المختارين (باستثناء الدافع)
             const selectedParticipantIDs = Array.from(
                 document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]:checked')
             ).map(cb => parseInt(cb.getAttribute('data-user-id')));
@@ -371,11 +393,10 @@
                 return;
             }
 
-            // نضيف الدافع (خالد) لعدد المشاركين في الحساب
             const totalParticipants = selectedParticipantIDs.length + 1; 
             const share = amount / totalParticipants;
             
-            // حساب الرصيد الجديد الافتراضي للدافع (للمعاينة فقط)
+            // حساب الرصيد الجديد الافتراضي (للمعاينة فقط)
             const netPaidForOthers = amount - share;
             const projectedNewBalance = currentUser.balance + netPaidForOthers;
 
@@ -393,7 +414,7 @@
             `;
             document.getElementById('previewText').innerHTML = previewText;
 
-            // تحذير التكرار
+            // تحذير التكرار (الآن يعتمد على البيانات التي تم جلبها)
             const today = new Date().toISOString().split('T')[0];
             const hasTodayExpense = expenses.some(e => e.payer_id === currentUserID && e.date === today && e.title === title);
             document.getElementById('warning').style.display = hasTodayExpense ? 'block' : 'none';
@@ -401,61 +422,60 @@
             document.getElementById('previewModal').classList.add('show');
         }
 
-        // حفظ المصروف وتحديث الأرصدة (تم التحديث)
-        function saveExpense() {
+        // حفظ المصروف وتحديث الأرصدة (الآن يحفظ في Firestore)
+        async function saveExpense() {
             const title = document.getElementById('expenseTitle').value;
             const amount = parseFloat(document.getElementById('expenseAmount').value.replace(/,/g, ''));
 
-            // جلب ID المشاركين المختارين
             const participantIDs = Array.from(
                 document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]:checked')
             ).map(cb => parseInt(cb.getAttribute('data-user-id')));
             
-            // نضيف الدافع (خالد) لقائمة المشاركين
             participantIDs.push(currentUserID); 
             
-            // الخوارزمية الأساسية
             const totalParticipants = participantIDs.length;
             const share = amount / totalParticipants;
 
-            // تحديث رصيد الدافع (خالد)
+            // تحديث الرصيد المحلي للدافع
             const netPaidForOthers = amount - share;
             currentUser.balance += netPaidForOthers;
-            currentUser.totalSpent += share; // (إجمالي ما صرفه)
-
-            // تحديث أرصدة المشاركين الآخرين
+            
+            // تحديث أرصدة المشاركين المحليين (للعرض الفوري)
             allUsers.forEach(user => {
                 if (participantIDs.includes(user.id) && user.id !== currentUserID) {
-                    // كل مشارك.balance -= نصيبه
                     user.balance -= share;
-                    user.totalSpent += share; // (إجمالي ما صرفه)
                 }
             });
 
-            // تسجيل المصروف الجديد (يمثل جدول المصروفات والمشاركين)
-            expenses.push({
-                id: expenses.length + 1,
+            // 🛑 بناء مستند المصروف للحفظ في Firestore
+            const newExpense = {
                 title,
                 amount,
                 payer_id: currentUserID,
                 participants_ids: participantIDs,
                 share,
-                date: new Date().toISOString().split('T')[0]
-            });
+                date: new Date().toISOString().split('T')[0],
+                timestamp: Date.now() 
+            };
 
-            // حفظ في localStorage
-            localStorage.setItem('allUsers', JSON.stringify(allUsers));
-            localStorage.setItem('expenses', JSON.stringify(expenses));
+            try {
+                // حفظ المصروف في مجموعة "expenses"
+                await addDoc(collection(db, "expenses"), newExpense);
 
-            // إغلاق Modal وإظهار إشعار
-            hideModal();
-            showNotification();
+                // حفظ الأرصدة المحدثة محلياً (كحل مؤقت حتى يتم دمج جدول Users)
+                localStorage.setItem('allUsers', JSON.stringify(allUsers)); 
 
-            // إعادة تعيين النموذج
-            document.getElementById('expenseForm').reset();
-            updateBalanceDisplay();
-            // لإلغاء تحديد كل العناصر بعد الحفظ
-            document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
+                hideModal();
+                showNotification();
+
+                document.getElementById('expenseForm').reset();
+                updateBalanceDisplay();
+                document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
+
+            } catch (e) {
+                console.error("خطأ في حفظ المصروف في Firestore: ", e);
+                alert("فشل في حفظ المصروف في قاعدة البيانات. يرجى مراجعة Console.");
+            }
         }
 
         // إخفاء Modal
@@ -472,8 +492,8 @@
 
         // تنفيذ الدوال الأولية عند تحميل الصفحة
         window.onload = () => {
-            populateParticipants(); // ملء Checkboxes
-            updateBalanceDisplay(); // عرض الرصيد المحدث
+            populateParticipants(); 
+            updateBalanceDisplay(); 
         };
     </script>
 </body>
