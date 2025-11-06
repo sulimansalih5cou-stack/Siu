@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إضافة مصروف محسّن - Smart Dorm Expenses</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* CSS: الأنماط المخصصة (تم الحفاظ عليها) */
+        body {
+            background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            animation: fadeInUp 0.8s ease-out;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .form-group {
+            margin-bottom: 25px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #E5E7EB;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #F9FAFB;
+        }
+        .form-group input:focus {
+            border-color: #3B82F6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            background: white;
+        }
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            background: #F3F4F6;
+            padding: 12px 15px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .checkbox-item input:checked + i {
+            color: #3B82F6;
+        }
+        .checkbox-item:hover {
+            background: #E5E7EB;
+            transform: translateY(-2px);
+            border-color: #3B82F6;
+        }
+        .checkbox-item input {
+            margin-left: 10px;
+            accent-color: #3B82F6;
+            transform: scale(1.2);
+        }
+        .select-all {
+            background: #3B82F6;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .select-all:hover {
+            background: #1D4ED8;
+            transform: translateY(-2px);
+        }
+        .btn {
+            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+        .btn-secondary:hover {
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+        }
+        .balance-card {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+        }
+        .balance-card h3 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        .balance-card p {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10B981;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+            display: none;
+            z-index: 1001;
+            animation: slideInRight 0.5s ease;
+        }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .warning {
+            background: #F59E0B;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .icon { color: #6B7280; margin-right: 10px; }
+        .app-description {
+            text-align: center;
+            color: #6B7280;
+            font-size: 14px;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+        /* لون مختلف للرصيد السالب (عليه) */
+        .balance-card.negative {
+            background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%);
+        }
+    </style>
+</head>
+<body>
+    <div id="notification" class="notification">
+        <i class="fas fa-check-circle"></i> تم تسجيل المصروف بنجاح! 🎉
+    </div>
+
+    <div class="container">
+        <div class="app-description">
+            <i class="fas fa-image icon"></i> نستخدم التطبيق على الصورة – أضف مصروفك بسهولة!
+        </div>
+
+        <div id="currentBalanceCard" class="balance-card">
+            <h3><i class="fas fa-user-circle icon"></i> رصيدك الحالي يا خالد</h3>
+            <p id="currentBalance">+0</p>
+        </div>
+
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">
+            <i class="fas fa-plus-circle text-blue-500"></i> إضافة مصروف جديد
+        </h1>
+
+        <form id="expenseForm">
+            <div class="form-group">
+                <label for="expenseTitle"><i class="fas fa-tag icon"></i> اسم المصروف (اكتب أو اختر)</label>
+                <input type="text" id="expenseTitle" placeholder="مثال: شاي المساء" list="suggestions" required>
+                <datalist id="suggestions">
+                    <option value="شاي">
+                    <option value="أكل">
+                    <option value="غاز">
+                    <option value="نظافة">
+                    <option value="أخرى">
+                </datalist>
+            </div>
+
+            <div class="form-group">
+                <label for="expenseAmount"><i class="fas fa-dollar-sign icon"></i> المبلغ الكلي</label>
+                <input type="tel" id="expenseAmount" placeholder="5,000" oninput="formatNumber(this)" required>
+            </div>
+            
+            <div class="form-group">
+                <label><i class="fas fa-users icon"></i> المشاركون (اختر من يشارك)</label>
+                <div class="select-all" onclick="selectAllParticipants()">اختر الكل</div>
+                <div class="checkbox-group" id="participantsCheckboxes">
+                    </div>
+            </div>
+
+            <div class="text-center">
+                <button type="button" onclick="previewExpense()" class="btn btn-secondary w-full">
+                    <i class="fas fa-eye"></i> معاينة وحفظ
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div id="previewModal" class="modal">
+        <div class="modal-content">
+            <div id="warning" class="warning">
+                <i class="fas fa-exclamation-triangle"></i> تحذير: قد يكون هذا المصروف مكرراً! هل تريد المتابعة؟
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-check-circle text-green-500"></i> تأكيد المصروف
+            </h2>
+            <p id="previewText" class="text-gray-600 mb-6 text-right"></p>
+            <div>
+                <button onclick="saveExpense()" class="btn">
+                    <i class="fas fa-save"></i> حفظ نهائي
+                </button>
+                <button onclick="hideModal()" class="btn btn-secondary ml-4">
+                    <i class="fas fa-times"></i> إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 💾 1. هيكلة البيانات (تم التحسين)
+        // هذا يمثل جدول users
+        let allUsers = [
+            { id: 1, name: 'خالد', balance: 3750.00, totalSpent: 0 }, // المستخدم الحالي (الدافع الافتراضي)
+            { id: 2, name: 'محمد', balance: -1200.00, totalSpent: 0 },
+            { id: 3, name: 'علي', balance: -1250.00, totalSpent: 0 },
+            { id: 4, name: 'عوض', balance: -1300.00, totalSpent: 0 },
+            { id: 5, name: 'سارة', balance: 0.00, totalSpent: 0 }
+        ];
+
+        let expenses = []; // هذا يمثل جدول expenses
+
+        // ID للمستخدم الحالي (لنفترض أنه خالد)
+        const currentUserID = 1;
+        let currentUser = allUsers.find(u => u.id === currentUserID);
+
+        // تحميل البيانات من localStorage إذا كانت موجودة
+        if (localStorage.getItem('allUsers')) {
+            allUsers = JSON.parse(localStorage.getItem('allUsers'));
+            currentUser = allUsers.find(u => u.id === currentUserID);
+            expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+        }
+
+
+        // 🖼️ 2. تحديث الواجهة والـ DOM
+
+        // وظيفة تحديث عرض الرصيد
+        function updateBalanceDisplay() {
+            const balanceCard = document.getElementById('currentBalanceCard');
+            const balanceElement = document.getElementById('currentBalance');
+            
+            const balanceValue = currentUser.balance;
+            const sign = balanceValue >= 0 ? '+' : '';
+            const formattedBalance = sign + Math.abs(balanceValue).toLocaleString('en-US');
+
+            balanceElement.textContent = formattedBalance;
+            
+            // تغيير لون الكارد بناءً على الرصيد
+            balanceCard.classList.remove('negative');
+            if (balanceValue < 0) {
+                balanceCard.classList.add('negative');
+            } else {
+                balanceCard.style.background = 'linear-gradient(135deg, #10B981 0%, #059669 100%)';
+            }
+        }
+
+        // وظيفة تنسيق الأرقام مع فاصلة الآلاف
+        function formatNumber(input) {
+            let value = input.value.replace(/,/g, '');
+            if (!isNaN(value) && value !== '') {
+                // استخدام Intl.NumberFormat للحصول على فاصلة الآلاف بدقة
+                input.value = parseFloat(value).toLocaleString('en-US'); 
+            }
+        }
+
+        // وظيفة ملء خانات المشاركين
+        function populateParticipants() {
+            const participantsContainer = document.getElementById('participantsCheckboxes');
+            participantsContainer.innerHTML = '';
+            
+            // عرض الجميع ما عدا المستخدم الحالي
+            allUsers.filter(u => u.id !== currentUserID).forEach(user => {
+                const label = document.createElement('label');
+                label.className = 'checkbox-item';
+                label.innerHTML = `
+                    <input type="checkbox" data-user-id="${user.id}" value="${user.name}">
+                    <i class="fas fa-user"></i> ${user.name}
+                `;
+                participantsContainer.appendChild(label);
+            });
+        }
+
+        // وظيفة اختيار جميع المشاركين
+        function selectAllParticipants() {
+            const checkboxes = document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = true);
+        }
+
+        // ⚙️ 3. منطق الحساب والخوارزمية (تم التحديث)
+
+        // معاينة المصروف
+        function previewExpense() {
+            const title = document.getElementById('expenseTitle').value;
+            // يجب إزالة الفواصل قبل تحويل المبلغ إلى رقم
+            const amount = parseFloat(document.getElementById('expenseAmount').value.replace(/,/g, ''));
+            
+            // جلب ID المشاركين المختارين (باستثناء الدافع)
+            const selectedParticipantIDs = Array.from(
+                document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]:checked')
+            ).map(cb => parseInt(cb.getAttribute('data-user-id')));
+
+            if (!title || isNaN(amount) || amount <= 0) {
+                alert('يرجى ملء اسم المصروف وإدخال مبلغ صحيح!');
+                return;
+            }
+
+            // نضيف الدافع (خالد) لعدد المشاركين في الحساب
+            const totalParticipants = selectedParticipantIDs.length + 1; 
+            const share = amount / totalParticipants;
+            
+            // حساب الرصيد الجديد الافتراضي للدافع (للمعاينة فقط)
+            const netPaidForOthers = amount - share;
+            const projectedNewBalance = currentUser.balance + netPaidForOthers;
+
+            const participantNames = selectedParticipantIDs
+                .map(id => allUsers.find(u => u.id === id).name)
+                .join(', ');
+
+            const previewText = `
+                <strong>المصروف:</strong> ${title}<br>
+                <strong>المبلغ الكلي:</strong> ${amount.toLocaleString('en-US')}<br>
+                <strong>المشاركون (بالإضافة إليك):</strong> ${participantNames || 'أنت فقط'}<br>
+                <strong>نصيب كل شخص:</strong> ${share.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>
+                <hr style="margin: 10px 0;">
+                <span class="text-blue-600 font-bold">رصيدك بعد العملية: ${projectedNewBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            `;
+            document.getElementById('previewText').innerHTML = previewText;
+
+            // تحذير التكرار
+            const today = new Date().toISOString().split('T')[0];
+            const hasTodayExpense = expenses.some(e => e.payer_id === currentUserID && e.date === today && e.title === title);
+            document.getElementById('warning').style.display = hasTodayExpense ? 'block' : 'none';
+
+            document.getElementById('previewModal').classList.add('show');
+        }
+
+        // حفظ المصروف وتحديث الأرصدة (تم التحديث)
+        function saveExpense() {
+            const title = document.getElementById('expenseTitle').value;
+            const amount = parseFloat(document.getElementById('expenseAmount').value.replace(/,/g, ''));
+
+            // جلب ID المشاركين المختارين
+            const participantIDs = Array.from(
+                document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]:checked')
+            ).map(cb => parseInt(cb.getAttribute('data-user-id')));
+            
+            // نضيف الدافع (خالد) لقائمة المشاركين
+            participantIDs.push(currentUserID); 
+            
+            // الخوارزمية الأساسية
+            const totalParticipants = participantIDs.length;
+            const share = amount / totalParticipants;
+
+            // تحديث رصيد الدافع (خالد)
+            const netPaidForOthers = amount - share;
+            currentUser.balance += netPaidForOthers;
+            currentUser.totalSpent += share; // (إجمالي ما صرفه)
+
+            // تحديث أرصدة المشاركين الآخرين
+            allUsers.forEach(user => {
+                if (participantIDs.includes(user.id) && user.id !== currentUserID) {
+                    // كل مشارك.balance -= نصيبه
+                    user.balance -= share;
+                    user.totalSpent += share; // (إجمالي ما صرفه)
+                }
+            });
+
+            // تسجيل المصروف الجديد (يمثل جدول المصروفات والمشاركين)
+            expenses.push({
+                id: expenses.length + 1,
+                title,
+                amount,
+                payer_id: currentUserID,
+                participants_ids: participantIDs,
+                share,
+                date: new Date().toISOString().split('T')[0]
+            });
+
+            // حفظ في localStorage
+            localStorage.setItem('allUsers', JSON.stringify(allUsers));
+            localStorage.setItem('expenses', JSON.stringify(expenses));
+
+            // إغلاق Modal وإظهار إشعار
+            hideModal();
+            showNotification();
+
+            // إعادة تعيين النموذج
+            document.getElementById('expenseForm').reset();
+            updateBalanceDisplay();
+            // لإلغاء تحديد كل العناصر بعد الحفظ
+            document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
+        }
+
+        // إخفاء Modal
+        function hideModal() {
+            document.getElementById('previewModal').classList.remove('show');
+        }
+
+        // إظهار إشعار
+        function showNotification() {
+            const notif = document.getElementById('notification');
+            notif.style.display = 'block';
+            setTimeout(() => notif.style.display = 'none', 4000);
+        }
+
+        // تنفيذ الدوال الأولية عند تحميل الصفحة
+        window.onload = () => {
+            populateParticipants(); // ملء Checkboxes
+            updateBalanceDisplay(); // عرض الرصيد المحدث
+        };
+    </script>
+</body>
+</html>
