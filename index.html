@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
-        /* CSS: الأنماط المخصصة (تم الحفاظ عليها) */
+        /* (CSS Styles remain the same) */
         body {
             background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -275,25 +275,29 @@
     </div>
 
     <script type="module">
-        // 🚀 1. ربط وتهيئة Firebase (استبدل بالروابط والإعدادات الصحيحة لمشروعك)
+        // 🚀 1. ربط وتهيئة Firebase (Realtime Database)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+        import { getDatabase, ref, push, get, child } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
+        // إعدادات الربط الجديدة (مع databaseURL)
         const firebaseConfig = {
             apiKey: "AIzaSyA2GNsXj4DzWyCYLKuVT3i1XBKfjX3ccuM",
             authDomain: "siu-students.firebaseapp.com",
+            databaseURL: "https://siu-students-default-rtdb.firebaseio.com", // 🔑 تم التحديث هنا
             projectId: "siu-students",
             storageBucket: "siu-students.firebasestorage.app",
             messagingSenderId: "76007314543",
-            appId: "1:76007314543:web:60296d876ecf0393dc699a",
-            measurementId: "G-8BS9882K04"
+            appId: "1:76007314543:web:4850b668cec4b93bdc699a",
+            measurementId: "G-SB6884R2FX"
         };
 
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        // const analytics = getAnalytics(app); // تم تجاهل التحليلات لتبسيط الكود
 
-        // 💾 2. هيكلة البيانات الأولية (ستُقرأ من Firestore لاحقاً)
-        // سنستخدم هذه القائمة الأولية للعرض والعمليات حتى نقوم بدمج قراءة البيانات من Firestore.
+        // تهيئة Realtime Database
+        const db = getDatabase(app);
+
+        // 💾 2. هيكلة البيانات الأولية (تستخدم مؤقتاً)
         let allUsers = [
             { id: 1, name: 'خالد', balance: 3750.00, totalSpent: 0 },
             { id: 2, name: 'محمد', balance: -1200.00, totalSpent: 0 },
@@ -301,32 +305,26 @@
             { id: 4, name: 'عوض', balance: -1300.00, totalSpent: 0 },
             { id: 5, name: 'سارة', balance: 0.00, totalSpent: 0 }
         ];
-
-        // ID للمستخدم الحالي (لنفترض أنه خالد)
+        
         const currentUserID = 1;
         let currentUser = allUsers.find(u => u.id === currentUserID);
 
-        // هنا نستخدم localStorage كاحتياطي مؤقت للأرصدة
         if (localStorage.getItem('allUsers')) {
             allUsers = JSON.parse(localStorage.getItem('allUsers'));
             currentUser = allUsers.find(u => u.id === currentUserID);
         }
 
-        let expenses = []; // قائمة المصروفات المحلية (ستُملأ من Firestore)
+        let expenses = []; // قائمة المصروفات المحلية (للتخزين المؤقت بعد الجلب)
 
 
         // 🖼️ 3. تحديث الواجهة والـ DOM (لم تتغير)
-
         function updateBalanceDisplay() {
             const balanceCard = document.getElementById('currentBalanceCard');
             const balanceElement = document.getElementById('currentBalance');
-            
             const balanceValue = currentUser.balance;
             const sign = balanceValue >= 0 ? '+' : '';
             const formattedBalance = sign + Math.abs(balanceValue).toLocaleString('en-US', { minimumFractionDigits: 2 });
-
             balanceElement.textContent = formattedBalance;
-            
             balanceCard.classList.remove('negative');
             if (balanceValue < 0) {
                 balanceCard.classList.add('negative');
@@ -345,7 +343,6 @@
         function populateParticipants() {
             const participantsContainer = document.getElementById('participantsCheckboxes');
             participantsContainer.innerHTML = '';
-            
             allUsers.filter(u => u.id !== currentUserID).forEach(user => {
                 const label = document.createElement('label');
                 label.className = 'checkbox-item';
@@ -362,18 +359,23 @@
             checkboxes.forEach(cb => cb.checked = true);
         }
 
-        // ⚙️ 4. منطق العمليات (تم تعديل `previewExpense` و `saveExpense`)
+        // ⚙️ 4. منطق العمليات (تم تعديل `fetchExpenses` و `saveExpense` لـ Realtime DB)
 
-        // وظيفة جلب المصروفات من Firestore للتأكد من عدم التكرار
+        // وظيفة جلب المصروفات من Realtime DB للتأكد من عدم التكرار
         async function fetchExpenses() {
             expenses = []; // تفريغ القائمة المحلية
             try {
-                const querySnapshot = await getDocs(collection(db, "expenses"));
-                querySnapshot.forEach((doc) => {
-                    expenses.push({ id: doc.id, ...doc.data() });
-                });
+                // استخدام get للحصول على لقطة (Snapshot) لجميع المصروفات
+                const snapshot = await get(child(ref(db), `expenses`)); 
+                if (snapshot.exists()) {
+                    // تحويل الكائن الناتج من RTDB إلى مصفوفة ليسهل التعامل معه
+                    const expensesObject = snapshot.val();
+                    for (const key in expensesObject) {
+                        expenses.push({ id: key, ...expensesObject[key] });
+                    }
+                }
             } catch (e) {
-                console.error("خطأ في جلب المصروفات: ", e);
+                console.error("خطأ في جلب المصروفات من RTDB: ", e);
             }
         }
 
@@ -396,7 +398,6 @@
             const totalParticipants = selectedParticipantIDs.length + 1; 
             const share = amount / totalParticipants;
             
-            // حساب الرصيد الجديد الافتراضي (للمعاينة فقط)
             const netPaidForOthers = amount - share;
             const projectedNewBalance = currentUser.balance + netPaidForOthers;
 
@@ -422,7 +423,7 @@
             document.getElementById('previewModal').classList.add('show');
         }
 
-        // حفظ المصروف وتحديث الأرصدة (الآن يحفظ في Firestore)
+        // حفظ المصروف وتحديث الأرصدة (الآن يحفظ في Realtime DB)
         async function saveExpense() {
             const title = document.getElementById('expenseTitle').value;
             const amount = parseFloat(document.getElementById('expenseAmount').value.replace(/,/g, ''));
@@ -447,7 +448,7 @@
                 }
             });
 
-            // 🛑 بناء مستند المصروف للحفظ في Firestore
+            // 🛑 بناء مستند المصروف للحفظ في Realtime Database
             const newExpense = {
                 title,
                 amount,
@@ -459,10 +460,10 @@
             };
 
             try {
-                // حفظ المصروف في مجموعة "expenses"
-                await addDoc(collection(db, "expenses"), newExpense);
+                // استخدام ref و push لإضافة عقدة جديدة في المسار /expenses/
+                await push(ref(db, 'expenses'), newExpense);
 
-                // حفظ الأرصدة المحدثة محلياً (كحل مؤقت حتى يتم دمج جدول Users)
+                // حفظ الأرصدة المحدثة محلياً (كحل مؤقت)
                 localStorage.setItem('allUsers', JSON.stringify(allUsers)); 
 
                 hideModal();
@@ -473,17 +474,16 @@
                 document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
 
             } catch (e) {
-                console.error("خطأ في حفظ المصروف في Firestore: ", e);
+                console.error("خطأ في حفظ المصروف في Realtime DB: ", e);
                 alert("فشل في حفظ المصروف في قاعدة البيانات. يرجى مراجعة Console.");
             }
         }
 
-        // إخفاء Modal
+        // (وظائف إضافية: hideModal و showNotification تبقى كما هي)
         function hideModal() {
             document.getElementById('previewModal').classList.remove('show');
         }
 
-        // إظهار إشعار
         function showNotification() {
             const notif = document.getElementById('notification');
             notif.style.display = 'block';
