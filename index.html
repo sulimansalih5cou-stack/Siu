@@ -26,6 +26,7 @@
             max-width: 600px;
             width: 100%;
             animation: fadeInUp 0.8s ease-out;
+            position: relative; /* مهم للزر العائم */
         }
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(50px); }
@@ -200,6 +201,26 @@
         .balance-card.negative {
             background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%);
         }
+
+        /* نمط الزر الجديد */
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px; /* ليتناسب مع اتجاه RTL */
+            padding: 8px 15px;
+            background-color: #6B7280;
+            color: white;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .logout-btn:hover {
+            background-color: #4B5563;
+        }
     </style>
 </head>
 <body>
@@ -208,6 +229,10 @@
     </div>
 
     <div class="container">
+        <a href="login.html" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i> تبديل المستخدم
+        </a>
+        
         <div class="app-description">
             <i class="fas fa-image icon"></i> نستخدم التطبيق على الصورة – أضف مصروفك بسهولة!
         </div>
