@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-    <title>تسجيل الدخول - Smart Dorm Expenses</title>
+    <title>إنشاء حساب جديد - Smart Dorm Expenses</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        /* أنماط مخصصة لصفحة تسجيل الدخول */
+        /* أنماط مخصصة (نفس الأنماط الجذابة التي استخدمتها) */
         body {
-            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); /* خلفية زرقاء جذابة */
+            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        .login-card {
+        .login-card { /* تم الإبقاء على اسم الكلاس، ولكنها الآن بطاقة تسجيل */
             background: white;
             border-radius: 20px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
@@ -44,8 +44,8 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
             background: white;
         }
-        .btn-login {
-            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+        .btn-signup { /* تغيير اسم كلاس الزر ليناسب عملية التسجيل */
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); /* لون مختلف للتسجيل (برتقالي/أصفر) */
             color: white;
             padding: 15px;
             border-radius: 12px;
@@ -53,12 +53,12 @@
             font-weight: 700;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
             width: 100%;
         }
-        .btn-login:hover {
+        .btn-signup:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
         }
         .error-message {
             color: #EF4444;
@@ -74,72 +74,117 @@
 <body>
     <div class="login-card">
         <h1 class="text-3xl font-bold text-center text-gray-800 mb-2">
-            <i class="fas fa-lock text-blue-500"></i> تسجيل الدخول
+            <i class="fas fa-user-plus text-blue-500"></i> إنشاء حساب جديد
         </h1>
-        <p class="text-center text-gray-500 mb-8">الرجاء إدخال بياناتك للمتابعة.</p>
+        <p class="text-center text-gray-500 mb-8">الرجاء إدخال بياناتك لإنشاء حساب.</p>
 
         <div id="errorMessage" class="error-message">
-            <i class="fas fa-exclamation-circle"></i> اسم المستخدم أو كلمة المرور غير صحيحة.
-        </div>
-
-        <form id="loginForm" onsubmit="event.preventDefault(); handleLogin();">
-            <div class="input-group mb-6">
-                <label for="username" class="block font-medium text-gray-700 mb-2">اسم المستخدم</label>
-                <input type="text" id="username" placeholder="مثال: khalid" required>
             </div>
 
-            <div class="input-group mb-8">
+        <form id="signupForm" onsubmit="event.preventDefault(); handleSignup();">
+            <div class="input-group mb-6">
+                <label for="name" class="block font-medium text-gray-700 mb-2">الاسم كاملاً</label>
+                <input type="text" id="name" placeholder="مثال: خالد محمد" required>
+            </div>
+
+            <div class="input-group mb-6">
+                <label for="username" class="block font-medium text-gray-700 mb-2">اسم المستخدم (للتسجيل)</label>
+                <input type="text" id="username" placeholder="مثال: khalid2025" required>
+            </div>
+
+            <div class="input-group mb-6">
                 <label for="password" class="block font-medium text-gray-700 mb-2">كلمة المرور</label>
                 <input type="password" id="password" placeholder="********" required>
             </div>
+            
+            <div class="input-group mb-8">
+                <label for="confirmPassword" class="block font-medium text-gray-700 mb-2">تأكيد كلمة المرور</label>
+                <input type="password" id="confirmPassword" placeholder="********" required>
+            </div>
 
-            <button type="submit" class="btn-login">
-                <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
+            <button type="submit" class="btn-signup">
+                <i class="fas fa-user-plus"></i> إنشاء الحساب
             </button>
         </form>
+        
+        <p class="text-center text-gray-500 mt-4">
+            هل لديك حساب بالفعل؟ 
+            <a href="login.html" class="text-blue-600 hover:text-blue-800 font-medium">سجّل الدخول</a>
+        </p>
     </div>
 
     <script type="module">
-        // يمكننا استخدام نفس بيانات المستخدمين من ملف app.js (بافتراض نفس الهيكلة)
-        // في تطبيقك الفعلي، ستقوم بالتحقق من Firebase Authentication!
+        // 🚨 ملاحظة: في التطبيقات الحقيقية، يتم تخزين بيانات المستخدمين في قاعدة بيانات.
+        // للاختبار، سنستخدم نفس القائمة ونضيف إليها باستخدام localStorage لكي يتم حفظ المستخدم الجديد حتى بعد تحديث الصفحة.
 
-        const USERS_CREDENTIALS = [
+        // جلب قائمة المستخدمين المحفوظة أو استخدام القائمة الافتراضية إذا لم تكن موجودة
+        let USERS_CREDENTIALS = JSON.parse(localStorage.getItem('USERS_CREDENTIALS')) || [
             { id: 1, name: 'خالد', username: 'khalid', password: '123' },
             { id: 2, name: 'محمد', username: 'mohammed', password: '123' },
             { id: 3, name: 'علي', username: 'ali', password: '123' }
         ];
 
-        function handleLogin() {
+        // حفظ القائمة الافتراضية في التخزين المحلي إذا كانت غير موجودة
+        if (!localStorage.getItem('USERS_CREDENTIALS')) {
+             localStorage.setItem('USERS_CREDENTIALS', JSON.stringify(USERS_CREDENTIALS));
+        }
+
+
+        function displayError(message) {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+            errorMessage.style.display = 'block';
+        }
+
+        function clearError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        function handleSignup() {
+            clearError(); // مسح أي رسالة خطأ سابقة
+
+            const nameInput = document.getElementById('name').value.trim();
             const usernameInput = document.getElementById('username').value.trim();
             const passwordInput = document.getElementById('password').value.trim();
-            const errorMessage = document.getElementById('errorMessage');
-
-            // 1. البحث عن المستخدم في القائمة
-            const user = USERS_CREDENTIALS.find(u => 
-                u.username === usernameInput && u.password === passwordInput
-            );
-
-            if (user) {
-                // 2. نجاح تسجيل الدخول
-                errorMessage.style.display = 'none';
-
-                // 3. حفظ بيانات المستخدم في الجلسة (يمكن استبدالها لاحقًا بـ Firebase Auth)
-                sessionStorage.setItem('currentUserID', user.id);
-                sessionStorage.setItem('currentUserName', user.name);
-
-                alert(`مرحباً بك يا ${user.name}! جاري تحويلك...`);
-
-                // 4. التوجيه إلى صفحة إدارة المصروفات (index.html)
-                window.location.href = 'index.html'; 
-
-            } else {
-                // 5. فشل تسجيل الدخول
-                errorMessage.style.display = 'block';
+            const confirmPasswordInput = document.getElementById('confirmPassword').value.trim();
+            
+            // 1. التحقق من تطابق كلمات المرور
+            if (passwordInput !== confirmPasswordInput) {
+                displayError('كلمة المرور وتأكيد كلمة المرور غير متطابقان.');
+                return;
             }
+
+            // 2. التحقق من عدم وجود اسم المستخدم بالفعل
+            const existingUser = USERS_CREDENTIALS.find(u => u.username === usernameInput);
+            if (existingUser) {
+                displayError('اسم المستخدم هذا موجود بالفعل. الرجاء اختيار اسم مستخدم آخر.');
+                return;
+            }
+
+            // 3. إنشاء مُعرّف (ID) جديد للمستخدم (بافتراض آخر ID + 1)
+            const newId = USERS_CREDENTIALS.length > 0 ? USERS_CREDENTIALS[USERS_CREDENTIALS.length - 1].id + 1 : 1;
+            
+            // 4. بناء كائن المستخدم الجديد
+            const newUser = {
+                id: newId,
+                name: nameInput,
+                username: usernameInput,
+                password: passwordInput // 🚨 ملاحظة: في الحقيقة، يجب تخزين كلمة المرور مشفرة (hashed)!
+            };
+
+            // 5. إضافة المستخدم الجديد إلى القائمة وحفظها في التخزين المحلي
+            USERS_CREDENTIALS.push(newUser);
+            localStorage.setItem('USERS_CREDENTIALS', JSON.stringify(USERS_CREDENTIALS));
+            
+            // 6. رسالة نجاح وتوجيه
+            alert(`تهانينا يا ${nameInput}! تم إنشاء حسابك بنجاح. سيتم تحويلك إلى صفحة تسجيل الدخول.`);
+
+            // 7. التوجيه إلى صفحة تسجيل الدخول (يجب أن يكون لديك ملف login.html)
+            window.location.href = 'login.html'; 
         }
 
         // إتاحة الدالة للنموذج
-        window.handleLogin = handleLogin;
+        window.handleSignup = handleSignup;
     </script>
 </body>
 </html>
