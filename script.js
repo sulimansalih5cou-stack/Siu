@@ -34,10 +34,15 @@ let currentUserDB = null;
 function formatNumber(input) {
     let value = input.value.replace(/,/g, '');
     if (!isNaN(value) && value !== '') {
+        // تنسيق الرقم مع فاصلة الآلاف
         input.value = parseFloat(value).toLocaleString('en-US'); 
     }
 }
 
+/**
+ * تحديث عرض رصيد المستخدم الحالي وتلوين البطاقة.
+ * المنطق: اللون الأخضر مع علامة (+) للرصيد الموجب أو صفر، والأحمر مع (-) للسالب.
+ */
 function updateBalanceDisplay() {
     if (!currentUserDB || !currentUserName) return;
 
@@ -60,9 +65,8 @@ function updateBalanceDisplay() {
 
         balanceElement.textContent = formattedBalance;
 
-        // 🛑 التعديل هنا: نعتمد فقط على كلاس CSS لتطبيق الخلفية الخضراء/الحمراء
+        // 🛑 التعديل: نعتمد فقط على كلاس CSS لتطبيق الخلفية الخضراء/الحمراء
         balanceCard.classList.remove('negative');
-        // ⚠️ تم حذف السطر الذي كان يفرض الخلفية الخضراء عبر style.background 
         
         if (balanceValue < 0) {
             // 🔴 إضافة كلاس negative لتطبيق الخلفية الحمراء عبر CSS
@@ -76,6 +80,10 @@ function updateBalanceDisplay() {
     }
 }
 
+/**
+ * ملء مربعات اختيار المشاركين في نموذج المصروف.
+ * يتم استثناء المستخدم الحالي (الدافع) من القائمة المعروضة.
+ */
 function populateParticipants() {
     const participantsContainer = document.getElementById('participantsCheckboxes');
     if (participantsContainer) {
@@ -178,12 +186,15 @@ async function saveExpense() {
          return; 
     }
 
+    // جمع IDs المشاركين الذين تم اختيارهم
     const participantUIDs = Array.from(
         document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]:checked')
     ).map(cb => cb.getAttribute('data-user-id'));
 
-    // نضمن أن الدافع (currentUserID) يكون دائماً مشاركاً في المصروف (Share)
-    participantUIDs.push(currentUserID); 
+    // 🛑 نضمن أن الدافع (currentUserID) يكون دائماً مشاركاً في المصروف
+    if (!participantUIDs.includes(currentUserID)) {
+        participantUIDs.push(currentUserID); 
+    }
 
     const totalParticipants = participantUIDs.length;
     const share = amount / totalParticipants;
@@ -194,15 +205,16 @@ async function saveExpense() {
         let oldBalance = user.balance || 0; 
         let newBalance = oldBalance;
 
-        // 1. حساب الدافع (Payer)
+        // 1. حساب الدافع (Payer): يدفع كامل المبلغ لكن حصته تُخصم
         if (user.uid === currentUserID) {
-            const netPaidForOthers = amount - share; 
+            const netPaidForOthers = amount - share; // هذا هو المبلغ الذي سيدخل رصيده كدين له
             newBalance = parseFloat((oldBalance + netPaidForOthers).toFixed(2));
         } 
-        // 2. حساب المشاركين الآخرين (Participant)
+        // 2. حساب المشاركين الآخرين (Participant): يدفع حصته
         else if (participantUIDs.includes(user.uid)) {
             newBalance = parseFloat((oldBalance - share).toFixed(2));
         }
+        // 3. المستخدمون غير المشاركين لا تتغير أرصدتهم
 
         usersUpdate[user.uid] = {
             displayName: user.displayName, 
@@ -229,6 +241,7 @@ async function saveExpense() {
              if (successModal) showSuccessModal(); 
 
              document.getElementById('expenseForm').reset();
+             // إلغاء تحديد الكل بعد الحفظ
              document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
         }
 
@@ -250,16 +263,27 @@ function previewExpense() {
         return;
     }
 
+    // جمع IDs المشاركين الذين تم اختيارهم من القائمة
     const participantUIDs = Array.from(
         document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]:checked')
     ).map(cb => cb.getAttribute('data-user-id'));
 
     if (!currentUserID) { alert('خطأ في تحديد المستخدم!'); return; }
-    participantUIDs.push(currentUserID); 
+    
+    // 🛑 إضافة الدافع لحساب الحصة
+    if (!participantUIDs.includes(currentUserID)) {
+        participantUIDs.push(currentUserID); 
+    }
 
     const totalParticipants = participantUIDs.length;
+
+    if (totalParticipants === 0) {
+        alert('يجب أن تكون أنت على الأقل أحد المشاركين في المصروف!');
+        return;
+    }
+    
     const share = amount / totalParticipants;
-    const netPaidForOthers = amount - share;
+    const netPaidForOthers = amount - share; // صافي المبلغ الذي سيدخل رصيد الدافع
 
     const participantNames = participantUIDs
         .map(uid => getUserNameById(uid))
@@ -310,6 +334,7 @@ function displayHistory() {
             debtFromYouList.innerHTML += `<p class="my-2"><i class="fas fa-arrow-down text-red-700 ml-1"></i> أنت مدين لـ **${user.displayName}** بمبلغ: ${formattedBalance} SAR</p>`;
             hasDebtFromYou = true;
         } else if (balance < -0.01) { // هو مدين لك
+            // رصيده سالب، أي أنه مدين لك (أنت دائن)
             debtToYouList.innerHTML += `<p class="my-2"><i class="fas fa-arrow-up text-green-700 ml-1"></i> **${user.displayName}** مدين لك بمبلغ: ${formattedBalance} SAR</p>`;
             hasDebtToYou = true;
         }
