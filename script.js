@@ -48,7 +48,7 @@ function updateBalanceDisplay() {
     // هذه العناصر موجودة فقط في index.html
     if (balanceElement && userNamePlaceholder) { 
         const balanceCard = document.getElementById('currentBalanceCard');
-        
+
         userNamePlaceholder.textContent = currentUserName;
 
         const balanceValue = currentUserDB.balance;
@@ -143,7 +143,7 @@ function loadDataFromFirebase() {
         } else {
              expenses = [];
         }
-        
+
         // تحديث سجل العمليات بعد تحميل المصروفات
         if (document.getElementById('expensesContainer')) {
             displayHistory();
@@ -158,7 +158,7 @@ async function saveExpense() {
     if (document.getElementById('previewModal')) {
          hideModal();
     }
-    
+
     if (!currentUserID || !currentUserDB) {
         alert("خطأ: بيانات المستخدم غير متوفرة. يرجى تسجيل الدخول مجدداً.");
         return;
@@ -169,7 +169,6 @@ async function saveExpense() {
     const amount = parseFloat(rawAmount); 
 
     if (isNaN(amount) || amount <= 0) {
-         // هذا الشرط تم فحصه في previewExpense لكن نتركه احتياطاً
          return; 
     }
 
@@ -185,7 +184,7 @@ async function saveExpense() {
     const usersUpdate = {};
 
     allUsers.forEach(user => {
-        let oldBalance = user.balance || 0; // تأكد من قيمة أولية لـ balance
+        let oldBalance = user.balance || 0; 
         let newBalance = oldBalance;
 
         // 1. حساب الدافع (Payer) - يضاف له صافي المبلغ
@@ -215,18 +214,14 @@ async function saveExpense() {
     };
 
     try {
-        // تحديث الأرصدة
         await set(ref(db, 'users'), usersUpdate);
-        // إضافة المصروف
         await push(ref(db, 'expenses'), newExpense);
 
         // إجراءات صفحة index.html
         if (document.getElementById('expenseForm')) {
-             // إظهار رسالة النجاح
              const successModal = document.getElementById('successModal');
              if (successModal) showSuccessModal(); 
 
-             // إفراغ النموذج
              document.getElementById('expenseForm').reset();
              document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
         }
@@ -248,20 +243,20 @@ function previewExpense() {
         alert('يرجى ملء اسم المصروف وإدخال مبلغ صحيح.');
         return;
     }
-    
+
     // حساب المشاركين وحصتهم
     const participantUIDs = Array.from(
         document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]:checked')
     ).map(cb => cb.getAttribute('data-user-id'));
-    
+
     // إضافة المستخدم الحالي دائماً كشريك دافع
     if (!currentUserID) { alert('خطأ في تحديد المستخدم!'); return; }
     participantUIDs.push(currentUserID); 
-    
+
     const totalParticipants = participantUIDs.length;
     const share = amount / totalParticipants;
     const netPaidForOthers = amount - share;
-    
+
     // أسماء المشاركين
     const participantNames = participantUIDs
         .map(uid => getUserNameById(uid))
@@ -296,12 +291,14 @@ function displayHistory() {
     expensesContainer.innerHTML = '';
     debtToYouList.innerHTML = '';
     debtFromYouList.innerHTML = '';
-    document.getElementById('loadingMessage').style.display = 'none'; // إخفاء رسالة التحميل
+    // قد لا يكون هذا العنصر موجوداً في history.html، لذا يجب التحقق منه
+    const loadingMessage = document.getElementById('loadingMessage');
+    if (loadingMessage) loadingMessage.style.display = 'none'; 
 
     // أ. عرض ملخص الديون (تقسيم الدين لك والدين عليك)
     let hasDebtToYou = false;
     let hasDebtFromYou = false;
-    
+
     const otherUsers = allUsers.filter(u => u.uid !== currentUserID); 
 
     otherUsers.forEach(user => {
@@ -407,7 +404,6 @@ onAuthStateChanged(auth, (user) => {
         // ربط زر تسجيل الخروج (باستخدام ID 'logoutButton')
         const logoutBtn = document.getElementById('logoutButton');
         if (logoutBtn) {
-            // يتم توجيه الرابط في HTML إلى auth.html، لكن نضيف حدث التأكيد
             logoutBtn.onclick = (e) => {
                  e.preventDefault();
                  auth.signOut().then(() => {
@@ -434,7 +430,6 @@ window.previewExpense = previewExpense;
 window.saveExpense = saveExpense;
 
 // الدوال المتعلقة بالـ Modal (للصفحة index.html)
-// Note: You must ensure you have the 'successModal' in your index.html file to avoid errors.
 window.hideModal = () => document.getElementById('previewModal').classList.remove('show');
 window.showSuccessModal = () => document.getElementById('successModal').classList.add('show');
 window.hideSuccessModal = () => document.getElementById('successModal').classList.remove('show');
