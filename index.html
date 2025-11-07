@@ -27,13 +27,7 @@
             width: 100%;
             position: relative;
         }
-        .form-group input {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #E5E7EB;
-            border-radius: 12px;
-            font-size: 16px;
-        }
+        /* ... (أنماط أخرى مثل form-group و btn-auth إلخ) ... */
         .balance-card {
             background: linear-gradient(135deg, #10B981 0%, #059669 100%);
             color: white;
@@ -42,9 +36,37 @@
             text-align: center;
             margin-bottom: 30px;
         }
+        /* 💡 نمط الرصيد السالب */
         .balance-card.negative {
             background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%);
         }
+
+        /* 💡 أنماط الـ Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        /* تم حذف نمط الإشعار الجانبي القديم (#notification) */
+
         .logout-btn {
             position: absolute;
             top: 20px;
@@ -56,18 +78,10 @@
             font-size: 14px;
             font-weight: 500;
         }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); align-items: center; justify-content: center; z-index: 1000; }
-        .modal.show { display: flex; }
-        .modal-content { background: white; padding: 30px; border-radius: 20px; max-width: 400px; width: 90%; text-align: center; }
-        .warning { background: #F59E0B; color: white; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none; }
-        .btn { padding: 15px 30px; border-radius: 12px; }
     </style>
 </head>
 <body>
-    <div id="notification" class="notification">
-        <i class="fas fa-check-circle"></i> تم تسجيل المصروف بنجاح! 🎉
-    </div>
-
+    
     <div class="container">
         <a href="#" id="logoutButton" class="logout-btn">
             <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
@@ -104,7 +118,7 @@
                 <label><i class="fas fa-users icon"></i> المشاركون (اختر من يشارك)</label>
                 <div class="select-all" onclick="selectAllParticipants()">اختر الكل</div>
                 <div class="checkbox-group" id="participantsCheckboxes">
-                    </div>
+                </div>
             </div>
 
             <div class="text-center">
@@ -130,6 +144,20 @@
                 </button>
                 <button onclick="hideModal()" class="btn btn-secondary ml-4">
                     <i class="fas fa-times"></i> إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="successModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4 text-green-500">
+                <i class="fas fa-check-circle"></i> نجاح! 🎉
+            </h2>
+            <p class="text-gray-600 mb-6 font-medium">تم تسجيل المصروف وتحديث الأرصدة بنجاح.</p>
+            <div>
+                <button onclick="hideSuccessModal()" class="btn btn-login">
+                    <i class="fas fa-thumbs-up"></i> حسناً
                 </button>
             </div>
         </div>
