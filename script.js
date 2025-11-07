@@ -38,63 +38,65 @@ function formatNumber(input) {
     }
 }
 
-/**
- * وظيفة محدّثة لعرض الرصيد الحالي بتنسيق الأقواس وتغيير لون البطاقة.
- * إذا كان الرصيد سالبًا: يُعرض كـ (-) 1,234.56 وتصبح خلفية البطاقة حمراء.
- * إذا كان الرصيد موجبًا: يُعرض كـ (+) 1,234.56 وتظل خلفية البطاقة خضراء.
- */
 function updateBalanceDisplay() {
     if (!currentUserDB || !currentUserName) return;
 
-    const balanceCard = document.getElementById('currentBalanceCard');
+    // هذه الدالة مخصصة لصفحة index.html
     const balanceElement = document.getElementById('currentBalance');
-    const userNamePlaceholder = document.getElementById('userNamePlaceholder');
+    if (balanceElement) {
+        const balanceCard = document.getElementById('currentBalanceCard');
+        const userNamePlaceholder = document.getElementById('userNamePlaceholder');
 
-    userNamePlaceholder.textContent = currentUserName;
+        userNamePlaceholder.textContent = currentUserName;
 
-    const balanceValue = currentUserDB.balance;
-    const absBalance = Math.abs(balanceValue); // القيمة المطلقة للرصيد للتنسيق
-
-    let formattedDisplay;
-
-    // 1. تحديد الإشارة (علامة + أو - بين قوسين)
-    if (balanceValue < 0) {
-        // الرصيد سالب
-        formattedDisplay = `(-) ${absBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        const balanceValue = currentUserDB.balance;
         
-        // تطبيق فئة CSS السالب لتغيير اللون إلى الأحمر
-        balanceCard.classList.add('negative');
-    } else {
-        // الرصيد موجب أو صفر
-        formattedDisplay = `(+) ${absBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        
-        // التأكد من إزالة فئة CSS السالب ليبقى اللون أخضر
+        const sign = balanceValue >= 0 ? '+' : '';
+        const formattedBalance = sign + Math.abs(balanceValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        balanceElement.textContent = formattedBalance;
+
         balanceCard.classList.remove('negative');
+        balanceCard.style.background = 'linear-gradient(135deg, #10B981 0%, #059669 100%)';
+        if (balanceValue < 0) {
+            balanceCard.classList.add('negative');
+        }
     }
-
-    // 2. تحديث نص الرصيد
-    balanceElement.textContent = formattedDisplay;
+    
+    // استدعاء دالة عرض التاريخ إذا كنا في history.html
+    if (document.getElementById('expensesTableBody')) {
+        displayHistory();
+    }
 }
 
 function populateParticipants() {
     const participantsContainer = document.getElementById('participantsCheckboxes');
-    participantsContainer.innerHTML = '';
-
-    allUsers.filter(u => u.uid !== currentUserID).forEach(user => {
-        const label = document.createElement('label');
-        label.className = 'checkbox-item';
-        label.innerHTML = `
-            <input type="checkbox" data-user-id="${user.uid}" value="${user.displayName}">
-            <span class="checkbox-icon fas fa-user ml-2"></span> ${user.displayName}
-        `;
-        participantsContainer.appendChild(label);
-    });
+    if (participantsContainer) {
+        participantsContainer.innerHTML = '';
+        allUsers.filter(u => u.uid !== currentUserID).forEach(user => {
+            const label = document.createElement('label');
+            label.className = 'checkbox-item';
+            label.innerHTML = `
+                <input type="checkbox" data-user-id="${user.uid}" value="${user.displayName}">
+                <span class="checkbox-icon fas fa-user ml-2"></span> ${user.displayName}
+            `;
+            participantsContainer.appendChild(label);
+        });
+    }
 }
 
 function selectAllParticipants() {
     const checkboxes = document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]');
     checkboxes.forEach(cb => cb.checked = true);
 }
+
+
+// 🆕 دالة مساعدة للحصول على الاسم من UID
+function getUserNameById(uid) {
+    const user = allUsers.find(u => u.uid === uid);
+    return user ? user.displayName : 'مستخدم غير معروف';
+}
+
 
 // 📝 4. منطق قراءة وكتابة البيانات عبر Firebase
 
@@ -109,11 +111,11 @@ function loadDataFromFirebase() {
                 uid: uid,
                 ...usersObject[uid]
             }));
-
+            
             currentUserDB = allUsers.find(u => u.uid === currentUserID);
 
             populateParticipants();
-            updateBalanceDisplay(); // استدعاء الدالة المحدثة
+            updateBalanceDisplay(); // يحدث شاشة التاريخ أيضًا
         }
     });
 
@@ -124,20 +126,22 @@ function loadDataFromFirebase() {
             expenses = Object.keys(expensesObject).map(key => ({ 
                 firebaseId: key,
                 ...expensesObject[key] 
-            }));
+            })).reverse(); // عرض الأحدث أولاً
         } else {
              expenses = [];
         }
     });
 }
 
-// 💡 دالة الحفظ الرئيسية (الكود النهائي المصحح)
+
+// 💡 دالة الحفظ الرئيسية (المنطق المصحح)
 async function saveExpense() {
     if (!currentUserID || !currentUserDB) {
         alert("خطأ: بيانات المستخدم غير متوفرة. يرجى تسجيل الدخول مجدداً.");
         return;
     }
-
+    
+    // ... (جلب البيانات والتحقق منها) ...
     const title = document.getElementById('expenseTitle').value;
     const rawAmount = document.getElementById('expenseAmount').value.replace(/,/g, '');
     const amount = parseFloat(rawAmount); 
@@ -159,22 +163,19 @@ async function saveExpense() {
     const usersUpdate = {};
 
     allUsers.forEach(user => {
-        // التأكد من الحصول على الرصيد القديم
         let oldBalance = user.balance; 
         let newBalance = oldBalance;
 
-        // 1. حساب الدافع (Payer) - يجب أن يضاف له صافي المبلغ
+        // 1. حساب الدافع (Payer)
         if (user.uid === currentUserID) {
-            // المبلغ الذي يضاف هو صافي ما دفعه الدافع نيابة عن الآخرين: (2000 - 1000 = +1000)
             const netPaidForOthers = amount - share; 
             newBalance = parseFloat((oldBalance + netPaidForOthers).toFixed(2));
         } 
-        // 2. حساب المشاركين الآخرين (Participant) - يجب أن يخصم منهم الحصة
+        // 2. حساب المشاركين الآخرين (Participant)
         else if (participantUIDs.includes(user.uid)) {
-            // المبلغ الذي يخصم هو حصة المشارك بالكامل: (-1000)
             newBalance = parseFloat((oldBalance - share).toFixed(2));
         }
-
+        
         usersUpdate[user.uid] = {
             displayName: user.displayName, 
             balance: newBalance,
@@ -194,11 +195,13 @@ async function saveExpense() {
         await set(ref(db, 'users'), usersUpdate);
         await push(ref(db, 'expenses'), newExpense);
 
-        hideModal();
-        showSuccessModal(); 
-
-        document.getElementById('expenseForm').reset();
-        document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
+        // هذه الدوال تعمل فقط في index.html
+        if (document.getElementById('previewModal')) {
+             hideModal();
+             showSuccessModal(); 
+             document.getElementById('expenseForm').reset();
+             document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
+        }
 
     } catch (error) {
         alert("فشل في حفظ البيانات إلى Firebase. تأكد من اتصالك وقواعد الأمان.");
@@ -206,64 +209,82 @@ async function saveExpense() {
     }
 }
 
-// 5. وظائف المعاينة والـ Modal
-function showSuccessModal() {
-    document.getElementById('successModal').classList.add('show');
-}
 
-function hideSuccessModal() {
-    document.getElementById('successModal').classList.remove('show');
-}
+// 🆕 5. وظيفة عرض سجل العمليات (مخصصة لـ history.html)
+function displayHistory() {
+    if (allUsers.length === 0 || expenses.length === 0 || !currentUserDB) return;
 
-function previewExpense() {
-    if (!currentUserDB) {
-        alert("الرجاء الانتظار حتى يتم تحميل بيانات المستخدمين.");
-        return;
+    const tableBody = document.getElementById('expensesTableBody');
+    const balanceSummary = document.getElementById('balanceSummary');
+    tableBody.innerHTML = '';
+    balanceSummary.innerHTML = '';
+
+    // أ. عرض ملخص الديون
+    let debtSummaryHTML = '';
+    
+    // تصفية المستخدمين الآخرين
+    const otherUsers = allUsers.filter(u => u.uid !== currentUserID); 
+
+    otherUsers.forEach(user => {
+        const balance = user.balance;
+        
+        if (balance > 0.01) { // أنت مدين لهم
+            debtSummaryHTML += `<p class="text-red-600 font-medium"><i class="fas fa-hand-holding-usd"></i> أنت مدين لـ **${user.displayName}** بمبلغ: ${balance.toFixed(2).toLocaleString('en-US')}</p>`;
+        } else if (balance < -0.01) { // هم مدينون لك
+            debtSummaryHTML += `<p class="text-green-600 font-medium"><i class="fas fa-money-check-alt"></i> **${user.displayName}** مدين لك بمبلغ: ${Math.abs(balance).toFixed(2).toLocaleString('en-US')}</p>`;
+        }
+    });
+
+    if (!debtSummaryHTML) {
+        debtSummaryHTML = `<p class="text-gray-500 font-medium"><i class="fas fa-check-circle"></i> لا توجد ديون معلقة حالياً! (الأرصدة صفرية)</p>`;
     }
 
-    const title = document.getElementById('expenseTitle').value;
-    const rawAmount = document.getElementById('expenseAmount').value.replace(/,/g, '');
-    const amount = parseFloat(rawAmount);
+    balanceSummary.innerHTML = debtSummaryHTML;
 
-    const selectedParticipantUIDs = Array.from(
-        document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]:checked')
-    ).map(cb => cb.getAttribute('data-user-id'));
 
-    if (!title || isNaN(amount) || amount <= 0) {
-        alert('يرجى ملء اسم المصروف وإدخال مبلغ صحيح!');
-        return;
+    // ب. إنشاء جدول المصروفات
+    expenses.forEach(expense => {
+        const isPayer = expense.payer_id === currentUserID;
+        const isParticipant = expense.participants_ids.includes(currentUserID);
+        const totalParticipants = expense.participants_ids.length;
+        const share = expense.share;
+        
+        let statusText = '';
+        let rowClass = '';
+
+        if (isPayer) {
+            const netPaid = expense.amount - share;
+            statusText = `<span class="text-green-600">دافع: +${netPaid.toFixed(2).toLocaleString('en-US')}</span>`;
+            rowClass = 'payer-row';
+        } else if (isParticipant) {
+            statusText = `<span class="text-red-600">حصتك: -${share.toFixed(2).toLocaleString('en-US')}</span>`;
+            rowClass = 'debtor-row';
+        } else {
+            statusText = `لم تشارك`;
+        }
+
+        const payerName = getUserNameById(expense.payer_id);
+        const participantNames = expense.participants_ids
+            .map(uid => getUserNameById(uid))
+            .filter(name => name !== payerName || name === currentUserName) // إزالة اسم الدافع المتكرر إذا كان الدافع والمشارك هو نفسه
+            .join(', ');
+
+        const row = document.createElement('tr');
+        row.className = rowClass;
+        row.innerHTML = `
+            <td>${expense.date}</td>
+            <td>${expense.title}</td>
+            <td>${payerName}</td>
+            <td>${expense.amount.toLocaleString('en-US')}</td>
+            <td>${statusText}</td>
+            <td class="text-sm">${participantNames}</td>
+        `;
+        tableBody.appendChild(row);
+    });
+
+    if (expenses.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">لا توجد مصروفات مسجلة بعد.</td></tr>`;
     }
-
-    const totalParticipants = selectedParticipantUIDs.length + 1; 
-    const share = amount / totalParticipants;
-
-    const netPaidForOthers = amount - share;
-    const projectedNewBalance = currentUserDB.balance + netPaidForOthers;
-
-    const participantNames = selectedParticipantUIDs
-        .map(uid => allUsers.find(u => u.uid === uid)?.displayName)
-        .filter(name => name)
-        .join(', ');
-
-    const previewText = `
-        <strong>المصروف:</strong> ${title}<br>
-        <strong>المبلغ الكلي:</strong> ${amount.toLocaleString('en-US')}<br>
-        <strong>المشاركون (بالإضافة إليك):</strong> ${participantNames || 'أنت فقط'}<br>
-        <strong>نصيب كل شخص:</strong> ${share.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>
-        <hr style="margin: 10px 0;">
-        <span class="text-blue-600 font-bold">رصيدك المتوقع بعد الحفظ: ${projectedNewBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-    `;
-    document.getElementById('previewText').innerHTML = previewText;
-
-    const today = new Date().toISOString().split('T')[0];
-    const hasTodayExpense = expenses.some(e => e.payer_id === currentUserID && e.date === today && e.title === title);
-    document.getElementById('warning').style.display = hasTodayExpense ? 'block' : 'none';
-
-    document.getElementById('previewModal').classList.add('show');
-}
-
-function hideModal() {
-    document.getElementById('previewModal').classList.remove('show');
 }
 
 
@@ -273,23 +294,35 @@ onAuthStateChanged(auth, (user) => {
         currentUserID = user.uid;
         currentUserName = user.displayName;
         loadDataFromFirebase();
-
-        document.getElementById('logoutButton').onclick = (e) => {
-             e.preventDefault();
-             auth.signOut().then(() => {
-                window.location.href = 'auth.html'; 
-             });
+        
+        // ربط زر تسجيل الخروج
+        const logoutBtn = document.getElementById('logoutButton');
+        if (logoutBtn) {
+            logoutBtn.onclick = (e) => {
+                 e.preventDefault();
+                 auth.signOut().then(() => {
+                    window.location.href = 'auth.html'; 
+                 });
+            }
         }
-
+        
     } else {
-        window.location.href = 'auth.html'; 
+        // إعادة التوجيه إلى صفحة المصادقة إذا لم يكن هناك مستخدم مسجل الدخول
+        if (window.location.pathname.indexOf('auth.html') === -1) {
+            window.location.href = 'auth.html'; 
+        }
     }
 });
 
-// *إتاحة الدوال للـ HTML*
+// *إتاحة الدوال للـ HTML (لصفحة index.html)*
+// يتم استدعاء الدوال الخاصة بصفحة history تلقائيًا بعد تحميل البيانات في loadDataFromFirebase
 window.formatNumber = formatNumber;
 window.selectAllParticipants = selectAllParticipants;
 window.previewExpense = previewExpense;
 window.saveExpense = saveExpense;
-window.hideModal = hideModal;
-window.hideSuccessModal = hideSuccessModal;
+// الدوال المتعلقة بالـ Modal
+if (document.getElementById('previewModal')) {
+    window.hideModal = () => document.getElementById('previewModal').classList.remove('show');
+    window.showSuccessModal = () => document.getElementById('successModal').classList.add('show');
+    window.hideSuccessModal = () => document.getElementById('successModal').classList.remove('show');
+}
