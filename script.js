@@ -50,7 +50,7 @@ function updateBalanceDisplay() {
         userNamePlaceholder.textContent = currentUserName;
 
         const balanceValue = currentUserDB.balance;
-        
+
         const sign = balanceValue >= 0 ? '+' : '';
         const formattedBalance = sign + Math.abs(balanceValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -62,7 +62,7 @@ function updateBalanceDisplay() {
             balanceCard.classList.add('negative');
         }
     }
-    
+
     // استدعاء دالة عرض التاريخ إذا كنا في history.html
     if (document.getElementById('expensesContainer')) {
         displayHistory();
@@ -101,7 +101,7 @@ function getUserNameById(uid) {
 function formatTimestamp(timestamp) {
     if (!timestamp) return { date: 'التاريخ غير متوفر', time: '' };
     const date = new Date(timestamp);
-    
+
     const formattedDate = date.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
     const formattedTime = date.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
 
@@ -122,7 +122,7 @@ function loadDataFromFirebase() {
                 uid: uid,
                 ...usersObject[uid]
             }));
-            
+
             currentUserDB = allUsers.find(u => u.uid === currentUserID);
 
             populateParticipants();
@@ -151,7 +151,7 @@ async function saveExpense() {
         alert("خطأ: بيانات المستخدم غير متوفرة. يرجى تسجيل الدخول مجدداً.");
         return;
     }
-    
+
     const title = document.getElementById('expenseTitle').value;
     const rawAmount = document.getElementById('expenseAmount').value.replace(/,/g, '');
     const amount = parseFloat(rawAmount); 
@@ -185,7 +185,7 @@ async function saveExpense() {
         else if (participantUIDs.includes(user.uid)) {
             newBalance = parseFloat((oldBalance - share).toFixed(2));
         }
-        
+
         usersUpdate[user.uid] = {
             displayName: user.displayName, 
             balance: newBalance,
@@ -221,38 +221,51 @@ async function saveExpense() {
 }
 
 
-// 🆕 5. وظيفة عرض سجل العمليات (مخصصة لـ history.html)
+// 🆕 5. وظيفة عرض سجل العمليات والديون (مخصصة لـ history.html)
 function displayHistory() {
     if (allUsers.length === 0 || !currentUserDB) return;
 
     const expensesContainer = document.getElementById('expensesContainer');
-    const balanceSummary = document.getElementById('balanceSummary');
-    if (!expensesContainer || !balanceSummary) return;
+    // 🆕 المعرفات الجديدة لتقسيم ملخص الديون
+    const debtToYouList = document.getElementById('debtToYouList'); 
+    const debtFromYouList = document.getElementById('debtFromYouList');
+
+    if (!expensesContainer || !debtToYouList || !debtFromYouList) return;
 
     expensesContainer.innerHTML = '';
-    balanceSummary.innerHTML = '';
+    debtToYouList.innerHTML = '';
+    debtFromYouList.innerHTML = '';
 
-    // أ. عرض ملخص الديون
-    let debtSummaryHTML = '';
+
+    // أ. عرض ملخص الديون (تقسيم الدين لك والدين عليك)
+    let hasDebtToYou = false;
+    let hasDebtFromYou = false;
+    
     const otherUsers = allUsers.filter(u => u.uid !== currentUserID); 
 
     otherUsers.forEach(user => {
-        const balance = user.balance;
-        
-        if (balance > 0.01) { 
-            debtSummaryHTML += `<p class="text-red-600 font-medium"><i class="fas fa-hand-holding-usd"></i> أنت مدين لـ **${user.displayName}** بمبلغ: ${balance.toFixed(2).toLocaleString('en-US')}</p>`;
-        } else if (balance < -0.01) { 
-            debtSummaryHTML += `<p class="text-green-600 font-medium"><i class="fas fa-money-check-alt"></i> **${user.displayName}** مدين لك بمبلغ: ${Math.abs(balance).toFixed(2).toLocaleString('en-US')}</p>`;
+        // نستخدم رصيد المستخدم الآخر (من منظور قاعدة البيانات) لفهم علاقته بك.
+        const balance = user.balance; 
+        const formattedBalance = Math.abs(balance).toFixed(2).toLocaleString('en-US');
+
+        if (balance > 0.01) { // رصيد المستخدم الآخر موجب => أنت مدين له
+            debtFromYouList.innerHTML += `<p class="my-2"><i class="fas fa-arrow-down text-red-700 ml-1"></i> أنت مدين لـ **${user.displayName}** بمبلغ: ${formattedBalance}</p>`;
+            hasDebtFromYou = true;
+        } else if (balance < -0.01) { // رصيد المستخدم الآخر سالب => هو مدين لك
+            debtToYouList.innerHTML += `<p class="my-2"><i class="fas fa-arrow-up text-green-700 ml-1"></i> **${user.displayName}** مدين لك بمبلغ: ${formattedBalance}</p>`;
+            hasDebtToYou = true;
         }
     });
 
-    if (!debtSummaryHTML) {
-        debtSummaryHTML = `<p class="text-gray-500 font-medium"><i class="fas fa-check-circle"></i> لا توجد ديون معلقة حالياً! (الأرصدة صفرية)</p>`;
+    if (!hasDebtToYou) {
+        debtToYouList.innerHTML = `<p class="text-gray-500 font-normal"><i class="fas fa-check-circle"></i> لا أحد مدين لك حالياً.</p>`;
     }
-    balanceSummary.innerHTML = debtSummaryHTML;
+    if (!hasDebtFromYou) {
+        debtFromYouList.innerHTML = `<p class="text-gray-500 font-normal"><i class="fas fa-check-circle"></i> لا تدين لأحد حالياً.</p>`;
+    }
 
 
-    // ب. إنشاء بطاقات المصروفات
+    // ب. إنشاء بطاقات المصروفات (سجل العمليات)
     if (expenses.length === 0) {
         expensesContainer.innerHTML = `<p class="text-center text-gray-500 col-span-full">لا توجد مصروفات مسجلة بعد.</p>`;
         return;
@@ -262,7 +275,7 @@ function displayHistory() {
         const isPayer = expense.payer_id === currentUserID;
         const isParticipant = expense.participants_ids.includes(currentUserID);
         const share = expense.share;
-        
+
         let statusText = '';
         let cardClass = 'neutral-card';
         let statusIcon = '<i class="fas fa-info-circle text-gray-500"></i>';
@@ -270,17 +283,17 @@ function displayHistory() {
         // 1. تحديد حالة رصيد المستخدم الحالي
         if (isPayer) {
             const netPaid = expense.amount - share;
-            statusText = `ربحت: +${netPaid.toFixed(2).toLocaleString('en-US')}`;
+            statusText = `ربحت (دفعْتَ عنهم): +${netPaid.toFixed(2).toLocaleString('en-US')}`;
             cardClass = 'payer-card';
             statusIcon = '<i class="fas fa-arrow-up text-green-600"></i>';
         } else if (isParticipant) {
-            statusText = `حصتك: -${share.toFixed(2).toLocaleString('en-US')}`;
+            statusText = `حصتك (عليك دين): -${share.toFixed(2).toLocaleString('en-US')}`;
             cardClass = 'debtor-card';
             statusIcon = '<i class="fas fa-arrow-down text-red-600"></i>';
         } else {
-            statusText = `لم تشارك`;
+            statusText = `لم تشارك في هذه العملية`;
         }
-        
+
         // 2. تنسيق التاريخ والوقت
         const { date: formattedDate, time: formattedTime } = formatTimestamp(expense.timestamp);
 
@@ -330,7 +343,7 @@ onAuthStateChanged(auth, (user) => {
         currentUserID = user.uid;
         currentUserName = user.displayName;
         loadDataFromFirebase();
-        
+
         // ربط زر تسجيل الخروج
         const logoutBtn = document.getElementById('logoutButton');
         if (logoutBtn) {
@@ -341,7 +354,7 @@ onAuthStateChanged(auth, (user) => {
                  });
             }
         }
-        
+
     } else {
         // إعادة التوجيه إلى صفحة المصادقة
         if (window.location.pathname.indexOf('auth.html') === -1) {
@@ -360,5 +373,3 @@ window.saveExpense = saveExpense;
 if (document.getElementById('previewModal')) {
     window.hideModal = () => document.getElementById('previewModal').classList.remove('show');
     window.showSuccessModal = () => document.getElementById('successModal').classList.add('show');
-    window.hideSuccessModal = () => document.getElementById('successModal').classList.remove('show');
-}
