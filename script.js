@@ -262,3 +262,56 @@ window.selectAllParticipants = selectAllParticipants;
 window.previewExpense = previewExpense;
 window.saveExpense = saveExpense;
 window.hideModal = hideModal;
+// ... (بقية الكود في الأعلى كما هو) ...
+
+// 💡 5. وظائف المعاينة والـ Modal (تعديل وظيفة الإشعار)
+
+// دالة جديدة لعرض modal النجاح
+function showSuccessModal() {
+    document.getElementById('successModal').classList.add('show');
+}
+
+// دالة جديدة لإخفاء modal النجاح
+function hideSuccessModal() {
+    document.getElementById('successModal').classList.remove('show');
+}
+
+function previewExpense() {
+    // ... (بقية الدالة كما هي) ...
+}
+
+function hideModal() {
+    document.getElementById('previewModal').classList.remove('show');
+}
+
+// ❌ تم حذف الدالة القديمة showNotification()
+
+// وظيفة حفظ المصروف وتحديث الأرصدة في Firebase
+async function saveExpense() {
+    // ... (منطق حساب المصروف والأرصدة كما هو) ...
+
+    try {
+        await set(ref(db, 'users'), usersUpdate);
+        await push(ref(db, 'expenses'), newExpense);
+
+        hideModal();
+        showSuccessModal(); // 💡 عرض modal النجاح الجديد
+
+        document.getElementById('expenseForm').reset();
+        document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
+
+    } catch (error) {
+        alert("فشل في حفظ البيانات إلى Firebase: " + error.message);
+        console.error(error);
+    }
+}
+
+// ... (بقية الكود في الأسفل كما هو) ...
+
+// *إتاحة الدوال للـ HTML*
+window.formatNumber = formatNumber;
+window.selectAllParticipants = selectAllParticipants;
+window.previewExpense = previewExpense;
+window.saveExpense = saveExpense;
+window.hideModal = hideModal;
+window.hideSuccessModal = hideSuccessModal; // 💡 إتاحة دالة إخفاء النجاح
