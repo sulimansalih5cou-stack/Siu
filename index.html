@@ -3,184 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إضافة مصروف محسّن - Smart Dorm Expenses</title>
+    <title>سجل العمليات - Smart Dorm Expenses</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        /* الأنماط الموحدة للصفحة */
         body {
-            background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+            background: linear-gradient(135deg, #F3FFEE 0%, #E5F3E0 100%);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             padding: 20px;
         }
-        /* تصميم البطاقة الرئيسية */
         .container {
             background: white;
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
             padding: 40px;
-            max-width: 600px;
+            max-width: 900px;
             width: 100%;
-            position: relative;
+            margin: 40px auto;
         }
-        
-        /* تحسين تصميم حقول الإدخال */
-        .input-group { margin-bottom: 25px; }
-        .input-group label { display: block; font-weight: 600; color: #374151; margin-bottom: 8px; font-size: 15px; }
-        .input-wrapper { position: relative; }
-        .input-wrapper input {
-            width: 100%; padding: 15px 15px 15px 50px;
-            border: 2px solid #D1D5DB; border-radius: 10px; font-size: 16px; transition: all 0.3s ease; background: #F9FAFB;
+        /* الأنماط الخاصة بالجدول */
+        .expense-table th, .expense-table td {
+            padding: 12px 15px;
+            text-align: right;
+            border-bottom: 1px solid #E5E7EB;
         }
-        .input-wrapper input:focus { border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); background: white; }
-        .input-wrapper .icon { position: absolute; top: 50%; right: 15px; transform: translateY(-50%); color: #6B7280; font-size: 18px; }
+        .expense-table th {
+            background-color: #F9FAFB;
+            color: #4B5563;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+        /* تمييز دور المستخدم */
+        .payer-row td { background-color: #ECFDF5; font-weight: 600; border-right: 4px solid #10B981; }
+        .debtor-row td { background-color: #FEF2F2; font-weight: 600; border-right: 4px solid #EF4444; }
 
-        /* تصميم بطاقة الرصيد */
-        .balance-card {
-            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-            color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
-        }
-        .balance-card.negative {
-            background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%);
-            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3);
-        }
-        .balance-card p { font-size: 32px; font-weight: 800; margin-top: 5px; }
-
-        /* تصميم أزرار الإجراءات */
-        .btn {
-            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); color: white; padding: 14px 30px; border-radius: 10px;
-            font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
-        }
-        .btn-secondary {
-            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-            box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
-        }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 15px rgba(59, 130, 246, 0.4); }
-
-        /* تصميم المشاركين (Checkboxes) */
-        .checkbox-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
-        .checkbox-item { 
-            padding: 10px 15px; border-radius: 8px; border: 1px solid #D1D5DB; background: #F3F4F6;
-            transition: all 0.3s ease; cursor: pointer; font-weight: 500; text-align: right; display: flex; align-items: center; 
-        }
-        .checkbox-item input { position: absolute; opacity: 0; }
-        .checkbox-item:hover { background: #E5E7EB; }
-        .checkbox-item input:checked + .checkbox-icon { color: #3B82F6; }
-        .checkbox-item input:checked + .checkbox-icon + span { color: #1D4ED8; font-weight: 700;}
-        
-        .select-all {
-            background-color: #E0F2FE; color: #1D4ED8; padding: 10px 15px; border-radius: 8px;
-            cursor: pointer; transition: all 0.3s ease; text-align: center; margin-bottom: 15px; font-weight: 600;
-        }
-
-        /* أنماط الـ Modal */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); align-items: center; justify-content: center; z-index: 1000; }
-        .modal.show { display: flex; }
-        .modal-content { background: white; padding: 30px; border-radius: 20px; max-width: 400px; width: 90%; text-align: center; }
-        .warning { background: #F59E0B; color: white; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none; }
-        .logout-btn { 
-            position: absolute; top: 20px; left: 20px; padding: 8px 15px; background-color: #6B7280; 
-            color: white; border-radius: 10px; font-size: 14px; font-weight: 500; 
+        .btn-back {
+            background-color: #3B82F6; color: white; padding: 10px 20px; border-radius: 10px;
+            font-weight: 700; transition: all 0.3s ease;
         }
     </style>
 </head>
 <body>
     
     <div class="container">
-        <a href="#" id="logoutButton" class="logout-btn">
-            <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
-        </a>
+        <div class="flex justify-between items-center mb-8 border-b pb-4">
+            <h1 class="text-3xl font-bold text-gray-800">
+                <i class="fas fa-history text-blue-500"></i> سجل العمليات والمصروفات
+            </h1>
+            <a href="index.html" class="btn-back">
+                <i class="fas fa-arrow-right ml-2"></i> العودة للإضافة
+            </a>
+        </div>
 
-        <div class="app-description">
-            <h2 class="text-xl font-bold text-gray-800 mb-6 text-center">
-                <i class="fas fa-wallet text-blue-500"></i> إدارة مصروفات السكن
+        <div class="bg-gray-100 p-6 rounded-xl mb-8">
+            <h2 class="text-xl font-bold text-gray-700 mb-4">
+                <i class="fas fa-chart-line ml-2"></i> ملخص الديون الحالي
             </h2>
-        </div>
-
-        <div id="currentBalanceCard" class="balance-card">
-            <h3><i class="fas fa-user-circle"></i> رصيدك الحالي يا <span id="userNamePlaceholder">...</span></h3>
-            <p id="currentBalance">يتم التحميل...</p>
-        </div>
-
-        <h1 class="text-2xl font-bold text-center text-gray-800 mb-6 border-b pb-3">
-            <i class="fas fa-plus-circle text-blue-500"></i> تسجيل مصروف جديد
-        </h1>
-
-        <form id="expenseForm">
-            <div class="input-group">
-                <label for="expenseTitle">اسم المصروف</label>
-                <div class="input-wrapper">
-                    <i class="fas fa-tag icon"></i>
-                    <input type="text" id="expenseTitle" placeholder="مثال: فاتورة الكهرباء" list="suggestions" required>
-                    <datalist id="suggestions">
-                        <option value="شاي"><option value="أكل"><option value="غاز"><option value="نظافة"><option value="أخرى">
-                    </datalist>
-                </div>
-            </div>
-
-            <div class="input-group">
-                <label for="expenseAmount">المبلغ الكلي</label>
-                <div class="input-wrapper">
-                    <i class="fas fa-dollar-sign icon"></i>
-                    <input type="tel" id="expenseAmount" placeholder="5,000" oninput="formatNumber(this)" required>
-                </div>
-            </div>
-
-            <div class="input-group">
-                <label><i class="fas fa-users"></i> المشاركون (اختر من يشارك)</label>
-                <div class="select-all" onclick="selectAllParticipants()">
-                    <i class="fas fa-check-double ml-2"></i> اختر الكل
-                </div>
-                <div class="checkbox-group" id="participantsCheckboxes">
-                    </div>
-            </div>
-
-            <div class="text-center mt-6">
-                <button type="button" onclick="previewExpense()" class="btn btn-secondary w-full">
-                    <i class="fas fa-eye ml-2"></i> معاينة وحفظ المصروف
-                </button>
-            </div>
-        </form>
-    </div>
-
-    <div id="previewModal" class="modal">
-        <div class="modal-content">
-            <div id="warning" class="warning">
-                <i class="fas fa-exclamation-triangle"></i> تحذير: قد يكون هذا المصروف مكرراً! هل تريد المتابعة؟
-            </div>
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">
-                <i class="fas fa-check-circle text-green-500"></i> تأكيد المصروف
-            </h2>
-            <p id="previewText" class="text-gray-600 mb-6 text-right"></p>
-            <div>
-                <button onclick="saveExpense()" class="btn">
-                    <i class="fas fa-save ml-2"></i> حفظ نهائي
-                </button>
-                <button onclick="hideModal()" class="btn btn-secondary mr-4">
-                    <i class="fas fa-times ml-2"></i> إلغاء
-                </button>
+            <div id="balanceSummary" class="text-gray-600">
+                <p>يتم تحميل الملخص...</p>
             </div>
         </div>
-    </div>
-    
-    <div id="successModal" class="modal">
-        <div class="modal-content">
-            <h2 class="text-3xl font-bold text-gray-800 mb-4 text-green-500">
-                <i class="fas fa-check-circle"></i> نجاح! 🎉
-            </h2>
-            <p class="text-gray-600 mb-6 font-medium">تم تسجيل المصروف وتحديث الأرصدة بنجاح.</p>
-            <div>
-                <button onclick="hideSuccessModal()" class="btn btn-login">
-                    <i class="fas fa-thumbs-up ml-2"></i> حسناً
-                </button>
-            </div>
+
+        <h2 class="text-xl font-bold text-gray-700 mb-4">
+            <i class="fas fa-list-alt ml-2"></i> قائمة جميع المصروفات
+        </h2>
+        <div class="overflow-x-auto">
+            <table class="w-full expense-table border-collapse">
+                <thead>
+                    <tr>
+                        <th class="w-1/6">التاريخ</th>
+                        <th class="w-1/4">المصروف</th>
+                        <th class="w-1/6">الدافع</th>
+                        <th class="w-1/6">المبلغ الكلي</th>
+                        <th class="w-1/6">حالة رصيدي</th>
+                        <th class="w-1/6">المشاركون</th>
+                    </tr>
+                </thead>
+                <tbody id="expensesTableBody">
+                    <tr><td colspan="6" class="text-center py-4">يتم تحميل البيانات...</td></tr>
+                </tbody>
+            </table>
         </div>
+        
     </div>
 
     <script src="script.js" type="module"></script> 
