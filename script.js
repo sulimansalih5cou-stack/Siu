@@ -41,7 +41,7 @@ function formatNumber(input) {
 function updateBalanceDisplay() {
     if (!currentUserDB || !currentUserName) return;
 
-    // هذه الدالة مخصصة لصفحة index.html
+    // تحديث شاشة index.html
     const balanceElement = document.getElementById('currentBalance');
     if (balanceElement) {
         const balanceCard = document.getElementById('currentBalanceCard');
@@ -64,7 +64,7 @@ function updateBalanceDisplay() {
     }
     
     // استدعاء دالة عرض التاريخ إذا كنا في history.html
-    if (document.getElementById('expensesTableBody')) {
+    if (document.getElementById('expensesContainer')) {
         displayHistory();
     }
 }
@@ -97,6 +97,17 @@ function getUserNameById(uid) {
     return user ? user.displayName : 'مستخدم غير معروف';
 }
 
+// 🆕 دالة تحويل الطابع الزمني إلى تنسيق تاريخ ووقت مقروء
+function formatTimestamp(timestamp) {
+    if (!timestamp) return { date: 'التاريخ غير متوفر', time: '' };
+    const date = new Date(timestamp);
+    
+    const formattedDate = date.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
+    const formattedTime = date.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+
+    return { date: formattedDate, time: formattedTime };
+}
+
 
 // 📝 4. منطق قراءة وكتابة البيانات عبر Firebase
 
@@ -115,7 +126,7 @@ function loadDataFromFirebase() {
             currentUserDB = allUsers.find(u => u.uid === currentUserID);
 
             populateParticipants();
-            updateBalanceDisplay(); // يحدث شاشة التاريخ أيضًا
+            updateBalanceDisplay();
         }
     });
 
@@ -126,7 +137,7 @@ function loadDataFromFirebase() {
             expenses = Object.keys(expensesObject).map(key => ({ 
                 firebaseId: key,
                 ...expensesObject[key] 
-            })).reverse(); // عرض الأحدث أولاً
+            })).sort((a, b) => b.timestamp - a.timestamp); // فرز تنازلي حسب الطابع الزمني
         } else {
              expenses = [];
         }
@@ -134,14 +145,13 @@ function loadDataFromFirebase() {
 }
 
 
-// 💡 دالة الحفظ الرئيسية (المنطق المصحح)
+// 💡 دالة الحفظ الرئيسية (المنطق المصحح مع إضافة الطابع الزمني)
 async function saveExpense() {
     if (!currentUserID || !currentUserDB) {
         alert("خطأ: بيانات المستخدم غير متوفرة. يرجى تسجيل الدخول مجدداً.");
         return;
     }
     
-    // ... (جلب البيانات والتحقق منها) ...
     const title = document.getElementById('expenseTitle').value;
     const rawAmount = document.getElementById('expenseAmount').value.replace(/,/g, '');
     const amount = parseFloat(rawAmount); 
@@ -166,12 +176,12 @@ async function saveExpense() {
         let oldBalance = user.balance; 
         let newBalance = oldBalance;
 
-        // 1. حساب الدافع (Payer)
+        // 1. حساب الدافع (Payer) - يضاف له صافي المبلغ
         if (user.uid === currentUserID) {
             const netPaidForOthers = amount - share; 
             newBalance = parseFloat((oldBalance + netPaidForOthers).toFixed(2));
         } 
-        // 2. حساب المشاركين الآخرين (Participant)
+        // 2. حساب المشاركين الآخرين (Participant) - يخصم منهم الحصة
         else if (participantUIDs.includes(user.uid)) {
             newBalance = parseFloat((oldBalance - share).toFixed(2));
         }
@@ -188,14 +198,15 @@ async function saveExpense() {
         payer_id: currentUserID, 
         participants_ids: participantUIDs,
         share: parseFloat(share.toFixed(2)),
-        date: new Date().toISOString().split('T')[0]
+        date: new Date().toISOString().split('T')[0], // التاريخ فقط
+        timestamp: Date.now() // 🆕 حفظ الطابع الزمني
     };
 
     try {
         await set(ref(db, 'users'), usersUpdate);
         await push(ref(db, 'expenses'), newExpense);
 
-        // هذه الدوال تعمل فقط في index.html
+        // إجراءات صفحة index.html
         if (document.getElementById('previewModal')) {
              hideModal();
              showSuccessModal(); 
@@ -212,25 +223,25 @@ async function saveExpense() {
 
 // 🆕 5. وظيفة عرض سجل العمليات (مخصصة لـ history.html)
 function displayHistory() {
-    if (allUsers.length === 0 || expenses.length === 0 || !currentUserDB) return;
+    if (allUsers.length === 0 || !currentUserDB) return;
 
-    const tableBody = document.getElementById('expensesTableBody');
+    const expensesContainer = document.getElementById('expensesContainer');
     const balanceSummary = document.getElementById('balanceSummary');
-    tableBody.innerHTML = '';
+    if (!expensesContainer || !balanceSummary) return;
+
+    expensesContainer.innerHTML = '';
     balanceSummary.innerHTML = '';
 
     // أ. عرض ملخص الديون
     let debtSummaryHTML = '';
-    
-    // تصفية المستخدمين الآخرين
     const otherUsers = allUsers.filter(u => u.uid !== currentUserID); 
 
     otherUsers.forEach(user => {
         const balance = user.balance;
         
-        if (balance > 0.01) { // أنت مدين لهم
+        if (balance > 0.01) { 
             debtSummaryHTML += `<p class="text-red-600 font-medium"><i class="fas fa-hand-holding-usd"></i> أنت مدين لـ **${user.displayName}** بمبلغ: ${balance.toFixed(2).toLocaleString('en-US')}</p>`;
-        } else if (balance < -0.01) { // هم مدينون لك
+        } else if (balance < -0.01) { 
             debtSummaryHTML += `<p class="text-green-600 font-medium"><i class="fas fa-money-check-alt"></i> **${user.displayName}** مدين لك بمبلغ: ${Math.abs(balance).toFixed(2).toLocaleString('en-US')}</p>`;
         }
     });
@@ -238,53 +249,78 @@ function displayHistory() {
     if (!debtSummaryHTML) {
         debtSummaryHTML = `<p class="text-gray-500 font-medium"><i class="fas fa-check-circle"></i> لا توجد ديون معلقة حالياً! (الأرصدة صفرية)</p>`;
     }
-
     balanceSummary.innerHTML = debtSummaryHTML;
 
 
-    // ب. إنشاء جدول المصروفات
+    // ب. إنشاء بطاقات المصروفات
+    if (expenses.length === 0) {
+        expensesContainer.innerHTML = `<p class="text-center text-gray-500 col-span-full">لا توجد مصروفات مسجلة بعد.</p>`;
+        return;
+    }
+
     expenses.forEach(expense => {
         const isPayer = expense.payer_id === currentUserID;
         const isParticipant = expense.participants_ids.includes(currentUserID);
-        const totalParticipants = expense.participants_ids.length;
         const share = expense.share;
         
         let statusText = '';
-        let rowClass = '';
+        let cardClass = 'neutral-card';
+        let statusIcon = '<i class="fas fa-info-circle text-gray-500"></i>';
 
+        // 1. تحديد حالة رصيد المستخدم الحالي
         if (isPayer) {
             const netPaid = expense.amount - share;
-            statusText = `<span class="text-green-600">دافع: +${netPaid.toFixed(2).toLocaleString('en-US')}</span>`;
-            rowClass = 'payer-row';
+            statusText = `ربحت: +${netPaid.toFixed(2).toLocaleString('en-US')}`;
+            cardClass = 'payer-card';
+            statusIcon = '<i class="fas fa-arrow-up text-green-600"></i>';
         } else if (isParticipant) {
-            statusText = `<span class="text-red-600">حصتك: -${share.toFixed(2).toLocaleString('en-US')}</span>`;
-            rowClass = 'debtor-row';
+            statusText = `حصتك: -${share.toFixed(2).toLocaleString('en-US')}`;
+            cardClass = 'debtor-card';
+            statusIcon = '<i class="fas fa-arrow-down text-red-600"></i>';
         } else {
             statusText = `لم تشارك`;
         }
+        
+        // 2. تنسيق التاريخ والوقت
+        const { date: formattedDate, time: formattedTime } = formatTimestamp(expense.timestamp);
 
         const payerName = getUserNameById(expense.payer_id);
         const participantNames = expense.participants_ids
             .map(uid => getUserNameById(uid))
-            .filter(name => name !== payerName || name === currentUserName) // إزالة اسم الدافع المتكرر إذا كان الدافع والمشارك هو نفسه
             .join(', ');
 
-        const row = document.createElement('tr');
-        row.className = rowClass;
-        row.innerHTML = `
-            <td>${expense.date}</td>
-            <td>${expense.title}</td>
-            <td>${payerName}</td>
-            <td>${expense.amount.toLocaleString('en-US')}</td>
-            <td>${statusText}</td>
-            <td class="text-sm">${participantNames}</td>
-        `;
-        tableBody.appendChild(row);
-    });
+        const card = document.createElement('div');
+        card.className = `expense-card ${cardClass}`;
+        card.innerHTML = `
+            <div class="mb-4 text-center">
+                <p class="text-xl font-bold text-gray-800">${expense.title}</p>
+                <p class="text-3xl font-extrabold my-2 ${isPayer ? 'text-green-700' : 'text-red-700'}">
+                    ${expense.amount.toLocaleString('en-US')}
+                    <span class="text-sm font-normal text-gray-500"> SAR</span>
+                </p>
+            </div>
+            
+            <div class="border-t border-b border-gray-300 py-3 mb-3 text-sm">
+                <p class="flex justify-between items-center mb-1">
+                    <span class="font-medium text-gray-600"><i class="fas fa-calendar-alt ml-1"></i> التاريخ:</span>
+                    <span class="font-bold">${formattedDate}</span>
+                </p>
+                <p class="flex justify-between items-center">
+                    <span class="font-medium text-gray-600"><i class="fas fa-clock ml-1"></i> الوقت:</span>
+                    <span class="font-bold">${formattedTime}</span>
+                </p>
+            </div>
 
-    if (expenses.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">لا توجد مصروفات مسجلة بعد.</td></tr>`;
-    }
+            <p class="mb-2"><span class="font-medium text-gray-600"><i class="fas fa-user-tag ml-1"></i> الدافع:</span> <strong>${payerName}</strong></p>
+            
+            <p class="mb-4"><span class="font-medium text-gray-600"><i class="fas fa-users ml-1"></i> المشاركون:</span> <span class="text-sm">${participantNames}</span></p>
+
+            <div class="bg-white p-2 rounded-lg text-center ${isPayer ? 'text-green-700' : isParticipant ? 'text-red-700' : 'text-gray-500'} font-bold border border-current">
+                ${statusIcon} ${statusText}
+            </div>
+        `;
+        expensesContainer.appendChild(card);
+    });
 }
 
 
@@ -307,20 +343,20 @@ onAuthStateChanged(auth, (user) => {
         }
         
     } else {
-        // إعادة التوجيه إلى صفحة المصادقة إذا لم يكن هناك مستخدم مسجل الدخول
+        // إعادة التوجيه إلى صفحة المصادقة
         if (window.location.pathname.indexOf('auth.html') === -1) {
             window.location.href = 'auth.html'; 
         }
     }
 });
 
-// *إتاحة الدوال للـ HTML (لصفحة index.html)*
-// يتم استدعاء الدوال الخاصة بصفحة history تلقائيًا بعد تحميل البيانات في loadDataFromFirebase
+// *إتاحة الدوال للـ HTML*
 window.formatNumber = formatNumber;
 window.selectAllParticipants = selectAllParticipants;
 window.previewExpense = previewExpense;
 window.saveExpense = saveExpense;
-// الدوال المتعلقة بالـ Modal
+
+// الدوال المتعلقة بالـ Modal (للصفحة index.html)
 if (document.getElementById('previewModal')) {
     window.hideModal = () => document.getElementById('previewModal').classList.remove('show');
     window.showSuccessModal = () => document.getElementById('successModal').classList.add('show');
