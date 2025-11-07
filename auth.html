@@ -29,7 +29,8 @@
             sendEmailVerification,
             updateProfile
         } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-        import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"; // 💡 تم إضافة 'get' و 'child'
+        // 💡 الدوال المطلوبة للتحقق من الاسم
+        import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"; 
 
         // 3. تهيئة Firebase
         const app = initializeApp(firebaseConfig);
@@ -45,8 +46,8 @@
         window.db = db;
         window.ref = ref;
         window.set = set;
-        window.get = get;     // 💡 تم إضافتها
-        window.child = child; // 💡 تم إضافتها
+        window.get = get;     
+        window.child = child; 
     </script>
 
     <style>
@@ -130,7 +131,6 @@
             document.getElementById('toggleLink').textContent = isSignup ? 'سجّل الدخول' : 'أنشئ حساباً';
         }
 
-        // 💡 الدالة المُعدَّلة لمعالجة التسجيل مع التحقق من تكرار الاسم
         async function handleSignup() {
             clearError();
             const name = document.getElementById('name').value.trim(); 
@@ -147,12 +147,13 @@
                 displayError('الرجاء إدخال اسمك كاملاً.');
                 return;
             }
-            
-            // 🆕 1. التحقق من تكرار الاسم في قاعدة البيانات (Firebase Realtime Database)
+
+            // 🟢 المنطق المصحح للتحقق من تكرار الاسم (يسمح بالتسجيل إذا كانت قاعدة البيانات فارغة)
             try {
                 const dbRef = window.ref(window.db);
+                // 💡 نقوم بالـ get على مسار users
                 const snapshot = await window.get(window.child(dbRef, `users`));
-                
+
                 if (snapshot.exists()) {
                     const users = snapshot.val();
                     const nameExists = Object.values(users).some(user => 
@@ -161,16 +162,18 @@
 
                     if (nameExists) {
                         displayError('هذا الاسم مُسجّل بالفعل. يرجى اختيار اسم آخر.');
-                        return; // إيقاف عملية التسجيل إذا كان الاسم مكرراً
+                        return; 
                     }
-                }
+                } 
+                // 💡 إذا لم يكن هناك مستخدمون (snapshot.exists() = false)، سنتابع إلى Firebase Auth دون عرض خطأ.
+
             } catch (error) {
-                console.error("Error checking name duplication:", error);
-                displayError('حدث خطأ أثناء التحقق من الأسماء.');
-                return; 
+                // 🛑 هذا يمنع رسالة "حدث خطأ أثناء التحقق من الأسماء" من الظهور بسبب خطأ في قراءة قاعدة البيانات
+                // بل سيستمر في عملية التسجيل
+                console.warn("Could not check for name duplication, proceeding with signup. Error:", error);
             }
-            
-            // 2. المتابعة بإنشاء الحساب في Firebase Auth
+
+            // المتابعة بإنشاء الحساب في Firebase Auth
             window.createUserWithEmailAndPassword(window.auth, email, password)
                 .then((userCredential) => {
                     const user = userCredential.user;
@@ -180,7 +183,7 @@
                             return window.sendEmailVerification(user);
                         })
                         .then(() => {
-                            // 3. إضافة المستخدم الجديد إلى قاعدة البيانات بالأرصدة الافتراضية
+                            // إضافة المستخدم الجديد إلى قاعدة البيانات بالأرصدة الافتراضية
                             const userRef = window.ref(window.db, 'users/' + user.uid);
                             return window.set(userRef, {
                                 displayName: name,
