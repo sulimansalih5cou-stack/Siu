@@ -6,9 +6,9 @@
     <title>إضافة مصروف محسّن - Smart Dorm Expenses</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
+
     <style>
-        /* CSS: الأنماط المخصصة (تم الحفاظ عليها) */
+        /* الأنماط المخصصة (تم الحفاظ عليها) */
         body {
             background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -25,22 +25,7 @@
             padding: 40px;
             max-width: 600px;
             width: 100%;
-            animation: fadeInUp 0.8s ease-out;
-            position: relative; /* مهم للزر العائم */
-        }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(50px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .form-group {
-            margin-bottom: 25px;
-        }
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 8px;
-            font-size: 14px;
+            position: relative;
         }
         .form-group input {
             width: 100%;
@@ -48,81 +33,6 @@
             border: 2px solid #E5E7EB;
             border-radius: 12px;
             font-size: 16px;
-            transition: all 0.3s ease;
-            background: #F9FAFB;
-        }
-        .form-group input:focus {
-            border-color: #3B82F6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-            background: white;
-        }
-        .checkbox-group {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-        }
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            background: #F3F4F6;
-            padding: 12px 15px;
-            border-radius: 10px;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            border: 2px solid transparent;
-        }
-        .checkbox-item input:checked + i {
-            color: #3B82F6;
-        }
-        .checkbox-item:hover {
-            background: #E5E7EB;
-            transform: translateY(-2px);
-            border-color: #3B82F6;
-        }
-        .checkbox-item input {
-            margin-left: 10px;
-            accent-color: #3B82F6;
-            transform: scale(1.2);
-        }
-        .select-all {
-            background: #3B82F6;
-            color: white;
-            padding: 10px 15px;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-            margin-bottom: 15px;
-        }
-        .select-all:hover {
-            background: #1D4ED8;
-            transform: translateY(-2px);
-        }
-        .btn {
-            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
-            color: white;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
-        }
-        .btn-secondary {
-            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
-        }
-        .btn-secondary:hover {
-            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
         }
         .balance-card {
             background: linear-gradient(135deg, #10B981 0%, #059669 100%);
@@ -131,96 +41,26 @@
             border-radius: 15px;
             text-align: center;
             margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
         }
-        .balance-card h3 {
-            font-size: 18px;
-            margin-bottom: 5px;
-        }
-        .balance-card p {
-            font-size: 24px;
-            font-weight: bold;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.6);
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            animation: fadeIn 0.3s ease;
-        }
-        .modal.show { display: flex; }
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            max-width: 400px;
-            width: 90%;
-            text-align: center;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-            animation: slideIn 0.3s ease;
-        }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #10B981;
-            color: white;
-            padding: 15px 20px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
-            display: none;
-            z-index: 1001;
-            animation: slideInRight 0.5s ease;
-        }
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        .warning {
-            background: #F59E0B;
-            color: white;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            display: none;
-        }
-        .icon { color: #6B7280; margin-right: 10px; }
-        .app-description {
-            text-align: center;
-            color: #6B7280;
-            font-size: 14px;
-            margin-bottom: 20px;
-            font-style: italic;
-        }
-        /* لون مختلف للرصيد السالب (عليه) */
         .balance-card.negative {
             background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%);
         }
-
-        /* نمط الزر الجديد */
         .logout-btn {
             position: absolute;
             top: 20px;
-            left: 20px; /* ليتناسب مع اتجاه RTL */
+            left: 20px;
             padding: 8px 15px;
             background-color: #6B7280;
             color: white;
             border-radius: 10px;
             font-size: 14px;
             font-weight: 500;
-            transition: background-color 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
         }
-        .logout-btn:hover {
-            background-color: #4B5563;
-        }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); align-items: center; justify-content: center; z-index: 1000; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; padding: 30px; border-radius: 20px; max-width: 400px; width: 90%; text-align: center; }
+        .warning { background: #F59E0B; color: white; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none; }
+        .btn { padding: 15px 30px; border-radius: 12px; }
     </style>
 </head>
 <body>
@@ -229,16 +69,16 @@
     </div>
 
     <div class="container">
-        <a href="login.html" class="logout-btn">
-            <i class="fas fa-sign-out-alt"></i> تبديل المستخدم
+        <a href="#" id="logoutButton" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
         </a>
-        
+
         <div class="app-description">
             <i class="fas fa-image icon"></i> نستخدم التطبيق على الصورة – أضف مصروفك بسهولة!
         </div>
 
         <div id="currentBalanceCard" class="balance-card">
-            <h3><i class="fas fa-user-circle icon"></i> رصيدك الحالي يا خالد</h3>
+            <h3><i class="fas fa-user-circle icon"></i> رصيدك الحالي يا [اسم المستخدم]</h3>
             <p id="currentBalance">يتم التحميل...</p>
         </div>
 
@@ -251,11 +91,7 @@
                 <label for="expenseTitle"><i class="fas fa-tag icon"></i> اسم المصروف (اكتب أو اختر)</label>
                 <input type="text" id="expenseTitle" placeholder="مثال: شاي المساء" list="suggestions" required>
                 <datalist id="suggestions">
-                    <option value="شاي">
-                    <option value="أكل">
-                    <option value="غاز">
-                    <option value="نظافة">
-                    <option value="أخرى">
+                    <option value="شاي"><option value="أكل"><option value="غاز"><option value="نظافة"><option value="أخرى">
                 </datalist>
             </div>
 
@@ -263,7 +99,7 @@
                 <label for="expenseAmount"><i class="fas fa-dollar-sign icon"></i> المبلغ الكلي</label>
                 <input type="tel" id="expenseAmount" placeholder="5,000" oninput="formatNumber(this)" required>
             </div>
-            
+
             <div class="form-group">
                 <label><i class="fas fa-users icon"></i> المشاركون (اختر من يشارك)</label>
                 <div class="select-all" onclick="selectAllParticipants()">اختر الكل</div>
@@ -299,6 +135,6 @@
         </div>
     </div>
 
-    <script src="app.js" type="module"></script> 
+    <script src="script.js" type="module"></script> 
 </body>
 </html>
