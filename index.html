@@ -28,7 +28,7 @@
             width: 100%;
             position: relative;
         }
-        
+
         /* تحسين تصميم حقول الإدخال */
         .input-group { margin-bottom: 25px; }
         .input-group label { display: block; font-weight: 600; color: #374151; margin-bottom: 8px; font-size: 15px; }
@@ -73,7 +73,7 @@
         .checkbox-item:hover { background: #E5E7EB; }
         .checkbox-item input:checked + .checkbox-icon { color: #3B82F6; }
         .checkbox-item input:checked + .checkbox-icon + span { color: #1D4ED8; font-weight: 700;}
-        
+
         .select-all {
             background-color: #E0F2FE; color: #1D4ED8; padding: 10px 15px; border-radius: 8px;
             cursor: pointer; transition: all 0.3s ease; text-align: center; margin-bottom: 15px; font-weight: 600;
@@ -84,18 +84,52 @@
         .modal.show { display: flex; }
         .modal-content { background: white; padding: 30px; border-radius: 20px; max-width: 400px; width: 90%; text-align: center; }
         .warning { background: #F59E0B; color: white; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none; }
+        
+        /* 🆕 أنماط الأزرار العلوية */
+        .top-actions {
+            position: absolute; 
+            top: 20px; 
+            right: 20px; 
+            display: flex;
+            gap: 10px;
+        }
+        .top-action-btn { 
+            padding: 8px 15px; 
+            border-radius: 10px; 
+            font-size: 14px; 
+            font-weight: 500; 
+            transition: background-color 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
         .logout-btn { 
-            position: absolute; top: 20px; left: 20px; padding: 8px 15px; background-color: #6B7280; 
-            color: white; border-radius: 10px; font-size: 14px; font-weight: 500; 
+            background-color: #6B7280; 
+            color: white; 
+        }
+        .logout-btn:hover {
+            background-color: #4B5563;
+        }
+        .history-btn {
+            background-color: #10B981; 
+            color: white; 
+        }
+        .history-btn:hover {
+            background-color: #059669;
         }
     </style>
 </head>
 <body>
-    
+
     <div class="container">
-        <a href="#" id="logoutButton" class="logout-btn">
-            <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
-        </a>
+        <div class="top-actions">
+            <a href="history.html" class="top-action-btn history-btn">
+                <i class="fas fa-history"></i> سجل العمليات
+            </a>
+            <a href="auth.html" id="logoutButton" class="top-action-btn logout-btn">
+                <i class="fas fa-sign-out-alt"></i> تبديل المستخدم
+            </a>
+        </div>
 
         <div class="app-description">
             <h2 class="text-xl font-bold text-gray-800 mb-6 text-center">
@@ -168,7 +202,7 @@
             </div>
         </div>
     </div>
-    
+
     <div id="successModal" class="modal">
         <div class="modal-content">
             <h2 class="text-3xl font-bold text-gray-800 mb-4 text-green-500">
