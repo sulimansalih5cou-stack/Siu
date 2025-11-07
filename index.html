@@ -42,12 +42,15 @@
 
         /* تصميم بطاقة الرصيد */
         .balance-card {
+            /* 🟢 اللون الافتراضي (الأخضر للموجب أو صفر) */
             background: linear-gradient(135deg, #10B981 0%, #059669 100%);
             color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 30px;
             box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+            transition: background 0.5s ease; /* لإضافة حركة سلسة عند التغيير */
         }
         .balance-card.negative {
-            background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%);
+            /* 🔴 اللون الأحمر للسالب */
+            background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%) !important;
             box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3);
         }
         .balance-card p { font-size: 32px; font-weight: 800; margin-top: 5px; }
@@ -85,7 +88,7 @@
         .modal-content { background: white; padding: 30px; border-radius: 20px; max-width: 400px; width: 90%; text-align: center; }
         .warning { background: #F59E0B; color: white; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none; }
         
-        /* 🆕 أنماط الأزرار العلوية */
+        /* أنماط الأزرار العلوية */
         .top-actions {
             position: absolute; 
             top: 20px; 
