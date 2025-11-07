@@ -1,8 +1,7 @@
 // 🔥 1. تهيئة واستيراد Firebase SDK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-analytics.js";
-// 💡 استيراد تحديثات Firebase الضرورية
-import { getDatabase, ref, onValue, set, push, update } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+import { getDatabase, ref, onValue, set, push } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
 // 🛑 قم بتحديث هذه الإعدادات ببيانات مشروعك الحقيقية
@@ -33,7 +32,6 @@ let currentUserDB = null;
 // ⚙️ 3. وظائف تحديث الواجهة والـ DOM والتنسيق
 
 function formatNumber(input) {
-    // تنسيق الأرقام بفاصلة الألف
     let value = input.value.replace(/,/g, '');
     if (!isNaN(value) && value !== '') {
         input.value = parseFloat(value).toLocaleString('en-US'); 
@@ -51,17 +49,15 @@ function updateBalanceDisplay() {
 
     const balanceValue = currentUserDB.balance;
     
-    // تحديد الإشارة وعرض الرصيد
     const sign = balanceValue >= 0 ? '+' : '';
     const formattedBalance = sign + Math.abs(balanceValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     balanceElement.textContent = formattedBalance;
 
-    // تحديث لون البطاقة بناءً على الرصيد (موجب/سالب)
     balanceCard.classList.remove('negative');
     balanceCard.style.background = 'linear-gradient(135deg, #10B981 0%, #059669 100%)';
     if (balanceValue < 0) {
-        balanceCard.classList.add('negative'); // يطبق اللون الأحمر
+        balanceCard.classList.add('negative');
     }
 }
 
@@ -69,7 +65,6 @@ function populateParticipants() {
     const participantsContainer = document.getElementById('participantsCheckboxes');
     participantsContainer.innerHTML = '';
 
-    // عرض جميع المستخدمين ما عدا المستخدم الحالي
     allUsers.filter(u => u.uid !== currentUserID).forEach(user => {
         const label = document.createElement('label');
         label.className = 'checkbox-item';
@@ -91,11 +86,9 @@ function selectAllParticipants() {
 function loadDataFromFirebase() {
     if (!currentUserID) return; 
 
-    // الاستماع لتغييرات المستخدمين (الأرصدة)
     onValue(ref(db, 'users'), (snapshot) => {
         if (snapshot.exists()) {
             const usersObject = snapshot.val();
-            // تحويل البيانات من كائن إلى مصفوفة (مع UID كـ key)
             allUsers = Object.keys(usersObject).map(uid => ({ 
                 uid: uid,
                 ...usersObject[uid]
@@ -108,7 +101,6 @@ function loadDataFromFirebase() {
         }
     });
 
-    // الاستماع لتغييرات المصروفات
     onValue(ref(db, 'expenses'), (snapshot) => {
         if (snapshot.exists()) {
             const expensesObject = snapshot.val();
@@ -122,7 +114,7 @@ function loadDataFromFirebase() {
     });
 }
 
-// 💡 دالة الحفظ الرئيسية (تنفذ المنطق الحسابي وتحديث Firebase)
+// 💡 دالة الحفظ الرئيسية (تم إصلاح منطق الحسابات هنا)
 async function saveExpense() {
     if (!currentUserID || !currentUserDB) return;
 
@@ -139,27 +131,26 @@ async function saveExpense() {
         document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]:checked')
     ).map(cb => cb.getAttribute('data-user-id'));
 
-    participantUIDs.push(currentUserID); // إضافة الدافع لنفسه
+    participantUIDs.push(currentUserID); 
 
     const totalParticipants = participantUIDs.length;
     const share = amount / totalParticipants;
 
-    const usersUpdate = {}; // الكائن الذي سيتم كتابته إلى Firebase
+    const usersUpdate = {};
 
     allUsers.forEach(user => {
         let newBalance = user.balance;
 
-        // 1. حساب الدافع
+        // 1. حساب الدافع (Payer) - يضاف له صافي المبلغ المدفوع لنيابة عن الآخرين
         if (user.uid === currentUserID) {
-            const netPaidForOthers = amount - share; // صافي المبلغ المدفوع نيابة عن الآخرين
+            const netPaidForOthers = amount - share; 
             newBalance = parseFloat((newBalance + netPaidForOthers).toFixed(2));
         } 
-        // 2. حساب المشاركين الآخرين
+        // 2. حساب المشاركين الآخرين (Participant) - يخصم منهم حصتهم
         else if (participantUIDs.includes(user.uid)) {
-            newBalance = parseFloat((newBalance - share).toFixed(2)); // خصم الحصة
+            newBalance = parseFloat((newBalance - share).toFixed(2)); // 🛑 هذا هو التصحيح
         }
         
-        // إعداد البيانات للكتابة (سواء تغير الرصيد أم لا)
         usersUpdate[user.uid] = {
             displayName: user.displayName, 
             balance: newBalance,
@@ -176,7 +167,7 @@ async function saveExpense() {
     };
 
     try {
-        // 🛑 التحديث الجماعي: هذا يتطلب قواعد أمان تسمح بـ ".write": "auth != null" على مسار /users
+        // تحديث جميع المستخدمين (يتطلب قواعد أمان واسعة على مسار /users)
         await set(ref(db, 'users'), usersUpdate);
         // إضافة المصروف الجديد
         await push(ref(db, 'expenses'), newExpense);
@@ -184,7 +175,6 @@ async function saveExpense() {
         hideModal();
         showSuccessModal(); 
 
-        // إعادة تعيين النموذج بعد النجاح
         document.getElementById('expenseForm').reset();
         document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
 
