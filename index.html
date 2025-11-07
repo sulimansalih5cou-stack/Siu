@@ -23,22 +23,25 @@
             width: 100%;
             margin: 40px auto;
         }
-        /* الأنماط الخاصة بالجدول */
-        .expense-table th, .expense-table td {
-            padding: 12px 15px;
-            text-align: right;
-            border-bottom: 1px solid #E5E7EB;
+        /* الأنماط الخاصة ببطاقات العمليات */
+        #expensesContainer {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* 3 بطاقات في الصفوف الكبيرة */
         }
-        .expense-table th {
-            background-color: #F9FAFB;
-            color: #4B5563;
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 14px;
+        .expense-card {
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease;
+            position: relative;
         }
+        .expense-card:hover { transform: translateY(-3px); }
+
         /* تمييز دور المستخدم */
-        .payer-row td { background-color: #ECFDF5; font-weight: 600; border-right: 4px solid #10B981; }
-        .debtor-row td { background-color: #FEF2F2; font-weight: 600; border-right: 4px solid #EF4444; }
+        .payer-card { background-color: #E6FFFA; border: 2px solid #38A169; } /* دافع (موجب) */
+        .debtor-card { background-color: #FEEBEC; border: 2px solid #E53E3E; } /* مدين (سالب) */
+        .neutral-card { background-color: #F7FAFC; border: 2px solid #CBD5E0; } /* لا يشارك */
 
         .btn-back {
             background-color: #3B82F6; color: white; padding: 10px 20px; border-radius: 10px;
@@ -68,24 +71,10 @@
         </div>
 
         <h2 class="text-xl font-bold text-gray-700 mb-4">
-            <i class="fas fa-list-alt ml-2"></i> قائمة جميع المصروفات
+            <i class="fas fa-list-alt ml-2"></i> جميع العمليات
         </h2>
-        <div class="overflow-x-auto">
-            <table class="w-full expense-table border-collapse">
-                <thead>
-                    <tr>
-                        <th class="w-1/6">التاريخ</th>
-                        <th class="w-1/4">المصروف</th>
-                        <th class="w-1/6">الدافع</th>
-                        <th class="w-1/6">المبلغ الكلي</th>
-                        <th class="w-1/6">حالة رصيدي</th>
-                        <th class="w-1/6">المشاركون</th>
-                    </tr>
-                </thead>
-                <tbody id="expensesTableBody">
-                    <tr><td colspan="6" class="text-center py-4">يتم تحميل البيانات...</td></tr>
-                </tbody>
-            </table>
+        <div id="expensesContainer">
+            <p class="text-center text-gray-500 col-span-full" id="loadingMessage">يتم تحميل البيانات...</p>
         </div>
         
     </div>
