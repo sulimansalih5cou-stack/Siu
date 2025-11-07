@@ -1,3 +1,4 @@
+
 // 🔥 1. تهيئة واستيراد Firebase SDK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-analytics.js";
@@ -221,51 +222,38 @@ async function saveExpense() {
 }
 
 
-// 🆕 5. وظيفة عرض سجل العمليات والديون (مخصصة لـ history.html)
+// 🆕 5. وظيفة عرض سجل العمليات (مخصصة لـ history.html)
 function displayHistory() {
     if (allUsers.length === 0 || !currentUserDB) return;
 
     const expensesContainer = document.getElementById('expensesContainer');
-    // 🆕 المعرفات الجديدة لتقسيم ملخص الديون
-    const debtToYouList = document.getElementById('debtToYouList'); 
-    const debtFromYouList = document.getElementById('debtFromYouList');
-
-    if (!expensesContainer || !debtToYouList || !debtFromYouList) return;
+    const balanceSummary = document.getElementById('balanceSummary');
+    if (!expensesContainer || !balanceSummary) return;
 
     expensesContainer.innerHTML = '';
-    debtToYouList.innerHTML = '';
-    debtFromYouList.innerHTML = '';
+    balanceSummary.innerHTML = '';
 
-
-    // أ. عرض ملخص الديون (تقسيم الدين لك والدين عليك)
-    let hasDebtToYou = false;
-    let hasDebtFromYou = false;
-    
+    // أ. عرض ملخص الديون
+    let debtSummaryHTML = '';
     const otherUsers = allUsers.filter(u => u.uid !== currentUserID); 
 
     otherUsers.forEach(user => {
-        // نستخدم رصيد المستخدم الآخر (من منظور قاعدة البيانات) لفهم علاقته بك.
-        const balance = user.balance; 
-        const formattedBalance = Math.abs(balance).toFixed(2).toLocaleString('en-US');
+        const balance = user.balance;
 
-        if (balance > 0.01) { // رصيد المستخدم الآخر موجب => أنت مدين له
-            debtFromYouList.innerHTML += `<p class="my-2"><i class="fas fa-arrow-down text-red-700 ml-1"></i> أنت مدين لـ **${user.displayName}** بمبلغ: ${formattedBalance}</p>`;
-            hasDebtFromYou = true;
-        } else if (balance < -0.01) { // رصيد المستخدم الآخر سالب => هو مدين لك
-            debtToYouList.innerHTML += `<p class="my-2"><i class="fas fa-arrow-up text-green-700 ml-1"></i> **${user.displayName}** مدين لك بمبلغ: ${formattedBalance}</p>`;
-            hasDebtToYou = true;
+        if (balance > 0.01) { 
+            debtSummaryHTML += `<p class="text-red-600 font-medium"><i class="fas fa-hand-holding-usd"></i> أنت مدين لـ **${user.displayName}** بمبلغ: ${balance.toFixed(2).toLocaleString('en-US')}</p>`;
+        } else if (balance < -0.01) { 
+            debtSummaryHTML += `<p class="text-green-600 font-medium"><i class="fas fa-money-check-alt"></i> **${user.displayName}** مدين لك بمبلغ: ${Math.abs(balance).toFixed(2).toLocaleString('en-US')}</p>`;
         }
     });
 
-    if (!hasDebtToYou) {
-        debtToYouList.innerHTML = `<p class="text-gray-500 font-normal"><i class="fas fa-check-circle"></i> لا أحد مدين لك حالياً.</p>`;
+    if (!debtSummaryHTML) {
+        debtSummaryHTML = `<p class="text-gray-500 font-medium"><i class="fas fa-check-circle"></i> لا توجد ديون معلقة حالياً! (الأرصدة صفرية)</p>`;
     }
-    if (!hasDebtFromYou) {
-        debtFromYouList.innerHTML = `<p class="text-gray-500 font-normal"><i class="fas fa-check-circle"></i> لا تدين لأحد حالياً.</p>`;
-    }
+    balanceSummary.innerHTML = debtSummaryHTML;
 
 
-    // ب. إنشاء بطاقات المصروفات (سجل العمليات)
+    // ب. إنشاء بطاقات المصروفات
     if (expenses.length === 0) {
         expensesContainer.innerHTML = `<p class="text-center text-gray-500 col-span-full">لا توجد مصروفات مسجلة بعد.</p>`;
         return;
@@ -283,15 +271,15 @@ function displayHistory() {
         // 1. تحديد حالة رصيد المستخدم الحالي
         if (isPayer) {
             const netPaid = expense.amount - share;
-            statusText = `ربحت (دفعْتَ عنهم): +${netPaid.toFixed(2).toLocaleString('en-US')}`;
+            statusText = `ربحت: +${netPaid.toFixed(2).toLocaleString('en-US')}`;
             cardClass = 'payer-card';
             statusIcon = '<i class="fas fa-arrow-up text-green-600"></i>';
         } else if (isParticipant) {
-            statusText = `حصتك (عليك دين): -${share.toFixed(2).toLocaleString('en-US')}`;
+            statusText = `حصتك: -${share.toFixed(2).toLocaleString('en-US')}`;
             cardClass = 'debtor-card';
             statusIcon = '<i class="fas fa-arrow-down text-red-600"></i>';
         } else {
-            statusText = `لم تشارك في هذه العملية`;
+            statusText = `لم تشارك`;
         }
 
         // 2. تنسيق التاريخ والوقت
@@ -373,3 +361,5 @@ window.saveExpense = saveExpense;
 if (document.getElementById('previewModal')) {
     window.hideModal = () => document.getElementById('previewModal').classList.remove('show');
     window.showSuccessModal = () => document.getElementById('successModal').classList.add('show');
+    window.hideSuccessModal = () => document.getElementById('successModal').classList.remove('show');
+}
