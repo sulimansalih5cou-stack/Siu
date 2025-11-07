@@ -53,14 +53,19 @@ function updateBalanceDisplay() {
 
         const balanceValue = currentUserDB.balance;
 
+        // 💡 منطق عرض العلامة (+ أو -)
         const sign = balanceValue >= 0 ? '+' : '';
+        // نستخدم Math.abs لضمان عرض العلامة التي حددناها (مع ضمان ظهور - إذا كان سالبًا)
         const formattedBalance = sign + Math.abs(balanceValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
         balanceElement.textContent = formattedBalance;
 
+        // 🛑 التعديل هنا: نعتمد فقط على كلاس CSS لتطبيق الخلفية الخضراء/الحمراء
         balanceCard.classList.remove('negative');
-        balanceCard.style.background = 'linear-gradient(135deg, #10B981 0%, #059669 100%)';
+        // ⚠️ تم حذف السطر الذي كان يفرض الخلفية الخضراء عبر style.background 
+        
         if (balanceValue < 0) {
+            // 🔴 إضافة كلاس negative لتطبيق الخلفية الحمراء عبر CSS
             balanceCard.classList.add('negative');
         }
     }
@@ -75,7 +80,8 @@ function populateParticipants() {
     const participantsContainer = document.getElementById('participantsCheckboxes');
     if (participantsContainer) {
         participantsContainer.innerHTML = '';
-        allUsers.filter(u => u.uid !== currentUserID).forEach(user => {
+        // 🛑 استثناء المستخدم الحالي
+        allUsers.filter(u => u.uid !== currentUserID).forEach(user => { 
             const label = document.createElement('label');
             label.className = 'checkbox-item';
             label.innerHTML = `
@@ -152,7 +158,7 @@ function loadDataFromFirebase() {
 }
 
 
-// 💡 دالة الحفظ الرئيسية (المنطق المصحح مع إضافة الطابع الزمني)
+// 💡 دالة الحفظ الرئيسية
 async function saveExpense() {
     // ⚠️ يتم استدعاء saveExpense بعد المعاينة، لذا يجب إخفاء الـ modal أولاً
     if (document.getElementById('previewModal')) {
@@ -176,6 +182,7 @@ async function saveExpense() {
         document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]:checked')
     ).map(cb => cb.getAttribute('data-user-id'));
 
+    // نضمن أن الدافع (currentUserID) يكون دائماً مشاركاً في المصروف (Share)
     participantUIDs.push(currentUserID); 
 
     const totalParticipants = participantUIDs.length;
@@ -187,12 +194,12 @@ async function saveExpense() {
         let oldBalance = user.balance || 0; 
         let newBalance = oldBalance;
 
-        // 1. حساب الدافع (Payer) - يضاف له صافي المبلغ
+        // 1. حساب الدافع (Payer)
         if (user.uid === currentUserID) {
             const netPaidForOthers = amount - share; 
             newBalance = parseFloat((oldBalance + netPaidForOthers).toFixed(2));
         } 
-        // 2. حساب المشاركين الآخرين (Participant) - يخصم منهم الحصة
+        // 2. حساب المشاركين الآخرين (Participant)
         else if (participantUIDs.includes(user.uid)) {
             newBalance = parseFloat((oldBalance - share).toFixed(2));
         }
@@ -217,7 +224,6 @@ async function saveExpense() {
         await set(ref(db, 'users'), usersUpdate);
         await push(ref(db, 'expenses'), newExpense);
 
-        // إجراءات صفحة index.html
         if (document.getElementById('expenseForm')) {
              const successModal = document.getElementById('successModal');
              if (successModal) showSuccessModal(); 
@@ -233,7 +239,7 @@ async function saveExpense() {
 }
 
 
-// 🆕 دالة معاينة المصروف وفتح الـ Modal (لحماية زر الحفظ)
+// 🆕 دالة معاينة المصروف وفتح الـ Modal
 function previewExpense() {
     const title = document.getElementById('expenseTitle').value;
     const rawAmount = document.getElementById('expenseAmount').value.replace(/,/g, '');
@@ -244,12 +250,10 @@ function previewExpense() {
         return;
     }
 
-    // حساب المشاركين وحصتهم
     const participantUIDs = Array.from(
         document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]:checked')
     ).map(cb => cb.getAttribute('data-user-id'));
 
-    // إضافة المستخدم الحالي دائماً كشريك دافع
     if (!currentUserID) { alert('خطأ في تحديد المستخدم!'); return; }
     participantUIDs.push(currentUserID); 
 
@@ -257,12 +261,10 @@ function previewExpense() {
     const share = amount / totalParticipants;
     const netPaidForOthers = amount - share;
 
-    // أسماء المشاركين
     const participantNames = participantUIDs
         .map(uid => getUserNameById(uid))
         .join(', ');
 
-    // 📝 نص المعاينة
     const previewText = `
         <ul class="list-disc pr-6 text-gray-700 space-y-2">
             <li><span class="font-bold">اسم المصروف:</span> ${title}</li>
@@ -291,24 +293,23 @@ function displayHistory() {
     expensesContainer.innerHTML = '';
     debtToYouList.innerHTML = '';
     debtFromYouList.innerHTML = '';
-    // قد لا يكون هذا العنصر موجوداً في history.html، لذا يجب التحقق منه
+    
     const loadingMessage = document.getElementById('loadingMessage');
     if (loadingMessage) loadingMessage.style.display = 'none'; 
 
-    // أ. عرض ملخص الديون (تقسيم الدين لك والدين عليك)
+    // أ. عرض ملخص الديون
     let hasDebtToYou = false;
     let hasDebtFromYou = false;
-
     const otherUsers = allUsers.filter(u => u.uid !== currentUserID); 
 
     otherUsers.forEach(user => {
         const balance = user.balance || 0; 
         const formattedBalance = Math.abs(balance).toFixed(2).toLocaleString('en-US');
 
-        if (balance > 0.01) { // رصيد المستخدم الآخر موجب => أنت مدين له
+        if (balance > 0.01) { // أنت مدين له
             debtFromYouList.innerHTML += `<p class="my-2"><i class="fas fa-arrow-down text-red-700 ml-1"></i> أنت مدين لـ **${user.displayName}** بمبلغ: ${formattedBalance} SAR</p>`;
             hasDebtFromYou = true;
-        } else if (balance < -0.01) { // رصيد المستخدم الآخر سالب => هو مدين لك
+        } else if (balance < -0.01) { // هو مدين لك
             debtToYouList.innerHTML += `<p class="my-2"><i class="fas fa-arrow-up text-green-700 ml-1"></i> **${user.displayName}** مدين لك بمبلغ: ${formattedBalance} SAR</p>`;
             hasDebtToYou = true;
         }
@@ -321,8 +322,7 @@ function displayHistory() {
         debtFromYouList.innerHTML = `<p class="text-gray-500 font-normal"><i class="fas fa-check-circle"></i> لا تدين لأحد حالياً.</p>`;
     }
 
-
-    // ب. إنشاء بطاقات المصروفات (سجل العمليات)
+    // ب. إنشاء بطاقات المصروفات
     if (expenses.length === 0) {
         expensesContainer.innerHTML = `<p class="text-center text-gray-500 col-span-full">لا توجد مصروفات مسجلة بعد.</p>`;
         return;
@@ -337,7 +337,6 @@ function displayHistory() {
         let cardClass = 'neutral-card';
         let statusIcon = '<i class="fas fa-info-circle text-gray-500"></i>';
 
-        // 1. تحديد حالة رصيد المستخدم الحالي
         if (isPayer) {
             const netPaid = expense.amount - share;
             statusText = `ربحت (دفعْتَ عنهم): +${netPaid.toFixed(2).toLocaleString('en-US')}`;
@@ -351,9 +350,7 @@ function displayHistory() {
             statusText = `لم تشارك في هذه العملية`;
         }
 
-        // 2. تنسيق التاريخ والوقت
         const { date: formattedDate, time: formattedTime } = formatTimestamp(expense.timestamp);
-
         const payerName = getUserNameById(expense.payer_id);
         const participantNames = expense.participants_ids
             .map(uid => getUserNameById(uid))
@@ -401,7 +398,6 @@ onAuthStateChanged(auth, (user) => {
         currentUserName = user.displayName;
         loadDataFromFirebase();
 
-        // ربط زر تسجيل الخروج (باستخدام ID 'logoutButton')
         const logoutBtn = document.getElementById('logoutButton');
         if (logoutBtn) {
             logoutBtn.onclick = (e) => {
@@ -416,7 +412,6 @@ onAuthStateChanged(auth, (user) => {
         }
 
     } else {
-        // إعادة التوجيه إلى صفحة المصادقة
         if (window.location.pathname.indexOf('auth.html') === -1) {
             window.location.href = 'auth.html'; 
         }
@@ -429,7 +424,7 @@ window.selectAllParticipants = selectAllParticipants;
 window.previewExpense = previewExpense;
 window.saveExpense = saveExpense;
 
-// الدوال المتعلقة بالـ Modal (للصفحة index.html)
+// الدوال المتعلقة بالـ Modal
 window.hideModal = () => document.getElementById('previewModal').classList.remove('show');
 window.showSuccessModal = () => document.getElementById('successModal').classList.add('show');
 window.hideSuccessModal = () => document.getElementById('successModal').classList.remove('show');
