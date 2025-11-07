@@ -6,9 +6,40 @@
     <title>المصادقة - Smart Dorm Expenses</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    
+    <script type="module">
+        // 1. إعدادات Firebase الخاصة بك
+        const firebaseConfig = {
+            apiKey: "AIzaSyA2GNsXj4DzWyCYLKuVT3i1XBKfjX3ccuM",
+            authDomain: "siu-students.firebaseapp.com",
+            databaseURL: "https://siu-students-default-rtdb.firebaseio.com",
+            projectId: "siu-students",
+            storageBucket: "siu-students.firebasestorage.app",
+            messagingSenderId: "76007314543",
+            appId: "1:76007314543:web:4850b668cec4b93bdc699a",
+            measurementId: "G-SB6884R2FX"
+        };
+        
+        // 2. استيراد دوال Firebase الضرورية
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword, 
+            sendEmailVerification 
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
+        // 3. تهيئة Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // 4. دمج الدوال داخل النطاق العالمي (Window) ليتمكن الكود في <script> العادي من الوصول إليها
+        window.auth = auth;
+        window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+        window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+        window.sendEmailVerification = sendEmailVerification;
+    </script>
+    
     <style>
         /* أنماط مخصصة */
         body {
@@ -84,7 +115,7 @@
         <h1 id="authTitle" class="text-3xl font-bold text-center text-gray-800 mb-2">
             <i class="fas fa-user-plus text-blue-500"></i> إنشاء حساب
         </h1>
-        <p id="authSubtitle" class="text-center text-gray-500 mb-8">الرجاء إدخال بريدك الإلكتروني وكلمة المرور.</p>
+        <p id="authSubtitle" class="text-center text-gray-500 mb-8">الرجاء إدخال بريدك الإلكتروني وكلمة المرور لإنشاء حساب.</p>
 
         <div id="errorMessage" class="error-message"></div>
 
@@ -117,24 +148,10 @@
     </div>
 
     <script>
-        // 1. إعدادات Firebase
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY", // [أضف مفتاح API الخاص بك]
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com", // [أضف مجال المصادقة الخاص بك]
-            projectId: "YOUR_PROJECT_ID", // [أضف معرّف المشروع الخاص بك]
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
-
-        // تهيئة Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const auth = app.auth();
-
         // حالة النموذج الحالية (true = تسجيل، false = دخول)
         let isSignup = true;
 
-        // 2. دوال مساعدة للعرض والخطأ
+        // دوال مساعدة للعرض والخطأ
         function displayError(message) {
             const errorMessage = document.getElementById('errorMessage');
             errorMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
@@ -191,23 +208,21 @@
                 return;
             }
 
-            // إنشاء المستخدم باستخدام Firebase
-            auth.createUserWithEmailAndPassword(email, password)
+            // استخدام دالة Firebase المتاحة في النطاق العالمي
+            window.createUserWithEmailAndPassword(window.auth, email, password)
                 .then((userCredential) => {
                     const user = userCredential.user;
                     console.log("تم إنشاء المستخدم بنجاح:", user.uid);
 
                     // **إرسال بريد التوثيق (Email Verification)**
-                    return user.sendEmailVerification();
+                    return window.sendEmailVerification(user);
                 })
                 .then(() => {
-                    // رسالة نجاح بعد إرسال بريد التوثيق
                     alert('تهانينا! تم إنشاء حسابك. **يرجى التحقق من بريدك الإلكتروني لتفعيل الحساب** قبل محاولة تسجيل الدخول.');
-                    // يمكنك التبديل إلى نموذج تسجيل الدخول بعد النجاح
+                    // التبديل إلى نموذج تسجيل الدخول بعد النجاح
                     toggleForm();
                 })
                 .catch((error) => {
-                    // معالجة أخطاء Firebase (مثل: البريد مُستخدم، كلمة مرور ضعيفة، إلخ)
                     let errorMessage = 'حدث خطأ غير معروف.';
                     if (error.code === 'auth/email-already-in-use') {
                         errorMessage = 'هذا البريد الإلكتروني مُستخدم بالفعل.';
@@ -226,24 +241,25 @@
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
 
-            auth.signInWithEmailAndPassword(email, password)
+            // استخدام دالة Firebase المتاحة في النطاق العالمي
+            window.signInWithEmailAndPassword(window.auth, email, password)
                 .then((userCredential) => {
                     const user = userCredential.user;
 
-                    // **التحقق من توثيق البريد الإلكتروني**
-                    if (user.emailVerified) {
-                        alert('تم تسجيل الدخول بنجاح! مرحباً بك.');
-                        // توجيه المستخدم إلى الصفحة الرئيسية أو لوحة التحكم (مثال)
-                        // window.location.href = 'dashboard.html';
-                    } else {
-                        // إذا لم يكن موثقًا، نقوم بتسجيل الخروج ونطلب منه التوثيق
-                        auth.signOut();
-                        alert('بريدك الإلكتروني غير موثق. يرجى التحقق من صندوق الوارد أو البريد المزعج (Spam) وتفعيل الحساب قبل تسجيل الدخول.');
-                        // *خيار: يمكنك إضافة زر لإعادة إرسال البريد*
-                    }
+                    // يتم استدعاء 'reload' لضمان الحصول على أحدث حالة للـ emailVerified
+                    user.reload().then(() => {
+                        if (user.emailVerified) {
+                            alert('تم تسجيل الدخول بنجاح! مرحباً بك.');
+                            // التوجيه إلى الصفحة الرئيسية
+                            // window.location.href = 'dashboard.html';
+                        } else {
+                            // إذا لم يكن موثقًا، نطلب منه التوثيق
+                            window.auth.signOut();
+                            alert('بريدك الإلكتروني غير موثق. يرجى التحقق من صندوق الوارد أو البريد المزعج (Spam) وتفعيل الحساب قبل تسجيل الدخول.');
+                        }
+                    });
                 })
                 .catch((error) => {
-                    // معالجة أخطاء تسجيل الدخول
                     let errorMessage = 'حدث خطأ غير معروف.';
                     if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
                         errorMessage = 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
@@ -253,6 +269,11 @@
                     displayError(errorMessage);
                 });
         }
+        
+        // التأكد من تهيئة النموذج الافتراضي
+        document.addEventListener('DOMContentLoaded', () => {
+            toggleForm(); // لتعيين الحالة الافتراضية كـ تسجيل
+        });
     </script>
 </body>
 </html>
