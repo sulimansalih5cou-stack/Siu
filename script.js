@@ -38,6 +38,11 @@ function formatNumber(input) {
     }
 }
 
+/**
+ * وظيفة محدّثة لعرض الرصيد الحالي بتنسيق الأقواس وتغيير لون البطاقة.
+ * إذا كان الرصيد سالبًا: يُعرض كـ (-) 1,234.56 وتصبح خلفية البطاقة حمراء.
+ * إذا كان الرصيد موجبًا: يُعرض كـ (+) 1,234.56 وتظل خلفية البطاقة خضراء.
+ */
 function updateBalanceDisplay() {
     if (!currentUserDB || !currentUserName) return;
 
@@ -48,19 +53,27 @@ function updateBalanceDisplay() {
     userNamePlaceholder.textContent = currentUserName;
 
     const balanceValue = currentUserDB.balance;
-    
-    // تنسيق وعرض الإشارة (+ / -)
-    const sign = balanceValue >= 0 ? '+' : '';
-    const formattedBalance = sign + Math.abs(balanceValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const absBalance = Math.abs(balanceValue); // القيمة المطلقة للرصيد للتنسيق
 
-    balanceElement.textContent = formattedBalance;
+    let formattedDisplay;
 
-    // تحديث لون البطاقة بناءً على الرصيد
-    balanceCard.classList.remove('negative');
-    balanceCard.style.background = 'linear-gradient(135deg, #10B981 0%, #059669 100%)';
+    // 1. تحديد الإشارة (علامة + أو - بين قوسين)
     if (balanceValue < 0) {
+        // الرصيد سالب
+        formattedDisplay = `(-) ${absBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        
+        // تطبيق فئة CSS السالب لتغيير اللون إلى الأحمر
         balanceCard.classList.add('negative');
+    } else {
+        // الرصيد موجب أو صفر
+        formattedDisplay = `(+) ${absBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        
+        // التأكد من إزالة فئة CSS السالب ليبقى اللون أخضر
+        balanceCard.classList.remove('negative');
     }
+
+    // 2. تحديث نص الرصيد
+    balanceElement.textContent = formattedDisplay;
 }
 
 function populateParticipants() {
@@ -96,11 +109,11 @@ function loadDataFromFirebase() {
                 uid: uid,
                 ...usersObject[uid]
             }));
-            
+
             currentUserDB = allUsers.find(u => u.uid === currentUserID);
 
             populateParticipants();
-            updateBalanceDisplay();
+            updateBalanceDisplay(); // استدعاء الدالة المحدثة
         }
     });
 
@@ -161,7 +174,7 @@ async function saveExpense() {
             // المبلغ الذي يخصم هو حصة المشارك بالكامل: (-1000)
             newBalance = parseFloat((oldBalance - share).toFixed(2));
         }
-        
+
         usersUpdate[user.uid] = {
             displayName: user.displayName, 
             balance: newBalance,
@@ -207,7 +220,7 @@ function previewExpense() {
         alert("الرجاء الانتظار حتى يتم تحميل بيانات المستخدمين.");
         return;
     }
-    
+
     const title = document.getElementById('expenseTitle').value;
     const rawAmount = document.getElementById('expenseAmount').value.replace(/,/g, '');
     const amount = parseFloat(rawAmount);
@@ -260,14 +273,14 @@ onAuthStateChanged(auth, (user) => {
         currentUserID = user.uid;
         currentUserName = user.displayName;
         loadDataFromFirebase();
-        
+
         document.getElementById('logoutButton').onclick = (e) => {
              e.preventDefault();
              auth.signOut().then(() => {
                 window.location.href = 'auth.html'; 
              });
         }
-        
+
     } else {
         window.location.href = 'auth.html'; 
     }
