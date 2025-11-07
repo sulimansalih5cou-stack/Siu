@@ -1,0 +1,23 @@
+{
+  "name": "Siu_st",
+  "short_name": "Siu",
+  "description": "المتبه انت",
+  "start_url": "https://sulimansalih5cou-stack.github.io/Siu/index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#008000",
+  "orientation": "portrait",
+  "lang": "ar",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192x192.png?text=Siu",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://via.placeholder.com/512x512.png?text=Siu",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
