@@ -20,7 +20,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const db = getDatabase(app); 
-const auth = getAuth(app); // جلب خدمة المصادقة
+const auth = getAuth(app); 
 
 // 💾 2. هيكلة البيانات والمتغيرات الأساسية
 let allUsers = []; 
@@ -42,11 +42,10 @@ function updateBalanceDisplay() {
     if (!currentUserDB || !currentUserName) return;
 
     const balanceCard = document.getElementById('currentBalanceCard');
-    const balanceTitle = balanceCard.querySelector('h3');
     const balanceElement = document.getElementById('currentBalance');
+    const userNamePlaceholder = document.getElementById('userNamePlaceholder'); // 💡 تحديث اسم المستخدم في البطاقة
 
-    // 💡 استخدام اسم المستخدم في العنوان
-    balanceTitle.innerHTML = `<i class="fas fa-user-circle icon"></i> رصيدك الحالي يا **${currentUserName}**`;
+    userNamePlaceholder.textContent = currentUserName;
 
     const balanceValue = currentUserDB.balance;
     const sign = balanceValue >= 0 ? '+' : '';
@@ -68,9 +67,10 @@ function populateParticipants() {
     allUsers.filter(u => u.uid !== currentUserID).forEach(user => {
         const label = document.createElement('label');
         label.className = 'checkbox-item';
+        // 💡 تحسين التصميم هنا
         label.innerHTML = `
             <input type="checkbox" data-user-id="${user.uid}" value="${user.displayName}">
-            <i class="fas fa-user"></i> ${user.displayName}
+            <span class="checkbox-icon fas fa-user ml-2"></span> ${user.displayName}
         `;
         participantsContainer.appendChild(label);
     });
@@ -86,11 +86,10 @@ function selectAllParticipants() {
 function loadDataFromFirebase() {
     if (!currentUserID) return; 
 
-    // الاستماع لتغييرات المستخدمين (الأرصدة)
+    // الاستماع لتغييرات المستخدمين
     onValue(ref(db, 'users'), (snapshot) => {
         if (snapshot.exists()) {
             const usersObject = snapshot.val();
-            // تحويل البيانات من كائن إلى مصفوفة (مع UID كـ key)
             allUsers = Object.keys(usersObject).map(uid => ({ 
                 uid: uid,
                 ...usersObject[uid]
@@ -98,7 +97,6 @@ function loadDataFromFirebase() {
             
             currentUserDB = allUsers.find(u => u.uid === currentUserID);
 
-            // تحديث الواجهة
             populateParticipants();
             updateBalanceDisplay();
         }
@@ -122,7 +120,14 @@ async function saveExpense() {
     if (!currentUserID || !currentUserDB) return;
 
     const title = document.getElementById('expenseTitle').value;
-    const amount = parseFloat(document.getElementById('expenseAmount').value.replace(/,/g, ''));
+    // 💡 مهم: التأكد من تحويل القيمة الرقمية قبل استخدامها
+    const rawAmount = document.getElementById('expenseAmount').value.replace(/,/g, '');
+    const amount = parseFloat(rawAmount); 
+
+    if (isNaN(amount) || amount <= 0) {
+         alert('يرجى إدخال مبلغ صحيح.');
+         return;
+    }
 
     const participantUIDs = Array.from(
         document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]:checked')
@@ -140,21 +145,20 @@ async function saveExpense() {
 
         if (user.uid === currentUserID) {
             const netPaidForOthers = amount - share;
-            newBalance += netPaidForOthers;
+            newBalance = parseFloat((newBalance + netPaidForOthers).toFixed(2)); // 💡 تأكيد الحساب والتحويل إلى Float
         } else if (participantUIDs.includes(user.uid)) {
-            newBalance -= share;
+            newBalance = parseFloat((newBalance - share).toFixed(2)); // 💡 تأكيد الحساب والتحويل إلى Float
         }
 
-        // إعداد البيانات للكتابة إلى Firebase
         usersUpdate[user.uid] = {
             displayName: user.displayName, 
-            balance: parseFloat(newBalance.toFixed(2)), 
+            balance: newBalance, // سيتم حفظه كـ Number
         };
     });
 
     const newExpense = {
-        title,
-        amount: parseFloat(amount.toFixed(2)),
+        title: title,
+        amount: amount,
         payer_id: currentUserID, 
         participants_ids: participantUIDs,
         share: parseFloat(share.toFixed(2)),
@@ -162,29 +166,41 @@ async function saveExpense() {
     };
 
     try {
-        // تحديث جميع المستخدمين في الـ 'users'
+        // تحديث جميع المستخدمين (يتم كتابة الكائن بالكامل)
         await set(ref(db, 'users'), usersUpdate);
-        // إضافة المصروف الجديد في الـ 'expenses'
+        // إضافة المصروف الجديد (إضافة عنصر جديد)
         await push(ref(db, 'expenses'), newExpense);
 
         hideModal();
-        showNotification();
+        showSuccessModal(); 
+
         document.getElementById('expenseForm').reset();
         document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
 
     } catch (error) {
-        alert("فشل في حفظ البيانات إلى Firebase: " + error.message);
-        console.error(error);
+        alert("فشل في حفظ البيانات إلى Firebase. تحقق من قواعد الأمان (Rules) في قاعدة البيانات.");
+        console.error("Firebase Save Error:", error);
     }
 }
 
 // 5. وظائف المعاينة والـ Modal
+function showSuccessModal() {
+    document.getElementById('successModal').classList.add('show');
+}
+
+function hideSuccessModal() {
+    document.getElementById('successModal').classList.remove('show');
+}
 
 function previewExpense() {
-    if (!currentUserDB) return;
-
+    if (!currentUserDB) {
+        alert("الرجاء الانتظار حتى يتم تحميل بيانات المستخدمين.");
+        return;
+    }
+    // ... (بقية الدالة كما هي) ...
     const title = document.getElementById('expenseTitle').value;
-    const amount = parseFloat(document.getElementById('expenseAmount').value.replace(/,/g, ''));
+    const rawAmount = document.getElementById('expenseAmount').value.replace(/,/g, '');
+    const amount = parseFloat(rawAmount);
 
     const selectedParticipantUIDs = Array.from(
         document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]:checked')
@@ -201,9 +217,9 @@ function previewExpense() {
     const netPaidForOthers = amount - share;
     const projectedNewBalance = currentUserDB.balance + netPaidForOthers;
 
-    // 💡 استخدام displayName للمشاركين
     const participantNames = selectedParticipantUIDs
-        .map(uid => allUsers.find(u => u.uid === uid).displayName)
+        .map(uid => allUsers.find(u => u.uid === uid)?.displayName)
+        .filter(name => name)
         .join(', ');
 
     const previewText = `
@@ -227,31 +243,22 @@ function hideModal() {
     document.getElementById('previewModal').classList.remove('show');
 }
 
-function showNotification() {
-    const notif = document.getElementById('notification');
-    notif.style.display = 'block';
-    setTimeout(() => notif.style.display = 'none', 4000);
-}
 
 // 6. مراقبة حالة المصادقة (Auth State) وتجهيز البيانات
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        // المستخدم مسجل الدخول
         currentUserID = user.uid;
-        currentUserName = user.displayName; // جلب اسم المستخدم من Firebase Auth
+        currentUserName = user.displayName;
+        loadDataFromFirebase();
         
-        loadDataFromFirebase(); // بدء تحميل بيانات الـ DB
-        
-        // *تعديل زر تسجيل الخروج*
         document.getElementById('logoutButton').onclick = (e) => {
              e.preventDefault();
              auth.signOut().then(() => {
-                window.location.href = 'auth.html'; // التوجيه لصفحة الدخول
+                window.location.href = 'auth.html'; 
              });
         }
         
     } else {
-        // لا يوجد مستخدم مسجل الدخول، توجيهه لصفحة الدخول
         window.location.href = 'auth.html'; 
     }
 });
@@ -262,56 +269,4 @@ window.selectAllParticipants = selectAllParticipants;
 window.previewExpense = previewExpense;
 window.saveExpense = saveExpense;
 window.hideModal = hideModal;
-// ... (بقية الكود في الأعلى كما هو) ...
-
-// 💡 5. وظائف المعاينة والـ Modal (تعديل وظيفة الإشعار)
-
-// دالة جديدة لعرض modal النجاح
-function showSuccessModal() {
-    document.getElementById('successModal').classList.add('show');
-}
-
-// دالة جديدة لإخفاء modal النجاح
-function hideSuccessModal() {
-    document.getElementById('successModal').classList.remove('show');
-}
-
-function previewExpense() {
-    // ... (بقية الدالة كما هي) ...
-}
-
-function hideModal() {
-    document.getElementById('previewModal').classList.remove('show');
-}
-
-// ❌ تم حذف الدالة القديمة showNotification()
-
-// وظيفة حفظ المصروف وتحديث الأرصدة في Firebase
-async function saveExpense() {
-    // ... (منطق حساب المصروف والأرصدة كما هو) ...
-
-    try {
-        await set(ref(db, 'users'), usersUpdate);
-        await push(ref(db, 'expenses'), newExpense);
-
-        hideModal();
-        showSuccessModal(); // 💡 عرض modal النجاح الجديد
-
-        document.getElementById('expenseForm').reset();
-        document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
-
-    } catch (error) {
-        alert("فشل في حفظ البيانات إلى Firebase: " + error.message);
-        console.error(error);
-    }
-}
-
-// ... (بقية الكود في الأسفل كما هو) ...
-
-// *إتاحة الدوال للـ HTML*
-window.formatNumber = formatNumber;
-window.selectAllParticipants = selectAllParticipants;
-window.previewExpense = previewExpense;
-window.saveExpense = saveExpense;
-window.hideModal = hideModal;
-window.hideSuccessModal = hideSuccessModal; // 💡 إتاحة دالة إخفاء النجاح
+window.hideSuccessModal = hideSuccessModal;
