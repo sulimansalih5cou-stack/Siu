@@ -1,53 +1,3 @@
-// ... (جميع الاستيرادات والتهيئة) ...
-
-// 💡 دالة الحفظ الرئيسية (الكود النهائي المصحح)
-async function saveExpense() {
-    if (!currentUserID || !currentUserDB) return;
-
-    const title = document.getElementById('expenseTitle').value;
-    const rawAmount = document.getElementById('expenseAmount').value.replace(/,/g, '');
-    const amount = parseFloat(rawAmount); 
-
-    // ... (التحقق من المبلغ) ...
-
-    const participantUIDs = Array.from(
-        document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]:checked')
-    ).map(cb => cb.getAttribute('data-user-id'));
-
-    participantUIDs.push(currentUserID); 
-
-    const totalParticipants = participantUIDs.length;
-    const share = amount / totalParticipants;
-
-    const usersUpdate = {};
-
-    allUsers.forEach(user => {
-        let newBalance = user.balance;
-
-        // 1. حساب الدافع (Payer)
-        if (user.uid === currentUserID) {
-            // المبلغ الذي يضاف هو صافي ما دفعه الدافع نيابة عن الآخرين
-            const netPaidForOthers = amount - share; 
-            newBalance = parseFloat((newBalance + netPaidForOthers).toFixed(2));
-        } 
-        // 2. حساب المشاركين الآخرين (Participant)
-        else if (participantUIDs.includes(user.uid)) {
-            // المبلغ الذي يخصم هو حصة المشارك بالكامل
-            newBalance = parseFloat((newBalance - share).toFixed(2));
-        }
-        
-        usersUpdate[user.uid] = {
-            displayName: user.displayName, 
-            balance: newBalance,
-        };
-    });
-
-    // ... (إعداد المصروف الجديد وحفظه في Firebase) ...
-    // ... (بقية الإجراءات: hideModal, showSuccessModal, reset form)
-}
-
-// ... (بقية الكود) ...
-
 // 🔥 1. تهيئة واستيراد Firebase SDK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-analytics.js";
@@ -99,11 +49,13 @@ function updateBalanceDisplay() {
 
     const balanceValue = currentUserDB.balance;
     
+    // تنسيق وعرض الإشارة (+ / -)
     const sign = balanceValue >= 0 ? '+' : '';
     const formattedBalance = sign + Math.abs(balanceValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     balanceElement.textContent = formattedBalance;
 
+    // تحديث لون البطاقة بناءً على الرصيد
     balanceCard.classList.remove('negative');
     balanceCard.style.background = 'linear-gradient(135deg, #10B981 0%, #059669 100%)';
     if (balanceValue < 0) {
@@ -136,6 +88,7 @@ function selectAllParticipants() {
 function loadDataFromFirebase() {
     if (!currentUserID) return; 
 
+    // الاستماع لتغييرات المستخدمين (الأرصدة)
     onValue(ref(db, 'users'), (snapshot) => {
         if (snapshot.exists()) {
             const usersObject = snapshot.val();
@@ -151,6 +104,7 @@ function loadDataFromFirebase() {
         }
     });
 
+    // الاستماع لتغييرات المصروفات
     onValue(ref(db, 'expenses'), (snapshot) => {
         if (snapshot.exists()) {
             const expensesObject = snapshot.val();
@@ -164,9 +118,12 @@ function loadDataFromFirebase() {
     });
 }
 
-// 💡 دالة الحفظ الرئيسية (تم إصلاح منطق الحسابات هنا)
+// 💡 دالة الحفظ الرئيسية (الكود النهائي المصحح)
 async function saveExpense() {
-    if (!currentUserID || !currentUserDB) return;
+    if (!currentUserID || !currentUserDB) {
+        alert("خطأ: بيانات المستخدم غير متوفرة. يرجى تسجيل الدخول مجدداً.");
+        return;
+    }
 
     const title = document.getElementById('expenseTitle').value;
     const rawAmount = document.getElementById('expenseAmount').value.replace(/,/g, '');
@@ -189,16 +146,20 @@ async function saveExpense() {
     const usersUpdate = {};
 
     allUsers.forEach(user => {
-        let newBalance = user.balance;
+        // التأكد من الحصول على الرصيد القديم
+        let oldBalance = user.balance; 
+        let newBalance = oldBalance;
 
-        // 1. حساب الدافع (Payer) - يضاف له صافي المبلغ المدفوع لنيابة عن الآخرين
+        // 1. حساب الدافع (Payer) - يجب أن يضاف له صافي المبلغ
         if (user.uid === currentUserID) {
+            // المبلغ الذي يضاف هو صافي ما دفعه الدافع نيابة عن الآخرين: (2000 - 1000 = +1000)
             const netPaidForOthers = amount - share; 
-            newBalance = parseFloat((newBalance + netPaidForOthers).toFixed(2));
+            newBalance = parseFloat((oldBalance + netPaidForOthers).toFixed(2));
         } 
-        // 2. حساب المشاركين الآخرين (Participant) - يخصم منهم حصتهم
+        // 2. حساب المشاركين الآخرين (Participant) - يجب أن يخصم منهم الحصة
         else if (participantUIDs.includes(user.uid)) {
-            newBalance = parseFloat((newBalance - share).toFixed(2)); // 🛑 هذا هو التصحيح
+            // المبلغ الذي يخصم هو حصة المشارك بالكامل: (-1000)
+            newBalance = parseFloat((oldBalance - share).toFixed(2));
         }
         
         usersUpdate[user.uid] = {
@@ -217,9 +178,7 @@ async function saveExpense() {
     };
 
     try {
-        // تحديث جميع المستخدمين (يتطلب قواعد أمان واسعة على مسار /users)
         await set(ref(db, 'users'), usersUpdate);
-        // إضافة المصروف الجديد
         await push(ref(db, 'expenses'), newExpense);
 
         hideModal();
@@ -229,7 +188,7 @@ async function saveExpense() {
         document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
 
     } catch (error) {
-        alert("فشل في حفظ البيانات إلى Firebase. تحقق من اتصالك وقواعد الأمان.");
+        alert("فشل في حفظ البيانات إلى Firebase. تأكد من اتصالك وقواعد الأمان.");
         console.error("Firebase Save Error:", error);
     }
 }
