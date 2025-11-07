@@ -1,4 +1,3 @@
-
 // 🔥 1. تهيئة واستيراد Firebase SDK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-analytics.js";
@@ -44,10 +43,12 @@ function updateBalanceDisplay() {
 
     // تحديث شاشة index.html
     const balanceElement = document.getElementById('currentBalance');
-    if (balanceElement) {
-        const balanceCard = document.getElementById('currentBalanceCard');
-        const userNamePlaceholder = document.getElementById('userNamePlaceholder');
+    const userNamePlaceholder = document.getElementById('userNamePlaceholder');
 
+    // هذه العناصر موجودة فقط في index.html
+    if (balanceElement && userNamePlaceholder) { 
+        const balanceCard = document.getElementById('currentBalanceCard');
+        
         userNamePlaceholder.textContent = currentUserName;
 
         const balanceValue = currentUserDB.balance;
@@ -142,12 +143,22 @@ function loadDataFromFirebase() {
         } else {
              expenses = [];
         }
+        
+        // تحديث سجل العمليات بعد تحميل المصروفات
+        if (document.getElementById('expensesContainer')) {
+            displayHistory();
+        }
     });
 }
 
 
 // 💡 دالة الحفظ الرئيسية (المنطق المصحح مع إضافة الطابع الزمني)
 async function saveExpense() {
+    // ⚠️ يتم استدعاء saveExpense بعد المعاينة، لذا يجب إخفاء الـ modal أولاً
+    if (document.getElementById('previewModal')) {
+         hideModal();
+    }
+    
     if (!currentUserID || !currentUserDB) {
         alert("خطأ: بيانات المستخدم غير متوفرة. يرجى تسجيل الدخول مجدداً.");
         return;
@@ -158,8 +169,8 @@ async function saveExpense() {
     const amount = parseFloat(rawAmount); 
 
     if (isNaN(amount) || amount <= 0) {
-         alert('يرجى إدخال مبلغ صحيح.');
-         return;
+         // هذا الشرط تم فحصه في previewExpense لكن نتركه احتياطاً
+         return; 
     }
 
     const participantUIDs = Array.from(
@@ -174,7 +185,7 @@ async function saveExpense() {
     const usersUpdate = {};
 
     allUsers.forEach(user => {
-        let oldBalance = user.balance; 
+        let oldBalance = user.balance || 0; // تأكد من قيمة أولية لـ balance
         let newBalance = oldBalance;
 
         // 1. حساب الدافع (Payer) - يضاف له صافي المبلغ
@@ -199,18 +210,23 @@ async function saveExpense() {
         payer_id: currentUserID, 
         participants_ids: participantUIDs,
         share: parseFloat(share.toFixed(2)),
-        date: new Date().toISOString().split('T')[0], // التاريخ فقط
-        timestamp: Date.now() // 🆕 حفظ الطابع الزمني
+        date: new Date().toISOString().split('T')[0], 
+        timestamp: Date.now() 
     };
 
     try {
+        // تحديث الأرصدة
         await set(ref(db, 'users'), usersUpdate);
+        // إضافة المصروف
         await push(ref(db, 'expenses'), newExpense);
 
         // إجراءات صفحة index.html
-        if (document.getElementById('previewModal')) {
-             hideModal();
-             showSuccessModal(); 
+        if (document.getElementById('expenseForm')) {
+             // إظهار رسالة النجاح
+             const successModal = document.getElementById('successModal');
+             if (successModal) showSuccessModal(); 
+
+             // إفراغ النموذج
              document.getElementById('expenseForm').reset();
              document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
         }
@@ -222,38 +238,94 @@ async function saveExpense() {
 }
 
 
-// 🆕 5. وظيفة عرض سجل العمليات (مخصصة لـ history.html)
+// 🆕 دالة معاينة المصروف وفتح الـ Modal (لحماية زر الحفظ)
+function previewExpense() {
+    const title = document.getElementById('expenseTitle').value;
+    const rawAmount = document.getElementById('expenseAmount').value.replace(/,/g, '');
+    const amount = parseFloat(rawAmount); 
+
+    if (!title || isNaN(amount) || amount <= 0) {
+        alert('يرجى ملء اسم المصروف وإدخال مبلغ صحيح.');
+        return;
+    }
+    
+    // حساب المشاركين وحصتهم
+    const participantUIDs = Array.from(
+        document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]:checked')
+    ).map(cb => cb.getAttribute('data-user-id'));
+    
+    // إضافة المستخدم الحالي دائماً كشريك دافع
+    if (!currentUserID) { alert('خطأ في تحديد المستخدم!'); return; }
+    participantUIDs.push(currentUserID); 
+    
+    const totalParticipants = participantUIDs.length;
+    const share = amount / totalParticipants;
+    const netPaidForOthers = amount - share;
+    
+    // أسماء المشاركين
+    const participantNames = participantUIDs
+        .map(uid => getUserNameById(uid))
+        .join(', ');
+
+    // 📝 نص المعاينة
+    const previewText = `
+        <ul class="list-disc pr-6 text-gray-700 space-y-2">
+            <li><span class="font-bold">اسم المصروف:</span> ${title}</li>
+            <li><span class="font-bold">المبلغ الكلي:</span> ${amount.toLocaleString('en-US')} SAR</li>
+            <li><span class="font-bold">عدد المشاركين:</span> ${totalParticipants} (${participantNames})</li>
+            <li><span class="font-bold">حصة كل شخص:</span> ${share.toFixed(2).toLocaleString('en-US')} SAR</li>
+            <li><span class="font-bold text-green-700">صافي رصيدك (دين لك):</span> +${netPaidForOthers.toFixed(2).toLocaleString('en-US')} SAR</li>
+        </ul>
+    `;
+
+    document.getElementById('previewText').innerHTML = previewText;
+    document.getElementById('previewModal').classList.add('show');
+}
+
+
+// 🆕 5. وظيفة عرض سجل العمليات والديون (مخصصة لـ history.html)
 function displayHistory() {
     if (allUsers.length === 0 || !currentUserDB) return;
 
     const expensesContainer = document.getElementById('expensesContainer');
-    const balanceSummary = document.getElementById('balanceSummary');
-    if (!expensesContainer || !balanceSummary) return;
+    const debtToYouList = document.getElementById('debtToYouList'); 
+    const debtFromYouList = document.getElementById('debtFromYouList');
+
+    if (!expensesContainer || !debtToYouList || !debtFromYouList) return;
 
     expensesContainer.innerHTML = '';
-    balanceSummary.innerHTML = '';
+    debtToYouList.innerHTML = '';
+    debtFromYouList.innerHTML = '';
+    document.getElementById('loadingMessage').style.display = 'none'; // إخفاء رسالة التحميل
 
-    // أ. عرض ملخص الديون
-    let debtSummaryHTML = '';
+    // أ. عرض ملخص الديون (تقسيم الدين لك والدين عليك)
+    let hasDebtToYou = false;
+    let hasDebtFromYou = false;
+    
     const otherUsers = allUsers.filter(u => u.uid !== currentUserID); 
 
     otherUsers.forEach(user => {
-        const balance = user.balance;
+        const balance = user.balance || 0; 
+        const formattedBalance = Math.abs(balance).toFixed(2).toLocaleString('en-US');
 
-        if (balance > 0.01) { 
-            debtSummaryHTML += `<p class="text-red-600 font-medium"><i class="fas fa-hand-holding-usd"></i> أنت مدين لـ **${user.displayName}** بمبلغ: ${balance.toFixed(2).toLocaleString('en-US')}</p>`;
-        } else if (balance < -0.01) { 
-            debtSummaryHTML += `<p class="text-green-600 font-medium"><i class="fas fa-money-check-alt"></i> **${user.displayName}** مدين لك بمبلغ: ${Math.abs(balance).toFixed(2).toLocaleString('en-US')}</p>`;
+        if (balance > 0.01) { // رصيد المستخدم الآخر موجب => أنت مدين له
+            debtFromYouList.innerHTML += `<p class="my-2"><i class="fas fa-arrow-down text-red-700 ml-1"></i> أنت مدين لـ **${user.displayName}** بمبلغ: ${formattedBalance} SAR</p>`;
+            hasDebtFromYou = true;
+        } else if (balance < -0.01) { // رصيد المستخدم الآخر سالب => هو مدين لك
+            debtToYouList.innerHTML += `<p class="my-2"><i class="fas fa-arrow-up text-green-700 ml-1"></i> **${user.displayName}** مدين لك بمبلغ: ${formattedBalance} SAR</p>`;
+            hasDebtToYou = true;
         }
     });
 
-    if (!debtSummaryHTML) {
-        debtSummaryHTML = `<p class="text-gray-500 font-medium"><i class="fas fa-check-circle"></i> لا توجد ديون معلقة حالياً! (الأرصدة صفرية)</p>`;
+    if (!hasDebtToYou) {
+        debtToYouList.innerHTML = `<p class="text-gray-500 font-normal"><i class="fas fa-check-circle"></i> لا أحد مدين لك حالياً.</p>`;
     }
-    balanceSummary.innerHTML = debtSummaryHTML;
+    if (!hasDebtFromYou) {
+        debtFromYouList.innerHTML = `<p class="text-gray-500 font-normal"><i class="fas fa-check-circle"></i> لا تدين لأحد حالياً.</p>`;
+    }
 
 
-    // ب. إنشاء بطاقات المصروفات
+    // ب. إنشاء بطاقات المصروفات (سجل العمليات)
     if (expenses.length === 0) {
         expensesContainer.innerHTML = `<p class="text-center text-gray-500 col-span-full">لا توجد مصروفات مسجلة بعد.</p>`;
         return;
@@ -271,15 +343,15 @@ function displayHistory() {
         // 1. تحديد حالة رصيد المستخدم الحالي
         if (isPayer) {
             const netPaid = expense.amount - share;
-            statusText = `ربحت: +${netPaid.toFixed(2).toLocaleString('en-US')}`;
+            statusText = `ربحت (دفعْتَ عنهم): +${netPaid.toFixed(2).toLocaleString('en-US')}`;
             cardClass = 'payer-card';
             statusIcon = '<i class="fas fa-arrow-up text-green-600"></i>';
         } else if (isParticipant) {
-            statusText = `حصتك: -${share.toFixed(2).toLocaleString('en-US')}`;
+            statusText = `حصتك (عليك دين): -${share.toFixed(2).toLocaleString('en-US')}`;
             cardClass = 'debtor-card';
             statusIcon = '<i class="fas fa-arrow-down text-red-600"></i>';
         } else {
-            statusText = `لم تشارك`;
+            statusText = `لم تشارك في هذه العملية`;
         }
 
         // 2. تنسيق التاريخ والوقت
@@ -332,13 +404,17 @@ onAuthStateChanged(auth, (user) => {
         currentUserName = user.displayName;
         loadDataFromFirebase();
 
-        // ربط زر تسجيل الخروج
+        // ربط زر تسجيل الخروج (باستخدام ID 'logoutButton')
         const logoutBtn = document.getElementById('logoutButton');
         if (logoutBtn) {
+            // يتم توجيه الرابط في HTML إلى auth.html، لكن نضيف حدث التأكيد
             logoutBtn.onclick = (e) => {
                  e.preventDefault();
                  auth.signOut().then(() => {
                     window.location.href = 'auth.html'; 
+                 }).catch(error => {
+                     console.error("Logout Error:", error);
+                     window.location.href = 'auth.html'; 
                  });
             }
         }
@@ -358,8 +434,7 @@ window.previewExpense = previewExpense;
 window.saveExpense = saveExpense;
 
 // الدوال المتعلقة بالـ Modal (للصفحة index.html)
-if (document.getElementById('previewModal')) {
-    window.hideModal = () => document.getElementById('previewModal').classList.remove('show');
-    window.showSuccessModal = () => document.getElementById('successModal').classList.add('show');
-    window.hideSuccessModal = () => document.getElementById('successModal').classList.remove('show');
-}
+// Note: You must ensure you have the 'successModal' in your index.html file to avoid errors.
+window.hideModal = () => document.getElementById('previewModal').classList.remove('show');
+window.showSuccessModal = () => document.getElementById('successModal').classList.add('show');
+window.hideSuccessModal = () => document.getElementById('successModal').classList.remove('show');
