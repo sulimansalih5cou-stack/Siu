@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سجل العمليات - Smart Dorm Expenses</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #F3FFEE 0%, #E5F3E0 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            padding: 40px;
+            max-width: 900px;
+            width: 100%;
+            margin: 40px auto;
+        }
+        /* أنماط ملخص الديون */
+        .debt-summary-card { padding: 20px; border-radius: 12px; font-weight: 600; }
+        .debt-to-you { background-color: #ECFDF5; border: 1px solid #38A169; color: #065F46; } /* دائن لك (له عليك) */
+        .debt-from-you { background-color: #FEF2F2; border: 1px solid #EF4444; color: #991B1B; } /* عليك دين (لك عليه) */
+        
+        /* الأنماط الخاصة ببطاقات العمليات */
+        #expensesContainer {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        }
+        .expense-card {
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+        .expense-card:hover { transform: translateY(-3px); }
+        .payer-card { background-color: #E6FFFA; border: 2px solid #38A169; }
+        .debtor-card { background-color: #FEEBEC; border: 2px solid #E53E3E; }
+        .neutral-card { background-color: #F7FAFC; border: 2px solid #CBD5E0; }
+
+        .btn-action {
+            background-color: #3B82F6; color: white; padding: 10px 20px; border-radius: 10px;
+            font-weight: 700; transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="container">
+        <div class="flex justify-between items-center mb-8 border-b pb-4">
+            <h1 class="text-3xl font-bold text-gray-800">
+                <i class="fas fa-history text-blue-500"></i> سجل العمليات والمصروفات
+            </h1>
+            <a href="index.html" class="btn-action">
+                <i class="fas fa-arrow-right ml-2"></i> العودة للإضافة
+            </a>
+        </div>
+
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">
+            <i class="fas fa-money-check-alt ml-2"></i> ملخص الدين
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+            <div class="debt-summary-card debt-to-you">
+                <h3 class="text-xl font-bold mb-3"><i class="fas fa-arrow-up"></i> الدين لي (المستحق لك)</h3>
+                <div id="debtToYouList">يتم التحميل...</div>
+            </div>
+            
+            <div class="debt-summary-card debt-from-you">
+                <h3 class="text-xl font-bold mb-3"><i class="fas fa-arrow-down"></i> الدين علي (المستحق عليك)</h3>
+                <div id="debtFromYouList">يتم التحميل...</div>
+            </div>
+        </div>
+        
+        <hr class="my-6">
+
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">
+            <i class="fas fa-list-alt ml-2"></i> جميع المصروفات
+        </h2>
+        <div id="expensesContainer">
+            <p class="text-center text-gray-500 col-span-full" id="loadingMessage">يتم تحميل البيانات...</p>
+        </div>
+        
+    </div>
+
+    <script src="script.js" type="module"></script> 
+</body>
+</html>
