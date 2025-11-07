@@ -27,9 +27,9 @@
             createUserWithEmailAndPassword, 
             signInWithEmailAndPassword, 
             sendEmailVerification,
-            updateProfile // 💡 لاستخدام اسم المستخدم
+            updateProfile
         } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"; // 💡 لاستخدام قاعدة البيانات
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
         // 3. تهيئة Firebase
         const app = initializeApp(firebaseConfig);
@@ -41,14 +41,13 @@
         window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
         window.signInWithEmailAndPassword = signInWithEmailAndPassword;
         window.sendEmailVerification = sendEmailVerification;
-        window.updateProfile = updateProfile; // لإضافة اسم المستخدم
+        window.updateProfile = updateProfile;
         window.db = db;
         window.ref = ref;
         window.set = set;
     </script>
     
     <style>
-        /* CSS الأنماط (تم حذف الأنماط المتكررة للتركيز على الكود الوظيفي) */
         body { background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); display: flex; align-items: center; justify-content: center; min-height: 100vh; }
         .auth-card { background: white; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); padding: 40px; max-width: 400px; width: 90%; }
         .input-group input { width: 100%; padding: 15px; border: 2px solid #E5E7EB; border-radius: 12px; transition: all 0.3s ease; }
@@ -101,7 +100,6 @@
     </div>
 
     <script>
-        // حالة النموذج الحالية (true = تسجيل، false = دخول)
         let isSignup = true;
 
         function displayError(message) {
@@ -124,13 +122,12 @@
             document.getElementById('signupButton').style.display = isSignup ? 'block' : 'none';
             document.getElementById('loginButton').style.display = isSignup ? 'none' : 'block';
             document.getElementById('confirmPasswordGroup').style.display = isSignup ? 'block' : 'none';
-            document.getElementById('nameGroup').style.display = isSignup ? 'block' : 'none'; // 💡 إظهار/إخفاء حقل الاسم
+            document.getElementById('nameGroup').style.display = isSignup ? 'block' : 'none';
             
             document.getElementById('toggleText').textContent = isSignup ? 'هل لديك حساب بالفعل؟' : 'ليس لديك حساب؟';
             document.getElementById('toggleLink').textContent = isSignup ? 'سجّل الدخول' : 'أنشئ حساباً';
         }
 
-        // دالة إنشاء حساب جديد وتوثيقه (Sign Up) المعدلة
         function handleSignup() {
             clearError();
             const name = document.getElementById('name').value.trim(); 
@@ -148,29 +145,26 @@
                 return;
             }
 
-            // إنشاء المستخدم
             window.createUserWithEmailAndPassword(window.auth, email, password)
                 .then((userCredential) => {
                     const user = userCredential.user;
-
-                    // 1. تحديث البروفايل (إضافة اسم العرض)
+                    
                     return window.updateProfile(user, { displayName: name })
                         .then(() => {
-                            // 2. إرسال بريد التوثيق
                             return window.sendEmailVerification(user);
                         })
-                        // 3. 💡 إضافة المستخدم الجديد إلى قاعدة البيانات بالأرصدة الافتراضية
                         .then(() => {
+                            // إضافة المستخدم الجديد إلى قاعدة البيانات بالأرصدة الافتراضية
                             const userRef = window.ref(window.db, 'users/' + user.uid);
                             return window.set(userRef, {
                                 displayName: name,
-                                balance: 0.00 // رصيد افتراضي صفر
+                                balance: 0.00
                             });
                         });
                 })
                 .then(() => {
                     alert('تهانينا! تم إنشاء حسابك. يرجى التحقق من بريدك الإلكتروني لتفعيل الحساب قبل محاولة تسجيل الدخول.');
-                    toggleForm(); // التبديل لوضع تسجيل الدخول
+                    toggleForm();
                 })
                 .catch((error) => {
                     let errorMessage = 'حدث خطأ غير معروف.';
@@ -183,7 +177,6 @@
                 });
         }
 
-        // دالة تسجيل الدخول والتحقق من التوثيق
         function handleLogin() {
             clearError();
             const email = document.getElementById('email').value.trim();
@@ -196,7 +189,6 @@
                     user.reload().then(() => {
                         if (user.emailVerified) {
                             alert('تم تسجيل الدخول بنجاح! مرحباً بك.');
-                            // 💡 التوجيه إلى صفحة التطبيق الرئيسية
                             window.location.href = 'index.html'; 
                         } else {
                             window.auth.signOut();
@@ -213,7 +205,7 @@
                 });
         }
         
-        document.addEventListener('DOMContentLoaded', () => { toggleForm(); }); // إعداد الحالة الافتراضية
+        document.addEventListener('DOMContentLoaded', () => { toggleForm(); });
     </script>
 </body>
 </html>
