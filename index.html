@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        /* الأنماط المخصصة (تم الحفاظ عليها) */
+        /* الأنماط الموحدة للصفحة */
         body {
             background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -18,66 +18,148 @@
             justify-content: center;
             padding: 20px;
         }
+        /* تصميم البطاقة الرئيسية */
         .container {
             background: white;
             border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15); /* ظل أقوى */
             padding: 40px;
             max-width: 600px;
             width: 100%;
             position: relative;
         }
-        /* ... (أنماط أخرى مثل form-group و btn-auth إلخ) ... */
+        
+        /* 💡 تحسين تصميم حقول الإدخال */
+        .input-group {
+            margin-bottom: 25px;
+        }
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+        .input-wrapper {
+            position: relative;
+        }
+        .input-wrapper input {
+            width: 100%;
+            padding: 15px 15px 15px 50px; /* مسافة للآيكون */
+            border: 2px solid #D1D5DB; /* لون حدود أوضح */
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #F9FAFB;
+        }
+        .input-wrapper input:focus {
+            border-color: #3B82F6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+            background: white;
+        }
+        .input-wrapper .icon {
+            position: absolute;
+            top: 50%;
+            right: 15px; /* موقع الآيكون في RTL */
+            transform: translateY(-50%);
+            color: #6B7280;
+            font-size: 18px;
+        }
+
+        /* تصميم بطاقة الرصيد */
         .balance-card {
             background: linear-gradient(135deg, #10B981 0%, #059669 100%);
             color: white;
-            padding: 20px;
+            padding: 25px;
             border-radius: 15px;
             text-align: center;
             margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
         }
-        /* 💡 نمط الرصيد السالب */
         .balance-card.negative {
             background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%);
+            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3);
+        }
+        .balance-card p {
+            font-size: 32px;
+            font-weight: 800;
+            margin-top: 5px;
         }
 
-        /* 💡 أنماط الـ Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.6);
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            animation: fadeIn 0.3s ease;
-        }
-        .modal.show { display: flex; }
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            max-width: 400px;
-            width: 90%;
-            text-align: center;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-            animation: slideIn 0.3s ease;
-        }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        /* تم حذف نمط الإشعار الجانبي القديم (#notification) */
-
-        .logout-btn {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            padding: 8px 15px;
-            background-color: #6B7280;
+        /* تصميم أزرار الإجراءات */
+        .btn {
+            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
             color: white;
+            padding: 14px 30px;
             border-radius: 10px;
-            font-size: 14px;
-            font-weight: 500;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
         }
+        .btn-secondary {
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+            box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        /* تصميم المشاركين (Checkboxes) */
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+        }
+        .checkbox-item {
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid #D1D5DB;
+            background: #F3F4F6;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-weight: 500;
+            text-align: right;
+            display: flex;
+            align-items: center;
+        }
+        .checkbox-item input { /* إخفاء التشيك بوكس الأصلي */
+            position: absolute;
+            opacity: 0;
+        }
+        .checkbox-item:hover {
+            background: #E5E7EB;
+        }
+        .checkbox-item input:checked + .checkbox-label {
+            background-color: #3B82F6;
+            color: white;
+            border-color: #3B82F6;
+        }
+        .checkbox-item input:checked + .checkbox-icon {
+            color: #3B82F6;
+        }
+        
+        /* تصميم زر اختر الكل */
+        .select-all {
+            background-color: #E0F2FE;
+            color: #1D4ED8;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        /* أنماط الـ Modal (بقي كما هو) */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); align-items: center; justify-content: center; z-index: 1000; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; padding: 30px; border-radius: 20px; max-width: 400px; width: 90%; text-align: center; }
+        .warning { background: #F59E0B; color: white; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none; }
+        .logout-btn { position: absolute; top: 20px; left: 20px; padding: 8px 15px; background-color: #6B7280; color: white; border-radius: 10px; font-size: 14px; font-weight: 500; }
     </style>
 </head>
 <body>
@@ -88,42 +170,52 @@
         </a>
 
         <div class="app-description">
-            <i class="fas fa-image icon"></i> نستخدم التطبيق على الصورة – أضف مصروفك بسهولة!
+            <h2 class="text-xl font-bold text-gray-800 mb-6 text-center">
+                <i class="fas fa-wallet text-blue-500"></i> إدارة مصروفات السكن
+            </h2>
         </div>
 
         <div id="currentBalanceCard" class="balance-card">
-            <h3><i class="fas fa-user-circle icon"></i> رصيدك الحالي يا [اسم المستخدم]</h3>
+            <h3><i class="fas fa-user-circle"></i> رصيدك الحالي يا <span id="userNamePlaceholder">...</span></h3>
             <p id="currentBalance">يتم التحميل...</p>
         </div>
 
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">
-            <i class="fas fa-plus-circle text-blue-500"></i> إضافة مصروف جديد
+        <h1 class="text-2xl font-bold text-center text-gray-800 mb-6 border-b pb-3">
+            <i class="fas fa-plus-circle text-blue-500"></i> تسجيل مصروف جديد
         </h1>
 
         <form id="expenseForm">
-            <div class="form-group">
-                <label for="expenseTitle"><i class="fas fa-tag icon"></i> اسم المصروف (اكتب أو اختر)</label>
-                <input type="text" id="expenseTitle" placeholder="مثال: شاي المساء" list="suggestions" required>
-                <datalist id="suggestions">
-                    <option value="شاي"><option value="أكل"><option value="غاز"><option value="نظافة"><option value="أخرى">
-                </datalist>
-            </div>
-
-            <div class="form-group">
-                <label for="expenseAmount"><i class="fas fa-dollar-sign icon"></i> المبلغ الكلي</label>
-                <input type="tel" id="expenseAmount" placeholder="5,000" oninput="formatNumber(this)" required>
-            </div>
-
-            <div class="form-group">
-                <label><i class="fas fa-users icon"></i> المشاركون (اختر من يشارك)</label>
-                <div class="select-all" onclick="selectAllParticipants()">اختر الكل</div>
-                <div class="checkbox-group" id="participantsCheckboxes">
+            <div class="input-group">
+                <label for="expenseTitle">اسم المصروف</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-tag icon"></i>
+                    <input type="text" id="expenseTitle" placeholder="مثال: فاتورة الكهرباء" list="suggestions" required>
+                    <datalist id="suggestions">
+                        <option value="شاي"><option value="أكل"><option value="غاز"><option value="نظافة"><option value="أخرى">
+                    </datalist>
                 </div>
             </div>
 
-            <div class="text-center">
+            <div class="input-group">
+                <label for="expenseAmount">المبلغ الكلي</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-dollar-sign icon"></i>
+                    <input type="tel" id="expenseAmount" placeholder="5,000" oninput="formatNumber(this)" required>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label><i class="fas fa-users"></i> المشاركون (اختر من يشارك)</label>
+                <div class="select-all" onclick="selectAllParticipants()">
+                    <i class="fas fa-check-double ml-2"></i> اختر الكل
+                </div>
+                <div class="checkbox-group" id="participantsCheckboxes">
+                    </div>
+            </div>
+
+            <div class="text-center mt-6">
                 <button type="button" onclick="previewExpense()" class="btn btn-secondary w-full">
-                    <i class="fas fa-eye"></i> معاينة وحفظ
+                    <i class="fas fa-eye ml-2"></i> معاينة وحفظ المصروف
                 </button>
             </div>
         </form>
@@ -140,10 +232,10 @@
             <p id="previewText" class="text-gray-600 mb-6 text-right"></p>
             <div>
                 <button onclick="saveExpense()" class="btn">
-                    <i class="fas fa-save"></i> حفظ نهائي
+                    <i class="fas fa-save ml-2"></i> حفظ نهائي
                 </button>
-                <button onclick="hideModal()" class="btn btn-secondary ml-4">
-                    <i class="fas fa-times"></i> إلغاء
+                <button onclick="hideModal()" class="btn btn-secondary mr-4">
+                    <i class="fas fa-times ml-2"></i> إلغاء
                 </button>
             </div>
         </div>
@@ -157,7 +249,7 @@
             <p class="text-gray-600 mb-6 font-medium">تم تسجيل المصروف وتحديث الأرصدة بنجاح.</p>
             <div>
                 <button onclick="hideSuccessModal()" class="btn btn-login">
-                    <i class="fas fa-thumbs-up"></i> حسناً
+                    <i class="fas fa-thumbs-up ml-2"></i> حسناً
                 </button>
             </div>
         </div>
