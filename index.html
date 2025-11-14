@@ -1,226 +1,241 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html>
 <head>
-<link rel="manifest" href="manifest.json">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إضافة مصروف محسّن - Smart Dorm Expenses</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
+    <title>Breakout Web Game</title>
     <style>
-        /* الأنماط الموحدة للصفحة */
+        /* CSS بسيط لتوسيط اللعبة وإزالة الهوامش */
         body {
-            background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
+            background: #282c34;
             display: flex;
-            align-items: center;
             justify-content: center;
-            padding: 20px;
-        }
-        /* تصميم البطاقة الرئيسية */
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-            padding: 40px;
-            max-width: 600px;
-            width: 100%;
-            position: relative;
-        }
-
-        /* تحسين تصميم حقول الإدخال */
-        .input-group { margin-bottom: 25px; }
-        .input-group label { display: block; font-weight: 600; color: #374151; margin-bottom: 8px; font-size: 15px; }
-        .input-wrapper { position: relative; }
-        .input-wrapper input {
-            width: 100%; padding: 15px 15px 15px 50px;
-            border: 2px solid #D1D5DB; border-radius: 10px; font-size: 16px; transition: all 0.3s ease; background: #F9FAFB;
-        }
-        .input-wrapper input:focus { border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); background: white; }
-        .input-wrapper .icon { position: absolute; top: 50%; right: 15px; transform: translateY(-50%); color: #6B7280; font-size: 18px; }
-
-        /* تصميم بطاقة الرصيد */
-        .balance-card {
-            /* 🟢 اللون الافتراضي (الأخضر للموجب أو صفر) */
-            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-            color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
-            transition: background 0.5s ease; /* لإضافة حركة سلسة عند التغيير */
-        }
-        .balance-card.negative {
-            /* 🔴 اللون الأحمر للسالب */
-            background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%) !important;
-            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3);
-        }
-        .balance-card p { font-size: 32px; font-weight: 800; margin-top: 5px; }
-
-        /* تصميم أزرار الإجراءات */
-        .btn {
-            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); color: white; padding: 14px 30px; border-radius: 10px;
-            font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
-        }
-        .btn-secondary {
-            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-            box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
-        }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 15px rgba(59, 130, 246, 0.4); }
-
-        /* تصميم المشاركين (Checkboxes) */
-        .checkbox-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
-        .checkbox-item { 
-            padding: 10px 15px; border-radius: 8px; border: 1px solid #D1D5DB; background: #F3F4F6;
-            transition: all 0.3s ease; cursor: pointer; font-weight: 500; text-align: right; display: flex; align-items: center; 
-        }
-        .checkbox-item input { position: absolute; opacity: 0; }
-        .checkbox-item:hover { background: #E5E7EB; }
-        .checkbox-item input:checked + .checkbox-icon { color: #3B82F6; }
-        .checkbox-item input:checked + .checkbox-icon + span { color: #1D4ED8; font-weight: 700;}
-
-        .select-all {
-            background-color: #E0F2FE; color: #1D4ED8; padding: 10px 15px; border-radius: 8px;
-            cursor: pointer; transition: all 0.3s ease; text-align: center; margin-bottom: 15px; font-weight: 600;
-        }
-
-        /* أنماط الـ Modal */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); align-items: center; justify-content: center; z-index: 1000; }
-        .modal.show { display: flex; }
-        .modal-content { background: white; padding: 30px; border-radius: 20px; max-width: 400px; width: 90%; text-align: center; }
-        .warning { background: #F59E0B; color: white; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none; }
-        
-        /* أنماط الأزرار العلوية */
-        .top-actions {
-            position: absolute; 
-            top: 20px; 
-            right: 20px; 
-            display: flex;
-            gap: 10px;
-        }
-        .top-action-btn { 
-            padding: 8px 15px; 
-            border-radius: 10px; 
-            font-size: 14px; 
-            font-weight: 500; 
-            transition: background-color 0.3s;
-            display: inline-flex;
             align-items: center;
-            gap: 5px;
+            min-height: 100vh;
+            margin: 0;
+            font-family: sans-serif;
+            color: #fff;
+            flex-direction: column;
         }
-        .logout-btn { 
-            background-color: #6B7280; 
-            color: white; 
+        canvas {
+            background: #eee;
+            border: 5px solid #fff;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            margin-top: 10px;
         }
-        .logout-btn:hover {
-            background-color: #4B5563;
-        }
-        .history-btn {
-            background-color: #10B981; 
-            color: white; 
-        }
-        .history-btn:hover {
-            background-color: #059669;
+        h1 {
+            color: #61dafb;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="top-actions">
-            <a href="history.html" class="top-action-btn history-btn">
-                <i class="fas fa-history"></i> سجل العمليات
-            </a>
-            <a href="auth.html" id="logoutButton" class="top-action-btn logout-btn">
-                <i class="fas fa-sign-out-alt"></i> تبديل المستخدم
-            </a>
-        </div>
+    <h1>Breakout Clone</h1>
+    <canvas id="myCanvas" width="480" height="320"></canvas>
+    <p>استخدم مفتاحي السهم الأيمن والأيسر للتحريك.</p>
 
-        <div class="app-description">
-            <h2 class="text-xl font-bold text-gray-800 mb-6 text-center">
-                <i class="fas fa-wallet text-blue-500"></i> إدارة مصروفات السكن
-            </h2>
-        </div>
+    <script>
+        // إعداد المتغيرات الأساسية للعبة
+        const canvas = document.getElementById("myCanvas");
+        const ctx = canvas.getContext("2d");
 
-        <div id="currentBalanceCard" class="balance-card">
-            <h3><i class="fas fa-user-circle"></i> رصيدك الحالي يا <span id="userNamePlaceholder">...</span></h3>
-            <p id="currentBalance">يتم التحميل...</p>
-        </div>
+        const WIDTH = canvas.width;
+        const HEIGHT = canvas.height;
 
-        <h1 class="text-2xl font-bold text-center text-gray-800 mb-6 border-b pb-3">
-            <i class="fas fa-plus-circle text-blue-500"></i> تسجيل مصروف جديد
-        </h1>
+        // متغيرات الكرة
+        let ballRadius = 10;
+        let x = WIDTH / 2;
+        let y = HEIGHT - 30;
+        let dx = 2; // سرعة الكرة في محور x
+        let dy = -2; // سرعة الكرة في محور y
 
-        <form id="expenseForm">
-            <div class="input-group">
-                <label for="expenseTitle">اسم المصروف</label>
-                <div class="input-wrapper">
-                    <i class="fas fa-tag icon"></i>
-                    <input type="text" id="expenseTitle" placeholder="مثال: فاتورة الكهرباء" list="suggestions" required>
-                    <datalist id="suggestions">
-                        <option value="شاي"><option value="أكل"><option value="غاز"><option value="نظافة"><option value="أخرى">
-                    </datalist>
-                </div>
-            </div>
+        // متغيرات المضرب (Paddle)
+        let paddleHeight = 10;
+        let paddleWidth = 75;
+        let paddleX = (WIDTH - paddleWidth) / 2;
 
-            <div class="input-group">
-                <label for="expenseAmount">المبلغ الكلي</label>
-                <div class="input-wrapper">
-                    <i class="fas fa-dollar-sign icon"></i>
-                    <input type="tel" id="expenseAmount" placeholder="5,000" oninput="formatNumber(this)" required>
-                </div>
-            </div>
+        // متغيرات التحكم
+        let rightPressed = false;
+        let leftPressed = false;
 
-            <div class="input-group">
-                <label><i class="fas fa-users"></i> المشاركون (اختر من يشارك)</label>
-                <div class="select-all" onclick="selectAllParticipants()">
-                    <i class="fas fa-check-double ml-2"></i> اختر الكل
-                </div>
-                <div class="checkbox-group" id="participantsCheckboxes">
-                    </div>
-            </div>
+        // متغيرات الطوب (Bricks)
+        const brickRowCount = 3;
+        const brickColumnCount = 5;
+        const brickWidth = 75;
+        const brickHeight = 20;
+        const brickPadding = 10;
+        const brickOffsetTop = 30;
+        const brickOffsetLeft = 30;
 
-            <div class="text-center mt-6">
-                <button type="button" onclick="previewExpense()" class="btn btn-secondary w-full">
-                    <i class="fas fa-eye ml-2"></i> معاينة وحفظ المصروف
-                </button>
-            </div>
-        </form>
-    </div>
+        // مصفوفة لتخزين حالة الطوب
+        const bricks = [];
+        for (let c = 0; c < brickColumnCount; c++) {
+            bricks[c] = [];
+            for (let r = 0; r < brickRowCount; r++) {
+                bricks[c][r] = { x: 0, y: 0, status: 1 }; // status 1 يعني الطوبة موجودة
+            }
+        }
 
-    <div id="previewModal" class="modal">
-        <div class="modal-content">
-            <div id="warning" class="warning">
-                <i class="fas fa-exclamation-triangle"></i> تحذير: قد يكون هذا المصروف مكرراً! هل تريد المتابعة؟
-            </div>
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">
-                <i class="fas fa-check-circle text-green-500"></i> تأكيد المصروف
-            </h2>
-            <p id="previewText" class="text-gray-600 mb-6 text-right"></p>
-            <div>
-                <button onclick="saveExpense()" class="btn">
-                    <i class="fas fa-save ml-2"></i> حفظ نهائي
-                </button>
-                <button onclick="hideModal()" class="btn btn-secondary mr-4">
-                    <i class="fas fa-times ml-2"></i> إلغاء
-                </button>
-            </div>
-        </div>
-    </div>
+        // متغيرات النقاط
+        let score = 0;
+        let lives = 3;
 
-    <div id="successModal" class="modal">
-        <div class="modal-content">
-            <h2 class="text-3xl font-bold text-gray-800 mb-4 text-green-500">
-                <i class="fas fa-check-circle"></i> نجاح! 🎉
-            </h2>
-            <p class="text-gray-600 mb-6 font-medium">تم تسجيل المصروف وتحديث الأرصدة بنجاح.</p>
-            <div>
-                <button onclick="hideSuccessModal()" class="btn btn-login">
-                    <i class="fas fa-thumbs-up ml-2"></i> حسناً
-                </button>
-            </div>
-        </div>
-    </div>
+        // ------------------
+        // الوظائف الرئيسية للعبة
+        // ------------------
 
-    <script src="script.js" type="module"></script> 
+        // 1. وظيفة رسم الكرة
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+            ctx.fillStyle = "#0095DD";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        // 2. وظيفة رسم المضرب
+        function drawPaddle() {
+            ctx.beginPath();
+            ctx.rect(paddleX, HEIGHT - paddleHeight, paddleWidth, paddleHeight);
+            ctx.fillStyle = "#0095DD";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        // 3. وظيفة رسم الطوب
+        function drawBricks() {
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    if (bricks[c][r].status === 1) {
+                        const brickX = (c * (brickWidth + brickPadding)) + brickOffsetLeft;
+                        const brickY = (r * (brickHeight + brickPadding)) + brickOffsetTop;
+                        bricks[c][r].x = brickX;
+                        bricks[c][r].y = brickY;
+                        ctx.beginPath();
+                        ctx.rect(brickX, brickY, brickWidth, brickHeight);
+                        ctx.fillStyle = "#0095DD";
+                        ctx.fill();
+                        ctx.closePath();
+                    }
+                }
+            }
+        }
+
+        // 4. وظيفة الكشف عن تصادم الكرة مع الطوب
+        function collisionDetection() {
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    const b = bricks[c][r];
+                    if (b.status === 1) {
+                        if (x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
+                            dy = -dy; // عكس اتجاه الكرة
+                            b.status = 0; // إخفاء الطوبة
+                            score++;
+
+                            if (score === brickRowCount * brickColumnCount) {
+                                alert("🎉 تهانينا! لقد فزت! 🎉");
+                                document.location.reload(); // إعادة تحميل اللعبة
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 5. وظيفة رسم النقاط والأرواح
+        function drawScore() {
+            ctx.font = "16px Arial";
+            ctx.fillStyle = "#0095DD";
+            ctx.fillText("النقاط: " + score, 8, 20);
+        }
+
+        function drawLives() {
+            ctx.font = "16px Arial";
+            ctx.fillStyle = "#0095DD";
+            ctx.fillText("الأرواح: " + lives, WIDTH - 65, 20);
+        }
+
+        // 6. وظيفة تحديث الإطار الرئيسي للعبة (Loop)
+        function draw() {
+            // مسح الشاشة قبل رسم الإطار الجديد
+            ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+            drawBricks();
+            drawBall();
+            drawPaddle();
+            drawScore();
+            drawLives();
+            collisionDetection();
+
+            // تصادم الكرة مع الجدران (اليمين واليسار والأعلى)
+            if (x + dx > WIDTH - ballRadius || x + dx < ballRadius) {
+                dx = -dx;
+            }
+            if (y + dy < ballRadius) {
+                dy = -dy;
+            } 
+            // تصادم الكرة مع الأسفل (خسارة حياة)
+            else if (y + dy > HEIGHT - ballRadius) {
+                // تصادم الكرة مع المضرب
+                if (x > paddleX && x < paddleX + paddleWidth) {
+                    dy = -dy;
+                }
+                // خسارة حياة
+                else {
+                    lives--;
+                    if (!lives) {
+                        alert("💔 نهاية اللعبة!");
+                        document.location.reload(); // إعادة تحميل اللعبة
+                    } else {
+                        // إعادة وضع الكرة والمضرب
+                        x = WIDTH / 2;
+                        y = HEIGHT - 30;
+                        dx = 2;
+                        dy = -2;
+                        paddleX = (WIDTH - paddleWidth) / 2;
+                    }
+                }
+            }
+
+            // حركة المضرب بالضغط على المفاتيح
+            if (rightPressed && paddleX < WIDTH - paddleWidth) {
+                paddleX += 7;
+            } else if (leftPressed && paddleX > 0) {
+                paddleX -= 7;
+            }
+
+            // تحديث موضع الكرة
+            x += dx;
+            y += dy;
+
+            // استدعاء دالة draw مرة أخرى للتحريك المستمر (Loop)
+            requestAnimationFrame(draw);
+        }
+
+        // ------------------
+        // معالجة المدخلات (Events)
+        // ------------------
+
+        document.addEventListener("keydown", keyDownHandler, false);
+        document.addEventListener("keyup", keyUpHandler, false);
+
+        function keyDownHandler(e) {
+            if (e.key === "Right" || e.key === "ArrowRight") {
+                rightPressed = true;
+            } else if (e.key === "Left" || e.key === "ArrowLeft") {
+                leftPressed = true;
+            }
+        }
+
+        function keyUpHandler(e) {
+            if (e.key === "Right" || e.key === "ArrowRight") {
+                rightPressed = false;
+            } else if (e.key === "Left" || e.key === "ArrowLeft") {
+                leftPressed = false;
+            }
+        }
+
+        // بدء اللعبة
+        draw();
+
+    </script>
 </body>
 </html>
