@@ -10,7 +10,7 @@
     <style>
     /* 💡 تم تطوير الأنماط لتبدو ككشف حساب بنكي */
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
-    
+
     body {
         background-color: #F8F9FA; 
         font-family: 'Cairo', sans-serif; 
@@ -26,7 +26,7 @@
         width: 100%;
         margin: 40px auto;
     }
-    
+
     /* أنماط ملخص الديون */
     .debt-summary-card { 
         padding: 25px; 
@@ -49,7 +49,7 @@
 
     /* 🛑 الأنماط الجديدة لسجل العمليات (كشف الحساب) 🛑 */
     #expensesContainer {
-        display: block; /* إلغاء الـ Grid */
+        display: block; 
         border: 1px solid #E2E8F0;
         border-radius: 12px;
         overflow: hidden;
@@ -70,8 +70,9 @@
         border-bottom: none;
     }
 
+    /* تغيير الترتيب والحجم ليماثل الصورة */
     .transaction-amount {
-        width: 120px; /* لتثبيت عرض المبلغ والتاريخ */
+        width: 140px; /* لزيادة العرض قليلاً للمبلغ والتاريخ */
         text-align: right;
         order: 3; /* يضع المبلغ في أقصى اليسار */
     }
@@ -88,21 +89,25 @@
 
     /* أنماط الأيقونات الدائرية */
     .credit-icon, .debit-icon, .neutral-icon {
-        width: 32px;
-        height: 32px;
+        width: 38px;
+        height: 38px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.8rem;
+        font-size: 0.9rem;
     }
+    /* حركة داخلة (دين لك) - أخضر */
     .credit-icon {
-        background-color: #38A169; /* أخضر */
-        color: white;
+        background-color: #EDF7ED; 
+        color: #38A169; 
+        border: 1px solid #38A169;
     }
+    /* حركة خارجة (دين عليك) - أحمر */
     .debit-icon {
-        background-color: #E53E3E; /* أحمر */
-        color: white;
+        background-color: #FEEEEE; 
+        color: #E53E3E; 
+        border: 1px solid #E53E3E;
     }
     .neutral-icon {
         background-color: #CBD5E0; /* رمادي */
@@ -148,7 +153,7 @@
                 </a>
             </div>
         </div>
-        
+
         <h2 class="text-2xl font-bold text-gray-800 mb-4 pt-4">
             <i class="fas fa-balance-scale ml-2 text-yellow-600"></i> ملخص الدين الحالي
         </h2>
