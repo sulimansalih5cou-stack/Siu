@@ -33,13 +33,11 @@ let currentUserDB = null;
 
 /**
  * دالة تنسيق الأرقام مع فاصلة الآلاف.
- * عند الإدخال، يتم إزالة الفواصل القديمة ثم إضافة فاصلة الآلاف لتسهيل القراءة.
  * @param {HTMLInputElement} input - حقل الإدخال.
  */
 function formatNumber(input) {
     let value = input.value.replace(/,/g, '');
     if (!isNaN(value) && value !== '') {
-        // تنسيق الرقم مع فاصلة الآلاف
         input.value = parseFloat(value).toLocaleString('en-US'); 
     }
 }
@@ -57,7 +55,7 @@ function roundToTwo(num) {
  * تحديث عرض رصيد المستخدم الحالي وتلوين البطاقة (الأخضر/الأحمر).
  */
 function updateBalanceDisplay() {
-    if (!currentUserDB || !currentUserName) return;
+    if (!currentUserDB) return; // تم حذف currentUserName من الشرط لأنه تم تحديثه بالفعل
 
     const balanceElement = document.getElementById('currentBalance');
     const userNamePlaceholder = document.getElementById('userNamePlaceholder');
@@ -65,13 +63,12 @@ function updateBalanceDisplay() {
     if (balanceElement && userNamePlaceholder) { 
         const balanceCard = document.getElementById('currentBalanceCard');
 
-        // Note: تم تحديث userNamePlaceholder بواسطة showUserName() بالفعل
+        // 🛑 التعديل: حذف هذا السطر. سيتم تحديث الاسم فقط في showUserName()
         // userNamePlaceholder.textContent = currentUserName; 
 
         const balanceValue = currentUserDB.balance;
 
         const sign = balanceValue >= 0 ? '+' : '';
-        // استخدام toFixed للتقريب النهائي للعرض فقط
         const formattedBalance = sign + Math.abs(balanceValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
         balanceElement.textContent = formattedBalance;
@@ -146,7 +143,7 @@ function formatTimestamp(timestamp) {
 }
 
 /**
- * دالة جديدة لعرض اسم المستخدم فقط (للتأكد من ظهوره فوراً)
+ * 💡 دالة جديدة لعرض اسم المستخدم فقط (للتأكد من ظهوره فوراً)
  */
 function showUserName() {
     const userNamePlaceholder = document.getElementById('userNamePlaceholder');
@@ -214,7 +211,7 @@ function loadDataFromFirebase() {
 function previewExpense() {
     const title = document.getElementById('expenseTitle').value;
     
-    // 🛑 التعديل لحل مشكلة الفواصل: إزالة الفواصل قبل التحويل إلى رقم
+    // إزالة الفواصل قبل التحويل إلى رقم (Thousands Separator Fix)
     const rawAmount = document.getElementById('expenseAmount').value.replace(/,/g, '');
     const amount = parseFloat(rawAmount); 
 
@@ -284,7 +281,7 @@ async function saveExpense() {
     }
 
     const title = document.getElementById('expenseTitle').value;
-    // 🛑 التعديل لحل مشكلة الفواصل: إزالة الفواصل قبل التحويل إلى رقم
+    // إزالة الفواصل قبل التحويل إلى رقم (Thousands Separator Fix)
     const rawAmount = document.getElementById('expenseAmount').value.replace(/,/g, '');
     const amount = parseFloat(rawAmount); 
 
@@ -379,7 +376,6 @@ function displayHistory() {
 
     otherUsers.forEach(user => {
         const balance = user.balance || 0; 
-        // تنسيق الأرقام للعرض مع ضمان منزلتين عشريتين
         const formattedBalance = Math.abs(balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
         if (balance < -0.01) { // رصيده سالب، أي أنه مدين لك (أنت دائن)
@@ -415,12 +411,10 @@ function displayHistory() {
 
         if (isPayer) {
             const netPaid = expense.amount - share;
-            // تنسيق الأرقام للعرض
             statusText = `ربحت (دفعْتَ عنهم): +${netPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             cardClass = 'payer-card';
             statusIcon = '<i class="fas fa-arrow-up text-green-600"></i>';
         } else if (isParticipant) {
-            // تنسيق الأرقام للعرض
             statusText = `حصتك (عليك دين): -${share.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             cardClass = 'debtor-card';
             statusIcon = '<i class="fas fa-arrow-down text-red-600"></i>';
@@ -474,7 +468,8 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUserID = user.uid;
         currentUserName = user.displayName;
-        showUserName(); // 💡 تحديث اسم المستخدم فوراً بعد المصادقة
+        showUserName(); // ✅ التعديل الرئيسي: تحديث اسم المستخدم فوراً وبشكل منفصل
+
         loadDataFromFirebase();
 
         const logoutBtn = document.getElementById('logoutButton');
