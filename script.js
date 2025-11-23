@@ -502,3 +502,128 @@ window.formatNumber = formatNumber;
 window.selectAllParticipants = selectAllParticipants;
 window.previewExpense = previewExpense;
 window.saveExpense = saveExpense;
+
+// ... (بقية الرمز في الأعلى) ...
+
+// 5. وظيفة عرض سجل العمليات والديون (مخصصة لـ history.html)
+function displayHistory() {
+    if (allUsers.length === 0 || !currentUserDB) return;
+
+    const expensesContainer = document.getElementById('expensesContainer');
+    const debtToYouList = document.getElementById('debtToYouList'); 
+    const debtFromYouList = document.getElementById('debtFromYouList');
+
+    if (!expensesContainer || !debtToYouList || !debtFromYouList) return;
+
+    // تنظيف الحاويات
+    expensesContainer.innerHTML = '';
+    debtToYouList.innerHTML = '';
+    debtFromYouList.innerHTML = '';
+
+    const loadingMessage = document.getElementById('loadingMessage');
+    if (loadingMessage) loadingMessage.style.display = 'none'; 
+
+    // أ. عرض ملخص الديون (باستخدام التنسيق الجديد)
+    let hasDebtToYou = false;
+    let hasDebtFromYou = false;
+    const otherUsers = allUsers.filter(u => u.uid !== currentUserID); 
+
+    otherUsers.forEach(user => {
+        const balance = user.balance || 0; 
+        const roundedBalance = roundToTwo(balance); 
+        const formattedBalance = Math.abs(roundedBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        if (roundedBalance < -0.01) { // رصيده سالب، أي أنه مدين لك (أنت دائن)
+            debtToYouList.innerHTML += `
+                <div class="debt-list-item">
+                    <span>${user.displayName}</span>
+                    <span class="text-green-700">${formattedBalance} SAR</span>
+                </div>
+            `;
+            hasDebtToYou = true;
+        } else if (roundedBalance > 0.01) { // رصيده موجب، أي أنت مدين له
+            debtFromYouList.innerHTML += `
+                 <div class="debt-list-item">
+                    <span>${user.displayName}</span>
+                    <span class="text-red-700">${formattedBalance} SAR</span>
+                </div>
+            `;
+            hasDebtFromYou = true;
+        }
+    });
+
+    if (!hasDebtToYou) {
+        debtToYouList.innerHTML = `<p class="text-gray-500 font-normal"><i class="fas fa-check-circle ml-1"></i> لا أحد مدين لك حالياً.</p>`;
+    }
+    if (!hasDebtFromYou) {
+        debtFromYouList.innerHTML = `<p class="text-gray-500 font-normal"><i class="fas fa-check-circle ml-1"></i> لا تدين لأحد حالياً.</p>`;
+    }
+
+    // ب. إنشاء سجل العمليات (مستوحى من كشف الحساب البنكي)
+    if (expenses.length === 0) {
+        expensesContainer.innerHTML = `<p class="text-center text-gray-500 col-span-full mt-8">لا توجد مصروفات مسجلة بعد.</p>`;
+        return;
+    }
+
+    expenses.forEach(expense => {
+        const isPayer = expense.payer_id === currentUserID;
+        const isParticipant = expense.participants_ids.includes(currentUserID);
+        const share = expense.share;
+        
+        // 1. حساب صافي الحركة على رصيدك
+        let netMovement = 0;
+        let movementType = 'حركة غير معنية';
+        let movementDetails = '';
+
+        if (isPayer) {
+            // أنت الدافع: دفعت المبلغ بالكامل لكن حصتك خُصمت (الباقي دين لك)
+            netMovement = expense.amount - share; 
+            movementType = 'دفعة لك (مدفوع عنهم)';
+            movementDetails = `دفعت ${expense.amount.toLocaleString('en-US')} SAR عن ${expense.participants_ids.length - 1} مشاركين. حصتك: ${share.toLocaleString('en-US')} SAR`;
+        } else if (isParticipant) {
+            // أنت مشارك و الدافع شخص آخر: حصتك دين عليك
+            netMovement = -share; 
+            movementType = 'دين عليك (حصتك)';
+            movementDetails = `حصة المصروف: ${share.toLocaleString('en-US')} SAR. الدافع: ${getUserNameById(expense.payer_id)}.`;
+        } else {
+            // لست مشاركاً ولست دافعاً
+            netMovement = 0; 
+            movementType = 'خارج الدائرة';
+            movementDetails = `الدافع: ${getUserNameById(expense.payer_id)}.`;
+        }
+        
+        // 2. تحديد الألوان والأيقونات
+        const isCredit = netMovement > 0.01;
+        const isDebit = netMovement < -0.01;
+        
+        const amountClass = isCredit ? 'text-green-600' : isDebit ? 'text-red-600' : 'text-gray-500';
+        const movementIcon = isCredit ? 'fas fa-arrow-down fa-rotate-180' : 'fas fa-arrow-up';
+        const iconClass = isCredit ? 'credit-icon' : isDebit ? 'debit-icon' : 'neutral-icon';
+
+        const { date: formattedDate } = formatTimestamp(expense.timestamp);
+        const formattedNetMovement = netMovement.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        
+        // 3. بناء سطر الحركة
+        const rowHTML = `
+            <div class="transaction-row ${isCredit ? 'credit-row' : isDebit ? 'debit-row' : 'neutral-row'}">
+                <div class="transaction-amount">
+                    <span class="font-bold ${amountClass}">${formattedNetMovement}</span>
+                    <span class="text-gray-500 text-sm block">${formattedDate}</span>
+                </div>
+                
+                <div class="transaction-details">
+                    <p class="text-sm font-semibold text-gray-800">${expense.title}</p>
+                    <p class="text-xs text-gray-600">${movementType}</p>
+                    <p class="text-xs text-gray-500 mt-1">المشاركون: ${expense.participants_ids.map(uid => getUserNameById(uid)).join(', ')}</p>
+                </div>
+                
+                <div class="transaction-icon">
+                    <div class="${iconClass}">
+                         <i class="${movementIcon}"></i>
+                    </div>
+                </div>
+            </div>
+        `;
+        expensesContainer.innerHTML += rowHTML;
+    });
+}
