@@ -3,185 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سجل العمليات - Smart Dorm Expenses</title>
+    <title>سجل المصروفات - Smart Dorm</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 
     <style>
-    /* 💡 تم تطوير الأنماط لتبدو ككشف حساب بنكي */
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+        body {
+            background-color: #F3F4F6; 
+            font-family: 'Cairo', sans-serif; 
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); 
+            padding: 30px;
+            max-width: 900px;
+            width: 100%;
+            margin: 20px auto;
+        }
 
-    body {
-        background-color: #F8F9FA; 
-        font-family: 'Cairo', sans-serif; 
-        min-height: 100vh;
-        padding: 20px;
-    }
-    .container {
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); 
-        padding: 40px;
-        max-width: 1000px;
-        width: 100%;
-        margin: 40px auto;
-    }
+        /* --- أنماط سجل العمليات الجديد --- */
+        #expensesContainer {
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: #fff;
+        }
 
-    /* أنماط ملخص الديون */
-    .debt-summary-card { 
-        padding: 25px; 
-        border-radius: 15px; 
-        font-weight: 600; 
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-    }
-    .debt-to-you { background-color: #ECFDF5; border: 1px solid #38A169; } 
-    .debt-from-you { background-color: #FEF2F2; border: 1px solid #E53E3E; } 
+        .transaction-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start; /* محاذاة العناصر للأعلى قليلاً */
+            padding: 16px 20px;
+            border-bottom: 1px solid #F3F4F6;
+            transition: background-color 0.2s;
+        }
+        .transaction-row:last-child { border-bottom: none; }
+        .transaction-row:hover { background-color: #F9FAFB; }
 
-    .debt-list-item {
-        padding: 8px 0;
-        border-bottom: 1px dotted rgba(0, 0, 0, 0.1);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.95rem;
-    }
-    .debt-list-item:last-child { border-bottom: none; }
+        /* ترتيب العناصر (بسبب RTL) */
+        .transaction-icon {
+            flex: 0 0 50px;
+            order: 1; /* الأيقونة يمين */
+        }
+        .transaction-details {
+            flex-grow: 1;
+            padding-right: 15px;
+            padding-left: 15px;
+            order: 2; /* التفاصيل وسط */
+        }
+        .transaction-amount {
+            flex: 0 0 160px; /* عرض ثابت للمبلغ والتاريخ */
+            text-align: left; /* الأرقام يسار */
+            order: 3; /* المبلغ يسار */
+        }
 
-    /* 🛑 الأنماط الجديدة لسجل العمليات (كشف الحساب) 🛑 */
-    #expensesContainer {
-        display: block; 
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        overflow: hidden;
-    }
-    .transaction-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 15px 20px;
-        border-bottom: 1px solid #F1F1F1;
-        background-color: white;
-        transition: background-color 0.2s;
-    }
-    .transaction-row:hover {
-        background-color: #FAFAFA;
-    }
-    .transaction-row:last-child {
-        border-bottom: none;
-    }
+        /* الأيقونات والأسهم */
+        .icon-circle {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+        /* دين لك (أخضر) */
+        .credit-style .icon-circle {
+            background-color: #ECFDF5;
+            color: #059669;
+            border: 1px solid #A7F3D0;
+        }
+        /* دين عليك (أحمر) */
+        .debit-style .icon-circle {
+            background-color: #FEF2F2;
+            color: #DC2626;
+            border: 1px solid #FECACA;
+        }
+        /* محايد */
+        .neutral-style .icon-circle {
+            background-color: #F3F4F6;
+            color: #6B7280;
+        }
 
-    /* تغيير الترتيب والحجم ليماثل الصورة */
-    .transaction-amount {
-        width: 140px; /* لزيادة العرض قليلاً للمبلغ والتاريخ */
-        text-align: right;
-        order: 3; /* يضع المبلغ في أقصى اليسار */
-    }
-    .transaction-details {
-        flex-grow: 1;
-        padding: 0 15px;
-        order: 2;
-    }
-    .transaction-icon {
-        width: 40px;
-        order: 1; /* يضع الأيقونة في أقصى اليمين */
-        text-align: center;
-    }
-
-    /* أنماط الأيقونات الدائرية */
-    .credit-icon, .debit-icon, .neutral-icon {
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.9rem;
-    }
-    /* حركة داخلة (دين لك) - أخضر */
-    .credit-icon {
-        background-color: #EDF7ED; 
-        color: #38A169; 
-        border: 1px solid #38A169;
-    }
-    /* حركة خارجة (دين عليك) - أحمر */
-    .debit-icon {
-        background-color: #FEEEEE; 
-        color: #E53E3E; 
-        border: 1px solid #E53E3E;
-    }
-    .neutral-icon {
-        background-color: #CBD5E0; /* رمادي */
-        color: #4A5568;
-    }
-
-    .btn-action {
-        background-color: #4C8AFB; 
-        color: white; 
-        padding: 10px 20px; 
-        border-radius: 8px;
-        font-weight: 700; 
-        transition: background-color 0.3s ease;
-    }
-    .btn-action:hover {
-        background-color: #3B6FD6;
-    }
-    .clear-debt-btn {
-         background-color: #F6AD55;
-         color: white; 
-         padding: 8px 16px; 
-         border-radius: 6px;
-         font-weight: 600;
-         transition: background-color 0.3s;
-         cursor: pointer;
-    }
-</style>
-
+        /* أزرار التنقل */
+        .btn-back {
+            background-color: #3B82F6;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            transition: 0.3s;
+        }
+        .btn-back:hover { background-color: #2563EB; }
+        
+        /* ملخص الديون */
+        .debt-card {
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+        }
+        .debt-card.positive { background-color: #ECFDF5; border-color: #A7F3D0; }
+        .debt-card.negative { background-color: #FEF2F2; border-color: #FECACA; }
+    </style>
 </head>
 <body>
 
     <div class="container">
-        <div class="flex flex-col md:flex-row justify-between items-center mb-8 border-b pb-4">
-            <h1 class="text-3xl font-bold text-gray-800 mb-4 md:mb-0">
-                <i class="fas fa-history text-blue-500 ml-2"></i> سجل العمليات والمصروفات
+        <div class="flex justify-between items-center mb-6 pb-4 border-b">
+            <h1 class="text-2xl font-bold text-gray-800">
+                <i class="fas fa-history text-blue-600 ml-2"></i> سجل المصروفات
             </h1>
-            <div class="flex space-x-4 space-x-reverse">
-                <a href="#" class="clear-debt-btn">
-                    <i class="fas fa-handshake ml-2"></i> تسوية الديون (قريباً)
-                </a>
-                <a href="index.html" class="btn-action">
-                    <i class="fas fa-arrow-right ml-2"></i> العودة للإضافة
-                </a>
+            <a href="index.html" class="btn-back">
+                <i class="fas fa-plus ml-2"></i> إضافة مصروف
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <div class="debt-card positive">
+                <h3 class="font-bold text-green-800 mb-2">💰 مبالغ لك (الناس مديونين لك)</h3>
+                <div id="debtToYouList" class="text-sm text-gray-700 space-y-1">جاري التحميل...</div>
+            </div>
+            <div class="debt-card negative">
+                <h3 class="font-bold text-red-800 mb-2">💸 مبالغ عليك (أنت مديون)</h3>
+                <div id="debtFromYouList" class="text-sm text-gray-700 space-y-1">جاري التحميل...</div>
             </div>
         </div>
 
-        <h2 class="text-2xl font-bold text-gray-800 mb-4 pt-4">
-            <i class="fas fa-balance-scale ml-2 text-yellow-600"></i> ملخص الدين الحالي
-        </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-            <div class="debt-summary-card debt-to-you">
-                <h3 class="text-xl font-bold mb-3"><i class="fas fa-hand-holding-usd ml-2"></i> المستحق لك (أنت الدائن)</h3>
-                <div id="debtToYouList" class="space-y-2">
-                    <p class="text-sm font-normal text-gray-600">يتم التحميل...</p>
-                </div>
-            </div>
-
-            <div class="debt-summary-card debt-from-you">
-                <h3 class="text-xl font-bold mb-3"><i class="fas fa-money-bill-wave ml-2"></i> المستحق عليك (أنت المدين)</h3>
-                <div id="debtFromYouList" class="space-y-2">
-                    <p class="text-sm font-normal text-gray-600">يتم التحميل...</p>
-                </div>
-            </div>
-        </div>
-
-        <hr class="my-8 border-gray-200">
-
-        <h2 class="text-2xl font-bold text-gray-800 mb-6">
-            <i class="fas fa-list-ul ml-2 text-purple-600"></i> سجل المصروفات التفصيلي
-        </h2>
+        <h2 class="text-xl font-bold text-gray-800 mb-4">أحدث العمليات</h2>
         <div id="expensesContainer">
-            <p class="text-center text-gray-500 col-span-full" id="loadingMessage">يتم تحميل البيانات...</p>
+            <p class="text-center text-gray-500 py-8" id="loadingMessage">يتم تحميل البيانات...</p>
         </div>
-
     </div>
 
     <script src="script.js" type="module"></script> 
