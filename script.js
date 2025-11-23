@@ -32,13 +32,17 @@ let currentUserDB = null;
 // ⚙️ 3. وظائف تحديث الواجهة والـ DOM والتنسيق
 
 /**
- * دالة تنسيق الأرقام مع فاصلة الآلاف.
+ * دالة تنسيق الأرقام مع فاصلة الآلاف في حقل الإدخال.
  * @param {HTMLInputElement} input - حقل الإدخال.
  */
 function formatNumber(input) {
+    // 1. إزالة أي فواصل موجودة
     let value = input.value.replace(/,/g, '');
+    
+    // 2. التحقق مما إذا كانت القيمة رقماً صحيحاً
     if (!isNaN(value) && value !== '') {
-        input.value = parseFloat(value).toLocaleString('en-US'); 
+        // 3. تحويلها إلى رقم ثم تنسيقها بإضافة فاصلة الآلاف
+        input.value = parseFloat(value).toLocaleString('en-US', { maximumFractionDigits: 0 }); 
     }
 }
 
@@ -55,7 +59,7 @@ function roundToTwo(num) {
  * تحديث عرض رصيد المستخدم الحالي وتلوين البطاقة (الأخضر/الأحمر).
  */
 function updateBalanceDisplay() {
-    if (!currentUserDB) return; // تم حذف currentUserName من الشرط لأنه تم تحديثه بالفعل
+    if (!currentUserDB) return; 
 
     const balanceElement = document.getElementById('currentBalance');
     const userNamePlaceholder = document.getElementById('userNamePlaceholder');
@@ -158,7 +162,7 @@ function showUserName() {
 function loadDataFromFirebase() {
     if (!currentUserID) return; 
 
-    // 💡 الاستماع لتغييرات المستخدمين (الأرصدة) - التعديل لضمان الترتيب
+    // 💡 الاستماع لتغييرات المستخدمين (الأرصدة)
     onValue(ref(db, 'users'), (snapshot) => {
         if (snapshot.exists()) {
             const usersObject = snapshot.val();
@@ -278,7 +282,7 @@ async function saveExpense() {
     }
 
     const title = document.getElementById('expenseTitle').value;
-    // إزالة الفواصل قبل التحويل إلى رقم (Thousands Separator Fix)
+    // 🛑 الأهم: إزالة الفواصل قبل التحويل إلى رقم لضمان الحفظ السليم في Firebase
     const rawAmount = document.getElementById('expenseAmount').value.replace(/,/g, '');
     const amount = parseFloat(rawAmount); 
 
@@ -288,7 +292,7 @@ async function saveExpense() {
 
     // جمع IDs المشاركين
     const participantUIDs = Array.from(
-        document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]:checked')
+        document.querySelectorAll('#participantsCheckboxes input[type="checkbox']:checked')
     ).map(cb => cb.getAttribute('data-user-id'));
 
     // إضافة الدافع
@@ -367,7 +371,7 @@ function displayHistory() {
     const loadingMessage = document.getElementById('loadingMessage');
     if (loadingMessage) loadingMessage.style.display = 'none'; 
 
-    // أ. عرض ملخص الديون
+    // أ. عرض ملخص الديون (لا تغيير هنا)
     let hasDebtToYou = false;
     let hasDebtFromYou = false;
     const otherUsers = allUsers.filter(u => u.uid !== currentUserID); 
@@ -403,7 +407,7 @@ function displayHistory() {
         debtFromYouList.innerHTML = `<p class="text-gray-500 font-normal"><i class="fas fa-check-circle ml-1"></i> لا تدين لأحد حالياً.</p>`;
     }
 
-    // ب. إنشاء سجل العمليات (مستوحى من كشف الحساب البنكي)
+    // ب. إنشاء سجل العمليات (التغيير الرئيسي هنا)
     if (expenses.length === 0) {
         expensesContainer.innerHTML = `<p class="text-center text-gray-500 col-span-full mt-8">لا توجد مصروفات مسجلة بعد.</p>`;
         return;
@@ -412,28 +416,30 @@ function displayHistory() {
     expenses.forEach(expense => {
         const isPayer = expense.payer_id === currentUserID;
         const isParticipant = expense.participants_ids.includes(currentUserID);
-        const share = expense.share;
+        
+        // 🛑 الشرط الجديد: إخفاء أي معاملة المستخدم ليس طرفًا فيها
+        if (!isPayer && !isParticipant) {
+            return; // تخطي هذه المعاملة
+        }
 
-        // 1. حساب صافي الحركة على رصيدك
+        const share = expense.share;
+        const totalParticipants = expense.participants_ids.length;
+
+        // 1. حساب صافي الحركة على رصيدك وتحديد السياق
         let netMovement = 0;
-        let movementType = ''; // تفصيل الحركة داخل المستطيل
-        let movementDescription = ''; // وصف إضافي
+        let movementSourceOrDest = ''; // مصدر أو وجهة الحركة (اسم المستخدم الآخر/سياق المشاركة)
+        let movementContext = ''; // سياق الحركة (دافع أو حصة)
 
         if (isPayer) {
             // أنت الدافع: دفعت المبلغ بالكامل لكن حصتك خُصمت (الباقي دين لك)
             netMovement = expense.amount - share; 
-            movementType = `تحويل نقدي - بنك #`;
-            movementDescription = `دفعة لك (مدفوع عنهم). المبلغ الكلي: ${expense.amount.toLocaleString('en-US')} SAR`;
+            movementSourceOrDest = `أنت الدافع`;
+            movementContext = `صافي دين لك: ${roundToTwo(netMovement).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR`;
         } else if (isParticipant) {
             // أنت مشارك و الدافع شخص آخر: حصتك دين عليك
             netMovement = -share; 
-            movementType = 'دفعة - تحويل نقدي';
-            movementDescription = `حصتك في المصروف. الدافع: ${getUserNameById(expense.payer_id)}.`;
-        } else {
-            // لست مشاركاً ولست دافعاً - لا يوجد حركة رصيد صافية
-            netMovement = 0; 
-            movementType = 'عملية لا تؤثر على الرصيد';
-            movementDescription = `الدافع: ${getUserNameById(expense.payer_id)}.`;
+            movementSourceOrDest = `مصروف مشترك (دافع: ${getUserNameById(expense.payer_id)})`;
+            movementContext = `حصتك في المصروف: -${roundToTwo(share).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR`;
         }
 
         // 2. تحديد الألوان والأيقونات
@@ -442,11 +448,15 @@ function displayHistory() {
 
         const amountClass = isCredit ? 'text-green-600' : isDebit ? 'text-red-600' : 'text-gray-500';
         const movementSign = isCredit ? '+' : isDebit ? '-' : '';
-        const movementIcon = isCredit ? 'fas fa-arrow-down fa-rotate-180' : 'fas fa-arrow-up'; // سهم لأسفل (للداخل - Credit) أو لأعلى (للخارج - Debit)
+        const movementIcon = isCredit ? 'fas fa-arrow-down fa-rotate-180' : 'fas fa-arrow-up'; 
         const iconClass = isCredit ? 'credit-icon' : isDebit ? 'debit-icon' : 'neutral-icon';
 
-        const { date: formattedDate } = formatTimestamp(expense.timestamp);
+        const { date: formattedDate, time: formattedTime } = formatTimestamp(expense.timestamp);
         const formattedNetMovement = Math.abs(netMovement).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        
+        // تفاصيل المشاركين الكامله
+        const allParticipants = expense.participants_ids.map(uid => getUserNameById(uid));
+        const participantDetail = `المشاركون (${totalParticipants}): ${allParticipants.join(', ')}`;
 
         // 3. بناء سطر الحركة
         const rowHTML = `
@@ -459,14 +469,16 @@ function displayHistory() {
                 </div>
                 
                 <div class="transaction-details">
-                    <p class="text-sm font-semibold text-gray-800">${movementType}</p>
-                    <p class="text-xs text-gray-600">${expense.title}</p>
-                    <p class="text-xs text-gray-500 mt-1">${movementDescription}</p>
+                    <p class="text-sm font-semibold text-gray-800">${expense.title}</p>
+                    <p class="text-xs text-gray-600">${movementSourceOrDest}</p>
+                    <p class="text-xs text-gray-500 mt-1">${participantDetail}</p>
                 </div>
 
                 <div class="transaction-amount">
-                    <span class="font-bold ${amountClass}">${movementSign}${formattedNetMovement}</span>
-                    <span class="text-gray-500 text-xs block mt-1">${formattedDate}</span>
+                    <span class="font-bold text-base ${amountClass}">${movementSign}${formattedNetMovement} SAR</span>
+                    <span class="text-gray-500 text-xs block mt-1"><i class="far fa-calendar-alt ml-1"></i> ${formattedDate}</span>
+                    <span class="text-gray-500 text-xs block mt-1"><i class="far fa-clock ml-1"></i> ${formattedTime}</span>
+                    <span class="text-gray-500 text-xs block mt-1 font-bold">المبلغ الكلي: ${expense.amount.toLocaleString('en-US')} SAR</span>
                 </div>
                 
             </div>
@@ -481,7 +493,7 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUserID = user.uid;
         currentUserName = user.displayName;
-        showUserName(); // ✅ التعديل الرئيسي: تحديث اسم المستخدم فوراً وبشكل منفصل
+        showUserName(); 
 
         loadDataFromFirebase();
 
