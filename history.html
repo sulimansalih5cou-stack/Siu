@@ -8,117 +8,129 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        /* 💡 تم تطوير الأنماط المضمنة هنا */
-        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
-        
-        body {
-            background-color: #F8F9FA; /* خلفية أفتح وأهدأ */
-            font-family: 'Cairo', sans-serif; /* خط عربي أجمل */
-            min-height: 100vh;
-            padding: 20px;
-        }
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); /* ظل أنعم */
-            padding: 40px;
-            max-width: 1000px; /* توسيع العرض قليلاً */
-            width: 100%;
-            margin: 40px auto;
-        }
-        
-        /* أنماط ملخص الديون */
-        .debt-summary-card { 
-            padding: 25px; 
-            border-radius: 15px; 
-            font-weight: 600; 
-            transition: all 0.3s ease;
-        }
-        .debt-summary-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-        }
-        /* دائن لك (له عليك) */
-        .debt-to-you { 
-            background: linear-gradient(135deg, #E6FFFA 0%, #D1FAE5 100%); 
-            border: 1px solid #38A169; 
-            color: #065F46; 
-        } 
-        /* عليك دين (لك عليه) */
-        .debt-from-you { 
-            background: linear-gradient(135deg, #FFF5F5 0%, #FEE2E2 100%); 
-            border: 1px solid #E53E3E; 
-            color: #9B2C2C; 
-        } 
+    /* 💡 تم تطوير الأنماط لتبدو ككشف حساب بنكي */
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+    
+    body {
+        background-color: #F8F9FA; 
+        font-family: 'Cairo', sans-serif; 
+        min-height: 100vh;
+        padding: 20px;
+    }
+    .container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); 
+        padding: 40px;
+        max-width: 1000px;
+        width: 100%;
+        margin: 40px auto;
+    }
+    
+    /* أنماط ملخص الديون */
+    .debt-summary-card { 
+        padding: 25px; 
+        border-radius: 15px; 
+        font-weight: 600; 
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    }
+    .debt-to-you { background-color: #ECFDF5; border: 1px solid #38A169; } 
+    .debt-from-you { background-color: #FEF2F2; border: 1px solid #E53E3E; } 
 
-        /* الأنماط الخاصة ببطاقات العمليات */
-        #expensesContainer {
-            display: grid;
-            gap: 25px; /* زيادة التباعد */
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* بطاقات أكبر قليلاً */
-        }
-        .expense-card {
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            position: relative;
-        }
-        .expense-card:hover { 
-            transform: translateY(-3px); 
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-        }
-        
-        /* تلوين البطاقات حسب الحالة */
-        .payer-card { /* أنت دفعت عنهم */
-            background-color: #E6FFFA; 
-            border-right: 5px solid #38A169; /* خط جانبي أخضر مميز */
-        }
-        .debtor-card { /* أنت مدين */
-            background-color: #FFF5F5; 
-            border-right: 5px solid #E53E3E; /* خط جانبي أحمر مميز */
-        }
-        .neutral-card { /* لم تشارك */
-            background-color: #F7FAFC; 
-            border-right: 5px solid #CBD5E0; 
-        }
+    .debt-list-item {
+        padding: 8px 0;
+        border-bottom: 1px dotted rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.95rem;
+    }
+    .debt-list-item:last-child { border-bottom: none; }
 
-        .btn-action {
-            background-color: #4C8AFB; 
-            color: white; 
-            padding: 10px 20px; 
-            border-radius: 8px;
-            font-weight: 700; 
-            transition: background-color 0.3s ease;
-        }
-        .btn-action:hover {
-            background-color: #3B6FD6;
-        }
-        
-        .clear-debt-btn {
-             background-color: #F6AD55;
-             color: white; 
-             padding: 8px 16px; 
-             border-radius: 6px;
-             font-weight: 600;
-             transition: background-color 0.3s;
-             cursor: pointer;
-        }
-        .clear-debt-btn:hover {
-            background-color: #E38D33;
-        }
-        
-        .debt-list-item {
-            padding: 8px 0;
-            border-bottom: 1px dotted rgba(0, 0, 0, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .debt-list-item:last-child {
-            border-bottom: none;
-        }
-    </style>
+    /* 🛑 الأنماط الجديدة لسجل العمليات (كشف الحساب) 🛑 */
+    #expensesContainer {
+        display: block; /* إلغاء الـ Grid */
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .transaction-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        border-bottom: 1px solid #F1F1F1;
+        background-color: white;
+        transition: background-color 0.2s;
+    }
+    .transaction-row:hover {
+        background-color: #FAFAFA;
+    }
+    .transaction-row:last-child {
+        border-bottom: none;
+    }
+
+    .transaction-amount {
+        width: 120px; /* لتثبيت عرض المبلغ والتاريخ */
+        text-align: right;
+        order: 3; /* يضع المبلغ في أقصى اليسار */
+    }
+    .transaction-details {
+        flex-grow: 1;
+        padding: 0 15px;
+        order: 2;
+    }
+    .transaction-icon {
+        width: 40px;
+        order: 1; /* يضع الأيقونة في أقصى اليمين */
+        text-align: center;
+    }
+
+    /* أنماط الأيقونات الدائرية */
+    .credit-icon, .debit-icon, .neutral-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+    }
+    .credit-icon {
+        background-color: #38A169; /* أخضر */
+        color: white;
+    }
+    .debit-icon {
+        background-color: #E53E3E; /* أحمر */
+        color: white;
+    }
+    .neutral-icon {
+        background-color: #CBD5E0; /* رمادي */
+        color: #4A5568;
+    }
+
+    .btn-action {
+        background-color: #4C8AFB; 
+        color: white; 
+        padding: 10px 20px; 
+        border-radius: 8px;
+        font-weight: 700; 
+        transition: background-color 0.3s ease;
+    }
+    .btn-action:hover {
+        background-color: #3B6FD6;
+    }
+    .clear-debt-btn {
+         background-color: #F6AD55;
+         color: white; 
+         padding: 8px 16px; 
+         border-radius: 6px;
+         font-weight: 600;
+         transition: background-color 0.3s;
+         cursor: pointer;
+    }
+</style>
+
 </head>
 <body>
 
