@@ -33,13 +33,24 @@ let currentUserDB = null;
 
 /**
  * دالة تنسيق الأرقام مع فاصلة الآلاف.
+ * عند الإدخال، يتم إزالة الفواصل القديمة ثم إضافة فاصلة الآلاف لتسهيل القراءة.
  * @param {HTMLInputElement} input - حقل الإدخال.
  */
 function formatNumber(input) {
     let value = input.value.replace(/,/g, '');
     if (!isNaN(value) && value !== '') {
+        // تنسيق الرقم مع فاصلة الآلاف
         input.value = parseFloat(value).toLocaleString('en-US'); 
     }
+}
+
+/**
+ * دالة مساعدة لتقريب الأرقام إلى منزلتين عشريتين كرقم.
+ * @param {number} num - الرقم المراد تقريبه.
+ * @returns {number} الرقم المقرَّب.
+ */
+function roundToTwo(num) {
+    return Math.round(num * 100) / 100;
 }
 
 /**
@@ -54,11 +65,13 @@ function updateBalanceDisplay() {
     if (balanceElement && userNamePlaceholder) { 
         const balanceCard = document.getElementById('currentBalanceCard');
 
-        userNamePlaceholder.textContent = currentUserName;
+        // Note: تم تحديث userNamePlaceholder بواسطة showUserName() بالفعل
+        // userNamePlaceholder.textContent = currentUserName; 
 
         const balanceValue = currentUserDB.balance;
 
         const sign = balanceValue >= 0 ? '+' : '';
+        // استخدام toFixed للتقريب النهائي للعرض فقط
         const formattedBalance = sign + Math.abs(balanceValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
         balanceElement.textContent = formattedBalance;
@@ -67,7 +80,6 @@ function updateBalanceDisplay() {
         if (balanceValue < 0) {
             balanceCard.classList.add('negative');
         } else {
-             // إزالة النمط المضمن الذي قد يعارض الكلاس
              balanceCard.style.background = '';
         }
     }
@@ -86,7 +98,7 @@ function populateParticipants() {
     const participantsContainer = document.getElementById('participantsCheckboxes');
     if (participantsContainer) {
         participantsContainer.innerHTML = '';
-        
+
         allUsers.filter(u => u.uid !== currentUserID).forEach(user => { 
             const label = document.createElement('label');
             label.className = 'checkbox-item';
@@ -133,6 +145,16 @@ function formatTimestamp(timestamp) {
     return { date: formattedDate, time: formattedTime };
 }
 
+/**
+ * دالة جديدة لعرض اسم المستخدم فقط (للتأكد من ظهوره فوراً)
+ */
+function showUserName() {
+    const userNamePlaceholder = document.getElementById('userNamePlaceholder');
+    if (userNamePlaceholder && currentUserName) {
+        userNamePlaceholder.textContent = currentUserName;
+    }
+}
+
 
 // 📝 4. منطق قراءة وكتابة البيانات عبر Firebase
 
@@ -142,19 +164,27 @@ function formatTimestamp(timestamp) {
 function loadDataFromFirebase() {
     if (!currentUserID) return; 
 
-    // 💡 الاستماع لتغييرات المستخدمين (الأرصدة)
+    // 💡 الاستماع لتغييرات المستخدمين (الأرصدة) - التعديل لضمان الترتيب
     onValue(ref(db, 'users'), (snapshot) => {
         if (snapshot.exists()) {
             const usersObject = snapshot.val();
+            
+            // 1. تحديث قائمة جميع المستخدمين
             allUsers = Object.keys(usersObject).map(uid => ({ 
                 uid: uid,
                 ...usersObject[uid]
             }));
 
+            // 2. تحديد كائن المستخدم الحالي من القائمة المحدثة
             currentUserDB = allUsers.find(u => u.uid === currentUserID);
 
-            populateParticipants();
+            // 3. تحديث عناصر الواجهة بعد أن أصبحت البيانات جاهزة
+            populateParticipants(); 
             updateBalanceDisplay();
+
+        } else {
+             allUsers = [];
+             currentUserDB = null;
         }
     });
 
@@ -183,6 +213,8 @@ function loadDataFromFirebase() {
  */
 function previewExpense() {
     const title = document.getElementById('expenseTitle').value;
+    
+    // 🛑 التعديل لحل مشكلة الفواصل: إزالة الفواصل قبل التحويل إلى رقم
     const rawAmount = document.getElementById('expenseAmount').value.replace(/,/g, '');
     const amount = parseFloat(rawAmount); 
 
@@ -221,8 +253,8 @@ function previewExpense() {
             <li><span class="font-bold">اسم المصروف:</span> ${title}</li>
             <li><span class="font-bold">المبلغ الكلي:</span> ${amount.toLocaleString('en-US')} SAR</li>
             <li><span class="font-bold">عدد المشاركين:</span> ${totalParticipants} (${participantNames})</li>
-            <li><span class="font-bold">حصة كل شخص:</span> ${share.toFixed(2).toLocaleString('en-US')} SAR</li>
-            <li><span class="font-bold text-green-700">صافي رصيدك (دين لك):</span> +${netPaidForOthers.toFixed(2).toLocaleString('en-US')} SAR</li>
+            <li><span class="font-bold">حصة كل شخص:</span> ${roundToTwo(share).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR</li>
+            <li><span class="font-bold text-green-700">صافي رصيدك (دين لك):</span> +${roundToTwo(netPaidForOthers).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR</li>
         </ul>
     `;
 
@@ -252,6 +284,7 @@ async function saveExpense() {
     }
 
     const title = document.getElementById('expenseTitle').value;
+    // 🛑 التعديل لحل مشكلة الفواصل: إزالة الفواصل قبل التحويل إلى رقم
     const rawAmount = document.getElementById('expenseAmount').value.replace(/,/g, '');
     const amount = parseFloat(rawAmount); 
 
@@ -281,11 +314,11 @@ async function saveExpense() {
         if (user.uid === currentUserID) {
             // الدافع: يدفع كامل المبلغ لكن حصته تُخصم (دين له)
             const netPaidForOthers = amount - share;
-            newBalance = parseFloat((oldBalance + netPaidForOthers).toFixed(2));
+            newBalance = roundToTwo(oldBalance + netPaidForOthers);
         } 
         else if (participantUIDs.includes(user.uid)) {
             // المشارك: يدفع حصته (دين عليه)
-            newBalance = parseFloat((oldBalance - share).toFixed(2));
+            newBalance = roundToTwo(oldBalance - share);
         }
 
         usersUpdate[user.uid] = {
@@ -299,7 +332,7 @@ async function saveExpense() {
         amount: amount,
         payer_id: currentUserID, 
         participants_ids: participantUIDs,
-        share: parseFloat(share.toFixed(2)),
+        share: roundToTwo(share), // استخدام الدالة المساعدة لضمان دقة الحفظ
         date: new Date().toISOString().split('T')[0], 
         timestamp: Date.now() 
     };
@@ -346,7 +379,8 @@ function displayHistory() {
 
     otherUsers.forEach(user => {
         const balance = user.balance || 0; 
-        const formattedBalance = Math.abs(balance).toFixed(2).toLocaleString('en-US');
+        // تنسيق الأرقام للعرض مع ضمان منزلتين عشريتين
+        const formattedBalance = Math.abs(balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
         if (balance < -0.01) { // رصيده سالب، أي أنه مدين لك (أنت دائن)
             debtToYouList.innerHTML += `<p class="my-2"><i class="fas fa-arrow-up text-green-700 ml-1"></i> **${user.displayName}** مدين لك بمبلغ: ${formattedBalance} SAR</p>`;
@@ -381,11 +415,13 @@ function displayHistory() {
 
         if (isPayer) {
             const netPaid = expense.amount - share;
-            statusText = `ربحت (دفعْتَ عنهم): +${netPaid.toFixed(2).toLocaleString('en-US')}`;
+            // تنسيق الأرقام للعرض
+            statusText = `ربحت (دفعْتَ عنهم): +${netPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             cardClass = 'payer-card';
             statusIcon = '<i class="fas fa-arrow-up text-green-600"></i>';
         } else if (isParticipant) {
-            statusText = `حصتك (عليك دين): -${share.toFixed(2).toLocaleString('en-US')}`;
+            // تنسيق الأرقام للعرض
+            statusText = `حصتك (عليك دين): -${share.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             cardClass = 'debtor-card';
             statusIcon = '<i class="fas fa-arrow-down text-red-600"></i>';
         } else {
@@ -438,6 +474,7 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUserID = user.uid;
         currentUserName = user.displayName;
+        showUserName(); // 💡 تحديث اسم المستخدم فوراً بعد المصادقة
         loadDataFromFirebase();
 
         const logoutBtn = document.getElementById('logoutButton');
