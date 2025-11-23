@@ -63,9 +63,6 @@ function updateBalanceDisplay() {
     if (balanceElement && userNamePlaceholder) { 
         const balanceCard = document.getElementById('currentBalanceCard');
 
-        // 🛑 التعديل: حذف هذا السطر. سيتم تحديث الاسم فقط في showUserName()
-        // userNamePlaceholder.textContent = currentUserName; 
-
         const balanceValue = currentUserDB.balance;
 
         const sign = balanceValue >= 0 ? '+' : '';
@@ -136,7 +133,7 @@ function formatTimestamp(timestamp) {
     if (!timestamp) return { date: 'التاريخ غير متوفر', time: '' };
     const date = new Date(timestamp);
 
-    const formattedDate = date.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
+    const formattedDate = date.toLocaleDateString('ar-EG', { day: '2-digit', month: 'short', year: 'numeric' });
     const formattedTime = date.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
 
     return { date: formattedDate, time: formattedTime };
@@ -165,7 +162,7 @@ function loadDataFromFirebase() {
     onValue(ref(db, 'users'), (snapshot) => {
         if (snapshot.exists()) {
             const usersObject = snapshot.val();
-            
+
             // 1. تحديث قائمة جميع المستخدمين
             allUsers = Object.keys(usersObject).map(uid => ({ 
                 uid: uid,
@@ -210,7 +207,7 @@ function loadDataFromFirebase() {
  */
 function previewExpense() {
     const title = document.getElementById('expenseTitle').value;
-    
+
     // إزالة الفواصل قبل التحويل إلى رقم (Thousands Separator Fix)
     const rawAmount = document.getElementById('expenseAmount').value.replace(/,/g, '');
     const amount = parseFloat(rawAmount); 
@@ -362,159 +359,6 @@ function displayHistory() {
 
     if (!expensesContainer || !debtToYouList || !debtFromYouList) return;
 
-    expensesContainer.innerHTML = '';
-    debtToYouList.innerHTML = '';
-    debtFromYouList.innerHTML = '';
-
-    const loadingMessage = document.getElementById('loadingMessage');
-    if (loadingMessage) loadingMessage.style.display = 'none'; 
-
-    // أ. عرض ملخص الديون
-    let hasDebtToYou = false;
-    let hasDebtFromYou = false;
-    const otherUsers = allUsers.filter(u => u.uid !== currentUserID); 
-
-    otherUsers.forEach(user => {
-        const balance = user.balance || 0; 
-        const formattedBalance = Math.abs(balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-        if (balance < -0.01) { // رصيده سالب، أي أنه مدين لك (أنت دائن)
-            debtToYouList.innerHTML += `<p class="my-2"><i class="fas fa-arrow-up text-green-700 ml-1"></i> **${user.displayName}** مدين لك بمبلغ: ${formattedBalance} SAR</p>`;
-            hasDebtToYou = true;
-        } else if (balance > 0.01) { // رصيده موجب، أي أنت مدين له
-            debtFromYouList.innerHTML += `<p class="my-2"><i class="fas fa-arrow-down text-red-700 ml-1"></i> أنت مدين لـ **${user.displayName}** بمبلغ: ${formattedBalance} SAR</p>`;
-            hasDebtFromYou = true;
-        }
-    });
-
-    if (!hasDebtToYou) {
-        debtToYouList.innerHTML = `<p class="text-gray-500 font-normal"><i class="fas fa-check-circle"></i> لا أحد مدين لك حالياً.</p>`;
-    }
-    if (!hasDebtFromYou) {
-        debtFromYouList.innerHTML = `<p class="text-gray-500 font-normal"><i class="fas fa-check-circle"></i> لا تدين لأحد حالياً.</p>`;
-    }
-
-    // ب. إنشاء بطاقات المصروفات
-    if (expenses.length === 0) {
-        expensesContainer.innerHTML = `<p class="text-center text-gray-500 col-span-full">لا توجد مصروفات مسجلة بعد.</p>`;
-        return;
-    }
-
-    expenses.forEach(expense => {
-        const isPayer = expense.payer_id === currentUserID;
-        const isParticipant = expense.participants_ids.includes(currentUserID);
-        const share = expense.share;
-
-        let statusText = '';
-        let cardClass = 'neutral-card';
-        let statusIcon = '<i class="fas fa-info-circle text-gray-500"></i>';
-
-        if (isPayer) {
-            const netPaid = expense.amount - share;
-            statusText = `ربحت (دفعْتَ عنهم): +${netPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            cardClass = 'payer-card';
-            statusIcon = '<i class="fas fa-arrow-up text-green-600"></i>';
-        } else if (isParticipant) {
-            statusText = `حصتك (عليك دين): -${share.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            cardClass = 'debtor-card';
-            statusIcon = '<i class="fas fa-arrow-down text-red-600"></i>';
-        } else {
-            statusText = `لم تشارك في هذه العملية`;
-        }
-
-        const { date: formattedDate, time: formattedTime } = formatTimestamp(expense.timestamp);
-        const payerName = getUserNameById(expense.payer_id);
-        const participantNames = expense.participants_ids
-            .map(uid => getUserNameById(uid))
-            .join(', ');
-
-        const card = document.createElement('div');
-        card.className = `expense-card ${cardClass}`;
-        card.innerHTML = `
-            <div class="mb-4 text-center">
-                <p class="text-xl font-bold text-gray-800">${expense.title}</p>
-                <p class="text-3xl font-extrabold my-2 ${isPayer ? 'text-green-700' : 'text-red-700'}">
-                    ${expense.amount.toLocaleString('en-US')}
-                    <span class="text-sm font-normal text-gray-500"> SAR</span>
-                </p>
-            </div>
-            
-            <div class="border-t border-b border-gray-300 py-3 mb-3 text-sm">
-                <p class="flex justify-between items-center mb-1">
-                    <span class="font-medium text-gray-600"><i class="fas fa-calendar-alt ml-1"></i> التاريخ:</span>
-                    <span class="font-bold">${formattedDate}</span>
-                </p>
-                <p class="flex justify-between items-center">
-                    <span class="font-medium text-gray-600"><i class="fas fa-clock ml-1"></i> الوقت:</span>
-                    <span class="font-bold">${formattedTime}</span>
-                </p>
-            </div>
-
-            <p class="mb-2"><span class="font-medium text-gray-600"><i class="fas fa-user-tag ml-1"></i> الدافع:</span> <strong>${payerName}</strong></p>
-            
-            <p class="mb-4"><span class="font-medium text-gray-600"><i class="fas fa-users ml-1"></i> المشاركون:</span> <span class="text-sm">${participantNames}</span></p>
-
-            <div class="bg-white p-2 rounded-lg text-center ${isPayer ? 'text-green-700' : isParticipant ? 'text-red-700' : 'text-gray-500'} font-bold border border-current">
-                ${statusIcon} ${statusText}
-            </div>
-        `;
-        expensesContainer.appendChild(card);
-    });
-}
-
-
-// 6. مراقبة حالة المصادقة (Auth State) وتجهيز البيانات
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        currentUserID = user.uid;
-        currentUserName = user.displayName;
-        showUserName(); // ✅ التعديل الرئيسي: تحديث اسم المستخدم فوراً وبشكل منفصل
-
-        loadDataFromFirebase();
-
-        const logoutBtn = document.getElementById('logoutButton');
-        if (logoutBtn) {
-            logoutBtn.onclick = (e) => {
-                 e.preventDefault();
-                 auth.signOut().then(() => {
-                    window.location.href = 'auth.html'; 
-                 }).catch(error => {
-                     console.error("Logout Error:", error);
-                     window.location.href = 'auth.html'; 
-                 });
-            }
-        }
-
-    } else {
-        if (window.location.pathname.indexOf('auth.html') === -1) {
-            window.location.href = 'auth.html'; 
-        }
-    }
-});
-
-// 7. الدوال المتعلقة بالـ Modal (متاحة عالمياً)
-window.hideModal = () => document.getElementById('previewModal').classList.remove('show');
-window.showSuccessModal = () => document.getElementById('successModal').classList.add('show');
-window.hideSuccessModal = () => document.getElementById('successModal').classList.remove('show');
-
-// *إتاحة الدوال للـ HTML*
-window.formatNumber = formatNumber;
-window.selectAllParticipants = selectAllParticipants;
-window.previewExpense = previewExpense;
-window.saveExpense = saveExpense;
-
-// ... (بقية الرمز في الأعلى) ...
-
-// 5. وظيفة عرض سجل العمليات والديون (مخصصة لـ history.html)
-function displayHistory() {
-    if (allUsers.length === 0 || !currentUserDB) return;
-
-    const expensesContainer = document.getElementById('expensesContainer');
-    const debtToYouList = document.getElementById('debtToYouList'); 
-    const debtFromYouList = document.getElementById('debtFromYouList');
-
-    if (!expensesContainer || !debtToYouList || !debtFromYouList) return;
-
     // تنظيف الحاويات
     expensesContainer.innerHTML = '';
     debtToYouList.innerHTML = '';
@@ -523,7 +367,7 @@ function displayHistory() {
     const loadingMessage = document.getElementById('loadingMessage');
     if (loadingMessage) loadingMessage.style.display = 'none'; 
 
-    // أ. عرض ملخص الديون (باستخدام التنسيق الجديد)
+    // أ. عرض ملخص الديون
     let hasDebtToYou = false;
     let hasDebtFromYou = false;
     const otherUsers = allUsers.filter(u => u.uid !== currentUserID); 
@@ -569,61 +413,105 @@ function displayHistory() {
         const isPayer = expense.payer_id === currentUserID;
         const isParticipant = expense.participants_ids.includes(currentUserID);
         const share = expense.share;
-        
+
         // 1. حساب صافي الحركة على رصيدك
         let netMovement = 0;
-        let movementType = 'حركة غير معنية';
-        let movementDetails = '';
+        let movementType = ''; // تفصيل الحركة داخل المستطيل
+        let movementDescription = ''; // وصف إضافي
 
         if (isPayer) {
             // أنت الدافع: دفعت المبلغ بالكامل لكن حصتك خُصمت (الباقي دين لك)
             netMovement = expense.amount - share; 
-            movementType = 'دفعة لك (مدفوع عنهم)';
-            movementDetails = `دفعت ${expense.amount.toLocaleString('en-US')} SAR عن ${expense.participants_ids.length - 1} مشاركين. حصتك: ${share.toLocaleString('en-US')} SAR`;
+            movementType = `تحويل نقدي - بنك #`;
+            movementDescription = `دفعة لك (مدفوع عنهم). المبلغ الكلي: ${expense.amount.toLocaleString('en-US')} SAR`;
         } else if (isParticipant) {
             // أنت مشارك و الدافع شخص آخر: حصتك دين عليك
             netMovement = -share; 
-            movementType = 'دين عليك (حصتك)';
-            movementDetails = `حصة المصروف: ${share.toLocaleString('en-US')} SAR. الدافع: ${getUserNameById(expense.payer_id)}.`;
+            movementType = 'دفعة - تحويل نقدي';
+            movementDescription = `حصتك في المصروف. الدافع: ${getUserNameById(expense.payer_id)}.`;
         } else {
-            // لست مشاركاً ولست دافعاً
+            // لست مشاركاً ولست دافعاً - لا يوجد حركة رصيد صافية
             netMovement = 0; 
-            movementType = 'خارج الدائرة';
-            movementDetails = `الدافع: ${getUserNameById(expense.payer_id)}.`;
+            movementType = 'عملية لا تؤثر على الرصيد';
+            movementDescription = `الدافع: ${getUserNameById(expense.payer_id)}.`;
         }
-        
+
         // 2. تحديد الألوان والأيقونات
         const isCredit = netMovement > 0.01;
         const isDebit = netMovement < -0.01;
-        
+
         const amountClass = isCredit ? 'text-green-600' : isDebit ? 'text-red-600' : 'text-gray-500';
-        const movementIcon = isCredit ? 'fas fa-arrow-down fa-rotate-180' : 'fas fa-arrow-up';
+        const movementSign = isCredit ? '+' : isDebit ? '-' : '';
+        const movementIcon = isCredit ? 'fas fa-arrow-down fa-rotate-180' : 'fas fa-arrow-up'; // سهم لأسفل (للداخل - Credit) أو لأعلى (للخارج - Debit)
         const iconClass = isCredit ? 'credit-icon' : isDebit ? 'debit-icon' : 'neutral-icon';
 
         const { date: formattedDate } = formatTimestamp(expense.timestamp);
-        const formattedNetMovement = netMovement.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        
+        const formattedNetMovement = Math.abs(netMovement).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
         // 3. بناء سطر الحركة
         const rowHTML = `
             <div class="transaction-row ${isCredit ? 'credit-row' : isDebit ? 'debit-row' : 'neutral-row'}">
-                <div class="transaction-amount">
-                    <span class="font-bold ${amountClass}">${formattedNetMovement}</span>
-                    <span class="text-gray-500 text-sm block">${formattedDate}</span>
-                </div>
-                
-                <div class="transaction-details">
-                    <p class="text-sm font-semibold text-gray-800">${expense.title}</p>
-                    <p class="text-xs text-gray-600">${movementType}</p>
-                    <p class="text-xs text-gray-500 mt-1">المشاركون: ${expense.participants_ids.map(uid => getUserNameById(uid)).join(', ')}</p>
-                </div>
                 
                 <div class="transaction-icon">
                     <div class="${iconClass}">
                          <i class="${movementIcon}"></i>
                     </div>
                 </div>
+                
+                <div class="transaction-details">
+                    <p class="text-sm font-semibold text-gray-800">${movementType}</p>
+                    <p class="text-xs text-gray-600">${expense.title}</p>
+                    <p class="text-xs text-gray-500 mt-1">${movementDescription}</p>
+                </div>
+
+                <div class="transaction-amount">
+                    <span class="font-bold ${amountClass}">${movementSign}${formattedNetMovement}</span>
+                    <span class="text-gray-500 text-xs block mt-1">${formattedDate}</span>
+                </div>
+                
             </div>
         `;
         expensesContainer.innerHTML += rowHTML;
     });
 }
+
+
+// 6. مراقبة حالة المصادقة (Auth State) وتجهيز البيانات
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        currentUserID = user.uid;
+        currentUserName = user.displayName;
+        showUserName(); // ✅ التعديل الرئيسي: تحديث اسم المستخدم فوراً وبشكل منفصل
+
+        loadDataFromFirebase();
+
+        const logoutBtn = document.getElementById('logoutButton');
+        if (logoutBtn) {
+            logoutBtn.onclick = (e) => {
+                 e.preventDefault();
+                 auth.signOut().then(() => {
+                    window.location.href = 'auth.html'; 
+                 }).catch(error => {
+                     console.error("Logout Error:", error);
+                     window.location.href = 'auth.html'; 
+                 });
+            }
+        }
+
+    } else {
+        if (window.location.pathname.indexOf('auth.html') === -1) {
+            window.location.href = 'auth.html'; 
+        }
+    }
+});
+
+// 7. الدوال المتعلقة بالـ Modal (متاحة عالمياً)
+window.hideModal = () => document.getElementById('previewModal').classList.remove('show');
+window.showSuccessModal = () => document.getElementById('successModal').classList.add('show');
+window.hideSuccessModal = () => document.getElementById('successModal').classList.remove('show');
+
+// *إتاحة الدوال للـ HTML*
+window.formatNumber = formatNumber;
+window.selectAllParticipants = selectAllParticipants;
+window.previewExpense = previewExpense;
+window.saveExpense = saveExpense;
