@@ -3,7 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase
 import { getDatabase, ref, onValue, set, push } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
-// 🛑 إعدادات Firebase (استبدل القيم أدناه ببيانات مشروعك الخاصة)
+// 🛑 إعدادات Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyA2GNsXj4DzWyCYLKuVT3i1XBKfjX3ccuM",
   authDomain: "siu-students.firebaseapp.com",
@@ -15,121 +15,84 @@ const firebaseConfig = {
   measurementId: "G-SB6884R2FX"
 };
 
-// تهيئة التطبيق
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app); 
 const auth = getAuth(app); 
 
-// متغيرات عامة
+// متغيرات
 let allUsers = []; 
 let expenses = []; 
 let currentUserID = null; 
-let currentUserDB = null; 
 
-// ----------------------------------------------------------------
-// 🛠️ دوال مساعدة (Helper Functions)
-// ----------------------------------------------------------------
+// -------------------------------------------------------
+// 🛠️ دوال مساعدة
+// -------------------------------------------------------
 
-// دالة لجلب اسم المستخدم بواسطة المعرف
 function getUserNameById(uid) {
     const user = allUsers.find(u => u.uid === uid);
-    return user ? user.displayName : 'مستخدم غير معروف';
+    return user ? user.displayName : 'مستخدم';
 }
 
-// دالة التقريب لرقمين عشريين
 function roundToTwo(num) {
     return Math.round(num * 100) / 100;
 }
 
-// دالة تنسيق التاريخ والوقت
-function formatTimestamp(timestamp) {
+// تنسيق التاريخ مثل الصورة (17-Nov-2025)
+function formatBankDate(timestamp) {
     if (!timestamp) return { date: '--', time: '--' };
-    const date = new Date(timestamp);
-    return {
-        date: date.toLocaleDateString('ar-EG', { day: 'numeric', month: 'short', year: 'numeric' }),
-        time: date.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
-    };
+    const dateObj = new Date(timestamp);
+    
+    const day = dateObj.getDate();
+    const month = dateObj.toLocaleString('en-US', { month: 'short' });
+    const year = dateObj.getFullYear();
+    
+    const date = `${day}-${month}-${year}`;
+    const time = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+    return { date, time };
 }
 
-// ----------------------------------------------------------------
-// 🔄 المنطق الرئيسي: جلب البيانات وعرضها
-// ----------------------------------------------------------------
-
+// -------------------------------------------------------
+// 🔄 جلب البيانات
+// -------------------------------------------------------
 function loadDataFromFirebase() {
     if (!currentUserID) return; 
 
-    // 1. جلب المستخدمين وحساب الديون
+    // جلب المستخدمين
     onValue(ref(db, 'users'), (snapshot) => {
         if (snapshot.exists()) {
             const usersObject = snapshot.val();
             allUsers = Object.keys(usersObject).map(uid => ({ uid, ...usersObject[uid] }));
-            currentUserDB = allUsers.find(u => u.uid === currentUserID);
-            
-            // تحديث قوائم الديون
-            updateDebtSummary();
         }
     });
 
-    // 2. جلب المصروفات وعرض السجل
+    // جلب المصروفات
     onValue(ref(db, 'expenses'), (snapshot) => {
         if (snapshot.exists()) {
             const expensesObject = snapshot.val();
-            // تحويل الكائن لمصفوفة وترتيبها من الأحدث للأقدم
             expenses = Object.keys(expensesObject)
                 .map(key => ({ firebaseId: key, ...expensesObject[key] }))
                 .sort((a, b) => b.timestamp - a.timestamp);
+            
+            displayHistory();
         } else {
             expenses = [];
+            displayHistory();
         }
-        // عرض السجل
-        displayHistory();
     });
 }
 
-// تحديث ملخص الديون (المربعات الملونة في الأعلى)
-function updateDebtSummary() {
-    const debtToYouList = document.getElementById('debtToYouList');
-    const debtFromYouList = document.getElementById('debtFromYouList');
-    
-    if (!debtToYouList || !debtFromYouList) return;
-
-    debtToYouList.innerHTML = '';
-    debtFromYouList.innerHTML = '';
-
-    let hasDebtToYou = false;
-    let hasDebtFromYou = false;
-
-    allUsers.filter(u => u.uid !== currentUserID).forEach(user => {
-        const balance = roundToTwo(user.balance || 0);
-        // تنسيق الرقم بفاصلة
-        const formattedBal = Math.abs(balance).toLocaleString('en-US');
-
-        if (balance < -0.01) {
-            // رصيده سالب = هو مديون لك (أخضر)
-            debtToYouList.innerHTML += `<div class="flex justify-between border-b border-green-100 py-1 last:border-0"><span>${user.displayName}</span><span class="font-bold">${formattedBal} ريال</span></div>`;
-            hasDebtToYou = true;
-        } else if (balance > 0.01) {
-            // رصيده موجب = أنت مديون له (أحمر)
-            debtFromYouList.innerHTML += `<div class="flex justify-between border-b border-red-100 py-1 last:border-0"><span>${user.displayName}</span><span class="font-bold">${formattedBal} ريال</span></div>`;
-            hasDebtFromYou = true;
-        }
-    });
-
-    if (!hasDebtToYou) debtToYouList.innerHTML = '<span class="text-gray-400 text-xs">لا يوجد ديون لك</span>';
-    if (!hasDebtFromYou) debtFromYouList.innerHTML = '<span class="text-gray-400 text-xs">لا يوجد ديون عليك</span>';
-}
-
-// ----------------------------------------------------------------
-// 🎨 الوظيفة الأهم: عرض السجل بالشكل المطلوب
-// ----------------------------------------------------------------
+// -------------------------------------------------------
+// 🎨 عرض السجل (Bankak Layout)
+// -------------------------------------------------------
 function displayHistory() {
     const container = document.getElementById('expensesContainer');
     if (!container) return;
     
-    container.innerHTML = ''; // مسح المحتوى القديم
-    
+    container.innerHTML = ''; 
+
     if (expenses.length === 0) {
-        container.innerHTML = '<p class="text-center text-gray-500 py-8">لا توجد سجلات بعد.</p>';
+        container.innerHTML = '<p class="text-center text-gray-500 mt-10">لا توجد حركات مسجلة.</p>';
         return;
     }
 
@@ -137,101 +100,95 @@ function displayHistory() {
         const isPayer = expense.payer_id === currentUserID;
         const isParticipant = expense.participants_ids.includes(currentUserID);
 
-        // 🛑 شرط التصفية: إذا لم تكن دافعاً ولم تكن مشاركاً، لا تظهر العملية
+        // عرض الحركات التي تخصك فقط
         if (!isPayer && !isParticipant) return;
 
-        // 1. حساب الأرقام
-        const totalAmount = expense.amount; // المبلغ الكلي
-        const share = expense.share; // حصة الفرد
-        let netMovement = 0; // صافي الحركة في رصيدك
+        // الحسابات
+        const share = expense.share;
+        let netAmount = 0;
+        let isPositive = false;
 
-        // 2. تحديد النصوص والأسماء
-        let title = expense.title;
-        let subText = "";
-        let detailsText = "";
+        // نصوص وتفاصيل
+        let mainTitle = ""; // مثل "تحويل نقدي"
+        let detailsLine1 = ""; // التفاصيل الصغيرة
+        let detailsLine2 = ""; // التفاصيل الثانية
         
-        // 3. تحديد الأنماط (أخضر/أحمر)
-        let rowClass = "neutral-style"; // الافتراضي
-        let arrowIcon = "fa-minus";
-
         if (isPayer) {
-            // أنت دفعت المبلغ كاملاً
-            // صافي الحركة = المبلغ الكلي - حصتك (لأن الباقي دين لك)
-            netMovement = totalAmount - share; 
-            rowClass = "credit-style"; // أخضر
-            arrowIcon = "fa-arrow-down"; // سهم للأسفل (داخل جيبك مستقبلاً)
-
-            subText = `<span class="text-green-700 font-bold">أنت الدافع</span>`;
-            detailsText = `دفعت عنهم: ${(totalAmount - share).toLocaleString('en-US')} | حصتك: ${share.toLocaleString('en-US')}`;
-
-        } else if (isParticipant) {
-            // شخص آخر دفع وأنت مشارك
-            // صافي الحركة = -حصتك (دين عليك)
-            netMovement = -share;
-            rowClass = "debit-style"; // أحمر
-            arrowIcon = "fa-arrow-up"; // سهم للأعلى (خارج من جيبك)
-
-            // إظهار اسم الدافع بوضوح
+            // أنت دفعت = أخضر (دين لك)
+            netAmount = expense.amount - share;
+            isPositive = true;
+            mainTitle = `دفع مصاريف (أنت الدافع)`;
+            detailsLine1 = `المبلغ الكلي: ${expense.amount.toLocaleString('en-US')} SDG`;
+            detailsLine2 = `المشاركون: ${expense.participants_ids.length} أشخاص`;
+        } else {
+            // أنت مشارك = أحمر (دين عليك)
+            netAmount = share;
+            isPositive = false; // يظهر بالسالب
             const payerName = getUserNameById(expense.payer_id);
-            subText = `<span class="text-gray-700 font-semibold">الدافع: ${payerName}</span>`;
-            detailsText = `حصتك المطلوبة: ${share.toLocaleString('en-US')}`;
+            mainTitle = `مشاركة في مصروف`;
+            detailsLine1 = `الدافع: ${payerName}`;
+            detailsLine2 = `المبلغ الكلي: ${expense.amount.toLocaleString('en-US')} SDG`;
         }
 
-        // تحضير القيم للعرض
-        const { date, time } = formatTimestamp(expense.timestamp);
-        const formattedTotal = totalAmount.toLocaleString('en-US'); // مثل 5,000
-        const formattedNet = Math.abs(netMovement).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-        const sign = netMovement > 0 ? '+' : '-';
+        // الألوان والأيقونات
+        const colorClass = isPositive ? "amount-pos" : "amount-neg";
+        const sign = isPositive ? "+" : "-";
+        const iconClass = isPositive ? "icon-success" : "icon-danger";
+        const arrowIcon = isPositive ? "fa-arrow-down" : "fa-arrow-up"; // سهم لأسفل (إيداع) أو لأعلى (سحب)
         
-        // أسماء المشاركين (عداك)
-        const participantsNames = expense.participants_ids
-            .filter(id => id !== currentUserID) // اختياري: إخفاء اسمك من القائمة
-            .map(id => getUserNameById(id))
-            .join('، ');
+        // التاريخ
+        const { date, time } = formatBankDate(expense.timestamp);
 
-        // 4. بناء كود HTML للصف (Row)
-        const htmlRow = `
-        <div class="transaction-row ${rowClass}">
+        // HTML البطاقة
+        const cardHTML = `
+        <div class="bankak-card">
             
-            <div class="transaction-icon">
-                <div class="icon-circle">
-                    <i class="fas ${arrowIcon} transform ${isPayer ? 'rotate-180' : ''}"></i>
+            <div class="card-top-row">
+                <div class="amount-display ${colorClass}">
+                    ${sign} ${netAmount.toLocaleString('en-US', {minimumFractionDigits: 1})}
+                </div>
+                <div class="date-display">
+                    ${date}
                 </div>
             </div>
 
-            <div class="transaction-details">
-                <p class="font-bold text-gray-900 text-lg mb-1">${title}</p>
-                <div class="text-sm mb-1">
-                    ${subText} 
-                    <span class="text-gray-400 mx-1">|</span> 
-                    <span class="text-gray-600">المبلغ الكلي: <strong>${formattedTotal}</strong> ريال</span>
+            <div class="card-body-row">
+                
+                <div class="details-section">
+                    <p class="transaction-title">${expense.title}</p>
+                    <p class="transaction-sub">
+                        ${mainTitle}<br>
+                        <span style="font-family: sans-serif;">${detailsLine1}</span><br>
+                        <span class="text-xs text-gray-400">${time}</span>
+                    </p>
                 </div>
-                <p class="text-xs text-gray-500">
-                    <i class="fas fa-users ml-1"></i> المشاركون: ${participantsNames || 'الجميع'}
-                </p>
-            </div>
 
-            <div class="transaction-amount dir-ltr">
-                <p class="font-bold text-xl ${isPayer ? 'text-green-600' : 'text-red-600'}" style="direction: ltr;">
-                    ${sign}${formattedNet}
-                </p>
-                <p class="text-xs text-gray-400 mt-1">${date}</p>
-                <p class="text-xs text-gray-300">${time}</p>
-            </div>
+                <div class="bank-icon-container ${iconClass}">
+                    <span class="font-bold text-xs">ج.س</span>
+                    <div class="arrow-badge ${isPositive ? 'text-green-600' : 'text-red-600'}">
+                        <i class="fas ${arrowIcon}"></i>
+                    </div>
+                </div>
 
+            </div>
         </div>
         `;
 
-        container.innerHTML += htmlRow;
+        container.innerHTML += cardHTML;
     });
 }
 
-// ----------------------------------------------------------------
-// 🔐 إدارة تسجيل الدخول
-// ----------------------------------------------------------------
+// -------------------------------------------------------
+// 🔐 المصادقة وعرض بيانات المستخدم
+// -------------------------------------------------------
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUserID = user.uid;
+        
+        // ✅ تحديث اسم المستخدم والبريد في الهيدر
+        document.getElementById('displayHeaderName').textContent = user.displayName || 'مستخدم';
+        document.getElementById('displayHeaderEmail').textContent = user.email || '';
+
         loadDataFromFirebase();
     } else {
         window.location.href = 'auth.html';
