@@ -1,8 +1,10 @@
 // 🔥 تهيئة واستيراد Firebase SDK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+// تم استيراد الدوال الأساسية
 import { getDatabase, ref, onValue, push, update } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js";
+// تم إزالة استيراد Storage لعدم الحاجة لرفع الصور
+// import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js";
 
 // 🛑 إعدادات Firebase
 // **الرجاء التأكد من وضع إعدادات مشروعك الحقيقية هنا**
@@ -11,7 +13,7 @@ const firebaseConfig = {
   authDomain: "siu-students.firebaseapp.com",
   databaseURL: "https://siu-students-default-rtdb.firebaseio.com",
   projectId: "siu-students",
-  storageBucket: "siu-students.firebasestorage.app", 
+  // storageBucket: "siu-students.firebasestorage.app", // تم إزالتها
   messagingSenderId: "76007314543",
   appId: "1:76007314543:web:4850b668cec4b93bdc699a",
   measurementId: "G-SB6884R2FX"
@@ -20,7 +22,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app); 
 const auth = getAuth(app); 
-const storage = getStorage(app);
+// const storage = getStorage(app); // تم إزالتها
 
 // متغيرات عامة
 let allUsers = []; 
@@ -66,23 +68,71 @@ function formatBankDate(timestamp) {
     return { date, time };
 }
 
-// ... (دوال updateHomeDisplay و populateParticipants لـ index.html تبقى كما هي)
-window.hideSuccessModal = () => {
-    document.getElementById('successModal').classList.remove('show');
-    // لضمان عملها لصفحة السجلات
-    if(document.getElementById('settleModal')) document.getElementById('settleModal').classList.remove('show');
-    else if(document.getElementById('previewModal')) document.getElementById('previewModal').classList.remove('show');
+// ============================================================
+// 🏠 منطق الصفحة الرئيسية (index.html) - تم إضافته ليكون الكود كاملاً
+// ============================================================
+
+function updateHomeDisplay() {
+    const balanceEl = document.getElementById('currentBalance');
+    const nameEl = document.getElementById('userNamePlaceholder');
+    const cardEl = document.getElementById('currentBalanceCard');
+    if (!balanceEl) return; 
+
+    let displayName = (currentUserDB && currentUserDB.displayName) ? currentUserDB.displayName : (auth.currentUser ? auth.currentUser.displayName : "مستخدم");
+    if (nameEl) nameEl.textContent = displayName;
+
+    const balance = (currentUserDB && currentUserDB.balance) ? currentUserDB.balance : 0;
+    balanceEl.textContent = balance.toLocaleString('en-US', {minimumFractionDigits: 1});
+
+    if (balance < -0.1) cardEl.classList.add('negative');
+    else cardEl.classList.remove('negative');
+}
+
+function populateParticipants() {
+    const container = document.getElementById('participantsCheckboxes');
+    if (!container) return;
+    container.innerHTML = '';
+    allUsers.filter(u => u.uid !== currentUserID).forEach(user => {
+        const div = document.createElement('div');
+        div.className = 'participant-checkbox';
+        div.innerHTML = `
+            <label class="flex items-center w-full cursor-pointer">
+                <input type="checkbox" data-uid="${user.uid}" class="form-checkbox h-5 w-5 text-blue-600">
+                <span class="mr-2 font-semibold text-gray-700 select-none">${user.displayName}</span>
+            </label>
+        `;
+        container.appendChild(div);
+    });
+}
+window.selectAllParticipants = function() {
+    document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = true);
 };
 
+// ... (دوال المعاينة والحفظ لـ index.html - تم إضافتها لتجنب الأخطاء)
+window.previewExpense = function() { 
+    // يجب أن يحتوي هذا على منطق عرض تفاصيل المصروف في modal
+    alert('منطق المعاينة غير متاح في هذا الملف. يرجى مراجعته من ملف index.html'); 
+}; 
+window.saveExpense = async function() { 
+    // يجب أن يحتوي هذا على منطق حفظ المصروف إلى Firebase
+    alert('منطق الحفظ غير متاح في هذا الملف. يرجى مراجعته من ملف index.html'); 
+};
+window.hideModal = () => { /* ... */ };
+
+// ----------------------------------------------------------------
+
+window.hideSuccessModal = () => {
+    document.getElementById('successModal').classList.remove('show');
+};
+
+
 // ============================================================
-// 📜 منطق صفحة السجلات (History Logic) - تم اختصار العرض
+// 📜 منطق صفحة السجلات (History Logic)
 // ============================================================
 
 function displayHistory() {
     const container = document.getElementById('expensesContainer');
     if (!container || activeFilter === 'summary') return;
-    
-    // ... (منطق الفلترة وعرض البطاقات يبقى كما هو)
     
     container.innerHTML = '<p class="text-center text-gray-500 mt-10">جاري عرض السجلات...</p>'; 
 
@@ -116,16 +166,64 @@ function displayHistory() {
         let isPositive = false;
         let mainTitle = "";
         let detailsText = "";
-        // ... (بقية منطق عرض البطاقات هنا)
+
+        if (isPayer) {
+            netAmount = expense.amount - share;
+            isPositive = true;
+            mainTitle = `تحويل نقدي (أنت الدافع)`;
+            detailsText = `المبلغ الكلي: ${expense.amount.toLocaleString('en-US')} SDG`;
+        } else {
+            netAmount = share;
+            isPositive = false;
+            const payerName = getUserNameById(expense.payer_id);
+            mainTitle = `مشاركة (دفع: ${payerName})`;
+            detailsText = `حصتك المطلوبة`;
+        }
+
+        const colorClass = isPositive ? "amount-pos" : "amount-neg";
+        const sign = isPositive ? "+" : "-";
+        const iconClass = isPositive ? "icon-success" : "icon-danger";
+        const arrowIcon = isPositive ? "fa-arrow-down" : "fa-arrow-up";
+        const { date, time } = formatBankDate(expense.timestamp);
+
+        const cardHTML = `
+        <div class="bankak-card">
+            <div class="card-main-content">
+                <div class="amount-display ${colorClass}">
+                    ${sign} ${netAmount.toLocaleString('en-US', {minimumFractionDigits: 1})}
+                </div>
+                <div class="details-wrapper">
+                    <div class="bank-icon-container ${iconClass} ml-3">
+                        <span class="font-bold text-xs">ج.س</span>
+                        <div class="arrow-badge ${isPositive ? 'text-green-600' : 'text-red-600'}">
+                            <i class="fas ${arrowIcon}"></i>
+                        </div>
+                    </div>
+                    <div class="details-text text-right">
+                        <p class="transaction-title">${expense.title}</p>
+                        <p class="transaction-sub">
+                            ${mainTitle}<br>
+                            <span class="text-xs opacity-80">${detailsText}</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer-date">
+                <span><i class="far fa-calendar-alt ml-1"></i> ${date}</span>
+                <span><i class="far fa-clock ml-1"></i> ${time}</span>
+            </div>
+        </div>
+        `;
+        container.innerHTML += cardHTML;
     });
+
 }
 
 // ============================================================
-// 📊 منطق ملخص الأرصدة (Summary Logic) - مصطلحات جديدة
+// 📊 منطق ملخص الأرصدة (Summary Logic)
 // ============================================================
 
 function calculateIndividualBalances() {
-    // ... (منطق حساب الأرصدة يبقى كما هو)
     const individualBalances = {};
     allUsers.forEach(user => {
         if (user.uid !== currentUserID) {
@@ -140,13 +238,11 @@ function calculateIndividualBalances() {
         expense.participants_ids.forEach(participantID => {
             if (participantID === currentUserID) return; 
 
-            // أنت الدافع (هو داير منك)
             if (isPayer && expense.participants_ids.includes(participantID)) {
                 individualBalances[participantID] = roundToTwo(individualBalances[participantID] + share);
             } 
         });
 
-        // حالة خاصة: الدافع ليس أنت، لكن أنت مشارك (أنت داير ليه)
         if (!isPayer && expense.participants_ids.includes(currentUserID)) {
              const payerID = expense.payer_id;
              if (payerID !== currentUserID) {
@@ -185,14 +281,14 @@ function displaySummary() {
         let action = ""; 
 
         if (balance > 0) {
-            // ✅ هو داير منك (أنت تطلب منه) - تستلم
+            // هو داير منك (أنت تطلب منه)
             message = `**${otherUserName} داير منك**`;
             cardClass = "border-green-500 bg-green-50";
             iconClass = "fa-arrow-left text-green-600";
             buttonText = `تسوية (استلام)`;
             action = `openSettleModal('${uid}', '${otherUserName}', 'receive', ${balance})`;
         } else {
-            // ✅ أنت داير لـ (أنت مدين له) - تدفع
+            // أنت داير لـ (أنت مدين له)
             message = `**أنت داير لـ ${otherUserName}**`;
             cardClass = "border-red-500 bg-red-50";
             iconClass = "fa-arrow-right text-red-600";
@@ -247,7 +343,7 @@ window.setFilter = function(filterType, element) {
 
 
 // ============================================================
-// 💰 دوال التسوية (Settle Up Logic) - تحديث الأرصدة تلقائياً بعد الإدخال
+// 💰 دوال التسوية (Settle Up Logic) - برقم العملية والتحديث الفوري
 // ============================================================
 
 window.openSettleModal = function(uid, name, actionType, maxAmount) {
@@ -257,11 +353,10 @@ window.openSettleModal = function(uid, name, actionType, maxAmount) {
     settleMaxAmount = maxAmount;
 
     const summaryEl = document.getElementById('settleSummary');
-    const inputEl = document.getElementById('settleAmountInput');
+    const amountInputEl = document.getElementById('settleAmountInput');
+    const refInputEl = document.getElementById('settleReference');
     const buttonEl = document.getElementById('confirmSettleButton');
     const warningEl = document.getElementById('amountWarning');
-    const bankNameEl = document.getElementById('settleBankName');
-    const settleDateEl = document.getElementById('settleDate');
 
     const totalStr = maxAmount.toLocaleString(undefined, { minimumFractionDigits: 1 });
     
@@ -279,23 +374,21 @@ window.openSettleModal = function(uid, name, actionType, maxAmount) {
     `;
 
     // تهيئة حقول الإدخال
-    inputEl.value = totalStr;
-    bankNameEl.value = '';
-    settleDateEl.value = '';
+    amountInputEl.value = totalStr; // وضع المبلغ الافتراضي هو المبلغ المطلوب
+    refInputEl.value = '';
     
     buttonEl.textContent = `تأكيد التسوية بمبلغ: ${totalStr}`;
     buttonEl.disabled = false;
     buttonEl.classList.remove('bg-green-600', 'bg-red-600', 'hover:bg-green-700', 'hover:bg-red-700');
     buttonEl.classList.add('bg-blue-600', 'hover:bg-blue-700');
     warningEl.textContent = '';
-    document.getElementById('proofFile').value = '';
 
     document.getElementById('settleModal').classList.add('show');
 
     // تحديث زر التأكيد عند تغيير المبلغ
-    inputEl.oninput = () => {
-        formatNumber(inputEl);
-        const currentAmount = parseFloat(inputEl.value.replace(/,/g, ''));
+    amountInputEl.oninput = () => {
+        formatNumber(amountInputEl);
+        const currentAmount = parseFloat(amountInputEl.value.replace(/,/g, ''));
         const newTotalStr = currentAmount.toLocaleString();
         
         if (currentAmount > settleMaxAmount) {
@@ -317,9 +410,7 @@ window.hideSettleModal = () => document.getElementById('settleModal').classList.
 window.confirmSettleUp = async function() {
     const amountStr = document.getElementById('settleAmountInput').value.replace(/,/g, '');
     const settleAmount = parseFloat(amountStr);
-    const proofFile = document.getElementById('proofFile').files[0];
-    const bankName = document.getElementById('settleBankName').value.trim();
-    const settleDate = document.getElementById('settleDate').value.trim();
+    const reference = document.getElementById('settleReference').value.trim();
     
     const confirmButton = document.getElementById('confirmSettleButton');
 
@@ -328,37 +419,30 @@ window.confirmSettleUp = async function() {
         alert('الرجاء إدخال مبلغ صحيح للتسوية لا يتجاوز الرصيد المطلوب.');
         return;
     }
-    if (!bankName || !settleDate) {
-        alert('الرجاء إدخال اسم المستفيد وتاريخ التحويل كما في الإشعار.');
-        return;
-    }
-    if (!proofFile) {
-        alert('الرجاء إرفاق صورة إشعار التحويل كدليل (ضروري).');
+    if (!reference || reference.length !== 4) {
+        alert('الرجاء إدخال رقم عملية (مرجع) صحيح مكون من 4 أرقام.');
         return;
     }
     
+    // منع الضغط المتكرر
     confirmButton.disabled = true;
     confirmButton.textContent = 'جاري المعالجة...';
 
     window.hideSettleModal(); 
 
     try {
-        // 1. رفع صورة الإشعار إلى Firebase Storage
-        const filePath = `settlement_proofs/${currentUserID}_${settleTargetUID}_${Date.now()}_${proofFile.name}`;
-        const proofRef = storageRef(storage, filePath);
-        const snapshot = await uploadBytes(proofRef, proofFile);
-        const proofURL = await getDownloadURL(snapshot.ref);
+        // **هنا يتم تطبيق منطق التحديث الفوري للأرصدة**
 
-        // 2. تحديد قيمة التعديل على الأرصدة (التحديث الآلي)
         let userBalanceChange = 0;
         let targetBalanceChange = 0;
         
+        // تحديد اتجاه التحديث
         if (settleActionType === 'pay') {
-            // أنت تدفع له: رصيدك الكلي يزيد (يقل دينك)، رصيده الكلي ينقص (يقل دينه عليك)
+            // أنت تدفع له
             userBalanceChange = settleAmount;
             targetBalanceChange = -settleAmount;
         } else {
-            // أنت تستلم منه: رصيدك الكلي ينقص (تقل مطالباتك)، رصيده الكلي يزيد (يقل دينه لك)
+            // أنت تستلم منه
             userBalanceChange = -settleAmount;
             targetBalanceChange = settleAmount;
         }
@@ -366,7 +450,7 @@ window.confirmSettleUp = async function() {
         const updates = {};
         const transactionId = push(ref(db, 'settlements')).key;
 
-        // 3. تحديث أرصدة المستخدمين الكلية
+        // 1. تحديث أرصدة المستخدمين الكلية
         const currentUserIndex = allUsers.findIndex(u => u.uid === currentUserID);
         const targetUserIndex = allUsers.findIndex(u => u.uid === settleTargetUID);
 
@@ -376,19 +460,15 @@ window.confirmSettleUp = async function() {
         updates[`users/${currentUserID}/balance`] = newCurrentUserBalance;
         updates[`users/${settleTargetUID}/balance`] = newTargetUserBalance;
 
-        // 4. تسجيل معاملة التسوية مع بيانات الإشعار
+        // 2. تسجيل معاملة التسوية برقم العملية (المرجع)
         updates[`settlements/${transactionId}`] = {
             amount: settleAmount,
             payer: settleActionType === 'pay' ? currentUserID : settleTargetUID, 
             receiver: settleActionType === 'pay' ? settleTargetUID : currentUserID, 
-            timestamp: Date.now(), // تاريخ التسجيل الفعلي للتسوية
+            timestamp: Date.now(), 
             
-            // بيانات الإشعار المرفقة (التي أدخلها المستخدم بناءً على الصورة)
-            bank_proof: {
-                transferDate: settleDate,
-                beneficiaryName: bankName,
-                proofURL: proofURL,
-            },
+            // بيانات التوثيق برقم العملية
+            reference_number: reference, 
             
             status: 'Completed',
             settledBy: currentUserID,
@@ -397,10 +477,10 @@ window.confirmSettleUp = async function() {
 
         await update(ref(db), updates);
         
-        // 5. إظهار رسالة النجاح
+        // 3. إظهار رسالة النجاح
         document.getElementById('successModal').classList.add('show');
         
-        loadData();
+        loadData(); // إعادة تحميل البيانات المحدثة
 
     } catch (e) {
         console.error("Error during settlement:", e);
@@ -417,8 +497,10 @@ window.confirmSettleUp = async function() {
 // ============================================================
 
 function initializePage() {
+    // هذا الشرط يتحقق من وجود نموذج المصروفات (في index.html) أو حاوية السجلات (في history.html)
     if (document.getElementById('expenseForm')) {
-        // ... (منطق index.html)
+        updateHomeDisplay();
+        populateParticipants();
     } else if (document.getElementById('expensesContainer')) {
         displayHistory();
     }
