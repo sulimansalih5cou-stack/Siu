@@ -1,4 +1,4 @@
-// 🔥 تهيئة واستيراد Firebase SDK
+ok// 🔥 تهيئة واستيراد Firebase SDK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { getDatabase, ref, onValue, set, push, update } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
@@ -357,12 +357,12 @@ function displaySummary() {
 
         if (balance > 0) {
             // أنت تريد منه مالاً (هو مدين لك)
-            message = `يدين لك ${otherUserName} بـ`;
+            message = `انت تريد من  ${otherUserName} `;
             cardClass = "border-green-500 bg-green-50";
             iconClass = "fa-arrow-left text-green-600";
         } else {
             // أنت تدين له بمال
-            message = `أنت مدين لـ ${otherUserName} بـ`;
+            message = `انت مدين لـ ${otherUserName} بـ`;
             cardClass = "border-red-500 bg-red-50";
             iconClass = "fa-arrow-right text-red-600";
         }
