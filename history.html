@@ -3,142 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سجل المصروفات - Smart Dorm</title>
+    <title>كشف الحساب - Smart Dorm</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 
     <style>
         body {
-            background-color: #F3F4F6; 
-            font-family: 'Cairo', sans-serif; 
-            min-height: 100vh;
+            background-color: #F4F4F4; /* خلفية رمادية فاتحة مثل التطبيقات */
+            font-family: 'Cairo', sans-serif;
+            padding-bottom: 40px;
+        }
+
+        /* تصميم بطاقة المستخدم في الأعلى */
+        .user-profile-card {
+            background: #B91C1C; /* لون أحمر داكن مثل بنكك */
+            color: white;
             padding: 20px;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .container {
+
+        /* --- تصميم كارت المعاملة (بنكك ستايل) --- */
+        .bankak-card {
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); 
-            padding: 30px;
-            max-width: 900px;
-            width: 100%;
-            margin: 20px auto;
-        }
-
-        /* --- أنماط سجل العمليات الجديد --- */
-        #expensesContainer {
             border: 1px solid #E5E7EB;
-            border-radius: 12px;
-            overflow: hidden;
-            background-color: #fff;
+            border-radius: 8px; /* حواف دائرية قليلاً */
+            margin-bottom: 12px;
+            padding: 15px;
+            position: relative;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
         }
 
-        .transaction-row {
+        /* الصف العلوي: المبلغ (يسار) والتاريخ (يمين) */
+        .card-top-row {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start; /* محاذاة العناصر للأعلى قليلاً */
-            padding: 16px 20px;
-            border-bottom: 1px solid #F3F4F6;
-            transition: background-color 0.2s;
+            align-items: flex-start;
+            margin-bottom: 10px;
         }
-        .transaction-row:last-child { border-bottom: none; }
-        .transaction-row:hover { background-color: #F9FAFB; }
 
-        /* ترتيب العناصر (بسبب RTL) */
-        .transaction-icon {
-            flex: 0 0 50px;
-            order: 1; /* الأيقونة يمين */
+        /* تنسيق المبلغ مثل الصورة (اليسار) */
+        .amount-display {
+            font-size: 1.2rem;
+            font-weight: 700;
+            direction: ltr; /* لضمان ظهور الرقم بشكل صحيح */
+            font-family: sans-serif; /* خط أرقام واضح */
         }
-        .transaction-details {
+        .amount-pos { color: #16A34A; } /* أخضر */
+        .amount-neg { color: #DC2626; } /* أحمر */
+
+        /* التاريخ (يمين) */
+        .date-display {
+            font-size: 0.85rem;
+            color: #6B7280;
+            font-weight: 600;
+        }
+
+        /* الصف الأوسط: التفاصيل والأيقونة */
+        .card-body-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .details-section {
+            text-align: right;
             flex-grow: 1;
-            padding-right: 15px;
-            padding-left: 15px;
-            order: 2; /* التفاصيل وسط */
+            padding-left: 10px;
         }
-        .transaction-amount {
-            flex: 0 0 160px; /* عرض ثابت للمبلغ والتاريخ */
-            text-align: left; /* الأرقام يسار */
-            order: 3; /* المبلغ يسار */
+        
+        .transaction-title {
+            font-weight: 700;
+            color: #374151;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+        
+        .transaction-sub {
+            font-size: 0.8rem;
+            color: #6B7280;
+            line-height: 1.4;
         }
 
-        /* الأيقونات والأسهم */
-        .icon-circle {
-            width: 42px;
-            height: 42px;
+        /* الأيقونة الدائرية (يمين) */
+        .bank-icon-container {
+            width: 45px;
+            height: 45px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.1rem;
+            flex-shrink: 0;
+            border: 2px solid;
+            position: relative;
         }
-        /* دين لك (أخضر) */
-        .credit-style .icon-circle {
-            background-color: #ECFDF5;
-            color: #059669;
-            border: 1px solid #A7F3D0;
-        }
-        /* دين عليك (أحمر) */
-        .debit-style .icon-circle {
-            background-color: #FEF2F2;
-            color: #DC2626;
-            border: 1px solid #FECACA;
-        }
-        /* محايد */
-        .neutral-style .icon-circle {
-            background-color: #F3F4F6;
-            color: #6B7280;
+        
+        .icon-success { border-color: #16A34A; color: #16A34A; }
+        .icon-danger { border-color: #DC2626; color: #DC2626; }
+
+        /* أيقونة السهم الصغير الملحق بالدائرة */
+        .arrow-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: white;
+            border-radius: 50%;
+            padding: 2px;
+            font-size: 0.7rem;
         }
 
-        /* أزرار التنقل */
-        .btn-back {
-            background-color: #3B82F6;
+        /* زر العودة */
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 12px;
+            border-radius: 6px;
             color: white;
-            padding: 8px 16px;
-            border-radius: 8px;
             text-decoration: none;
-            font-weight: bold;
-            display: inline-flex;
-            align-items: center;
-            transition: 0.3s;
+            font-size: 0.9rem;
         }
-        .btn-back:hover { background-color: #2563EB; }
-        
-        /* ملخص الديون */
-        .debt-card {
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid transparent;
-        }
-        .debt-card.positive { background-color: #ECFDF5; border-color: #A7F3D0; }
-        .debt-card.negative { background-color: #FEF2F2; border-color: #FECACA; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="flex justify-between items-center mb-6 pb-4 border-b">
-            <h1 class="text-2xl font-bold text-gray-800">
-                <i class="fas fa-history text-blue-600 ml-2"></i> سجل المصروفات
-            </h1>
-            <a href="index.html" class="btn-back">
-                <i class="fas fa-plus ml-2"></i> إضافة مصروف
+    <div class="user-profile-card">
+        <div class="flex justify-between items-start">
+            <div>
+                <h2 class="text-lg font-bold mb-1">مرحباً، <span id="displayHeaderName">...</span></h2>
+                <p class="text-sm opacity-90" id="displayHeaderEmail">جاري التحميل...</p>
+            </div>
+            <a href="index.html" class="back-btn">
+                <i class="fas fa-arrow-right ml-1"></i> رجوع
             </a>
         </div>
+        <div class="mt-4 border-t border-red-400 pt-3 flex justify-between items-center">
+            <span class="text-sm font-bold">عرض كشف الحساب</span>
+            <span class="text-xs bg-white text-red-700 px-2 py-1 rounded font-bold">SDG</span>
+        </div>
+    </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            <div class="debt-card positive">
-                <h3 class="font-bold text-green-800 mb-2">💰 مبالغ لك (الناس مديونين لك)</h3>
-                <div id="debtToYouList" class="text-sm text-gray-700 space-y-1">جاري التحميل...</div>
-            </div>
-            <div class="debt-card negative">
-                <h3 class="font-bold text-red-800 mb-2">💸 مبالغ عليك (أنت مديون)</h3>
-                <div id="debtFromYouList" class="text-sm text-gray-700 space-y-1">جاري التحميل...</div>
-            </div>
+    <div class="max-w-3xl mx-auto px-4">
+        <div class="flex justify-between text-gray-500 text-sm mb-4 border-b pb-2 overflow-x-auto whitespace-nowrap">
+            <span class="px-2 border-b-2 border-red-600 text-red-600 font-bold">آخر 30 يوم</span>
+            <span class="px-2">آخر 3 شهور</span>
+            <span class="px-2">تحديد التاريخ</span>
         </div>
 
-        <h2 class="text-xl font-bold text-gray-800 mb-4">أحدث العمليات</h2>
-        <div id="expensesContainer">
-            <p class="text-center text-gray-500 py-8" id="loadingMessage">يتم تحميل البيانات...</p>
+        <div id="expensesContainer" class="space-y-3">
+            <p class="text-center text-gray-500 mt-10">جاري تحميل البيانات...</p>
         </div>
     </div>
 
