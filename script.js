@@ -3,16 +3,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase
 import { getDatabase, ref, onValue, push, update } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
-// 🛑 إعدادات Firebase - هذه هي بيانات مشروعك الحقيقية (siu-students)
+// 🛑 إعدادات Firebase - (بياناتك الحقيقية هنا)
 const firebaseConfig = {
   apiKey: "AIzaSyA2GNsXj4DzWyCYLKuVT3i1XBKfjX3ccuM",
   authDomain: "siu-students.firebaseapp.com",
   databaseURL: "https://siu-students-default-rtdb.firebaseio.com",
   projectId: "siu-students",
-  storageBucket: "siu-students.firebasestorage.app",
   messagingSenderId: "76007314543",
-  appId: "1:76007314543:web:4850b668cec4b93bdc699a",
-  measurementId: "G-SB6884R2FX"
+  appId: "1:76007314543:web:4850b668cec4b93bdc699a"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -52,28 +50,39 @@ function formatBankDate(timestamp) {
     };
 }
 
-// --- تحديث الواجهة العامة ---
-function updateHomeDisplay() {
+// ============================================================
+// 🎨 دوال العرض المشتركة (تحديث الهيدر والإشعارات)
+// ============================================================
+
+function updateCommonUI() {
+    // تحديث بطاقة الرصيد (موجودة في كل الصفحات)
     const balanceEl = document.getElementById('currentBalance');
     const nameEl = document.getElementById('userNamePlaceholder');
     const cardEl = document.getElementById('currentBalanceCard');
-    if (!balanceEl) return; 
 
-    let displayName = currentUserDB ? currentUserDB.displayName : (auth.currentUser ? auth.currentUser.displayName : "مستخدم");
-    if (nameEl) nameEl.textContent = displayName;
+    if (balanceEl && nameEl && cardEl) {
+        let displayName = currentUserDB ? currentUserDB.displayName : (auth.currentUser ? auth.currentUser.displayName : "مستخدم");
+        nameEl.textContent = displayName;
 
-    const balance = currentUserDB ? currentUserDB.balance : 0;
-    balanceEl.textContent = balance.toLocaleString('en-US', {minimumFractionDigits: 1});
+        const balance = currentUserDB ? currentUserDB.balance : 0;
+        balanceEl.textContent = balance.toLocaleString('en-US', {minimumFractionDigits: 1});
 
-    if (balance < -0.1) cardEl.classList.add('negative');
-    else cardEl.classList.remove('negative');
+        if (balance < -0.1) cardEl.classList.add('negative');
+        else cardEl.classList.remove('negative');
+    }
 
-    // تحديثات خاصة
-    if (document.getElementById('participantsCheckboxes')) populateParticipants();
-    if (document.getElementById('totalMyExpenses')) displayMyExpensesSummary();
+    // تحديث شارة الإشعارات (موجودة في كل الصفحات)
+    const badge = document.getElementById('notificationBadge');
+    if (badge) {
+        const unreadCount = allNotifications.filter(n => n.recipientId === currentUserID && !n.read).length;
+        badge.style.display = unreadCount > 0 ? 'block' : 'none';
+    }
 }
 
-// --- صفحة إضافة المصروف (index.html) ---
+// ============================================================
+// 🏠 دوال الصفحة الرئيسية (index.html)
+// ============================================================
+
 function populateParticipants() {
     const container = document.getElementById('participantsCheckboxes');
     if (!container) return;
@@ -87,12 +96,17 @@ function populateParticipants() {
     });
 }
 window.selectAllParticipants = function() {
-    document.querySelectorAll('#participantsCheckboxes input').forEach(cb => cb.checked = true);
+    const checks = document.querySelectorAll('#participantsCheckboxes input');
+    if(checks) checks.forEach(cb => cb.checked = true);
 };
 
 window.previewExpense = function() {
-    const title = document.getElementById('expenseTitle').value;
-    const amount = parseFloat(document.getElementById('expenseAmount').value.replace(/,/g, ''));
+    const titleEl = document.getElementById('expenseTitle');
+    const amountEl = document.getElementById('expenseAmount');
+    if (!titleEl || !amountEl) return;
+
+    const title = titleEl.value;
+    const amount = parseFloat(amountEl.value.replace(/,/g, ''));
     const checkboxes = document.querySelectorAll('#participantsCheckboxes input:checked');
     
     if (!title || !amount) { alert('البيانات ناقصة'); return; }
@@ -120,7 +134,7 @@ window.saveExpense = async function() {
     
     const updates = {};
     const newKey = push(ref(db, 'expenses')).key;
-    const payerName = currentUserDB.displayName;
+    const payerName = currentUserDB ? currentUserDB.displayName : 'مستخدم';
 
     updates[`expenses/${newKey}`] = {
         title, amount, share, payer_id: currentUserID, participants_ids: participants, timestamp: Date.now()
@@ -149,7 +163,10 @@ window.saveExpense = async function() {
     populateParticipants();
 };
 
-// --- صفحة مصروفاتي (my_expenses.html) ---
+// ============================================================
+// 📋 دوال صفحة مصروفاتي (my_expenses.html)
+// ============================================================
+
 function displayMyExpensesSummary() {
     const totalEl = document.getElementById('totalMyExpenses');
     const listEl = document.getElementById('myExpenseHistory');
@@ -177,19 +194,26 @@ function displayMyExpensesSummary() {
     listEl.innerHTML = html || '<p class="text-center text-gray-400">لا توجد بيانات.</p>';
 }
 
-// --- صفحة السجل (history.html) ---
+// ============================================================
+// 📜 دوال صفحة السجلات (history.html)
+// ============================================================
+
 window.setFilter = function(type, el) {
     activeFilter = type;
     document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
     el.classList.add('active');
     
+    const expCont = document.getElementById('expensesContainer');
+    const sumCont = document.getElementById('summaryContainer');
+    if(!expCont || !sumCont) return;
+
     if (type === 'summary') {
-        document.getElementById('expensesContainer').classList.add('hidden');
-        document.getElementById('summaryContainer').classList.remove('hidden');
+        expCont.classList.add('hidden');
+        sumCont.classList.remove('hidden');
         displaySummary();
     } else {
-        document.getElementById('summaryContainer').classList.add('hidden');
-        document.getElementById('expensesContainer').classList.remove('hidden');
+        sumCont.classList.add('hidden');
+        expCont.classList.remove('hidden');
         displayHistory();
     }
 };
@@ -198,6 +222,7 @@ function displayHistory() {
     const container = document.getElementById('expensesContainer');
     if (!container || activeFilter === 'summary') return;
     
+    container.innerHTML = '';
     const now = Date.now();
     const filtered = allExpenses.filter(e => {
         const relevant = e.payer_id === currentUserID || e.participants_ids.includes(currentUserID);
@@ -236,6 +261,7 @@ function displayHistory() {
 
 function displaySummary() {
     const container = document.getElementById('summaryContainer');
+    if(!container) return;
     let balances = {};
     allUsers.forEach(u => { if(u.uid !== currentUserID) balances[u.uid] = 0; });
     
@@ -271,7 +297,7 @@ function displaySummary() {
     container.innerHTML = html;
 }
 
-// --- التسوية (Manual + Ref) ---
+// --- التسوية ---
 window.openSettleModal = function(uid, name, type, amount) {
     settleTargetUID = uid; settleTargetName = name; settleActionType = type; settleMaxAmount = amount;
     const summary = document.getElementById('settleSummary');
@@ -291,7 +317,7 @@ window.confirmSettleUp = async function() {
     if (!amount || !refNum || refNum.length < 4) { alert('بيانات غير صحيحة'); return; }
     
     document.getElementById('confirmSettleButton').disabled = true;
-    window.hideModal();
+    window.hideSettleModal();
 
     const updates = {};
     const myChange = settleActionType === 'pay' ? amount : -amount;
@@ -317,6 +343,8 @@ window.confirmSettleUp = async function() {
 // --- الإشعارات ---
 window.openNotificationModal = function() {
     const list = document.getElementById('notificationsList');
+    if(!list) return;
+    
     const myNotifs = allNotifications.filter(n => n.recipientId === currentUserID).sort((a,b) => b.timestamp - a.timestamp);
     
     let html = '';
@@ -339,13 +367,16 @@ window.markAllAsRead = async function() {
 
 window.hideNotificationModal = () => document.getElementById('notificationModal').classList.remove('show');
 window.hideModal = () => document.querySelectorAll('.modal').forEach(m => m.classList.remove('show'));
+window.hideSuccessModal = () => document.querySelectorAll('.modal').forEach(m => m.classList.remove('show'));
 
-// --- التحميل والمصادقة (Fixed Loop) ---
+// --- التحميل والمصادقة ---
 function initializePage() {
-    // تفعيل عرض البيانات الخاصة بكل صفحة بعد تحميل البيانات
-    if (document.getElementById('expenseForm')) updateHomeDisplay();
-    else if (document.getElementById('expensesContainer')) displayHistory();
-    else if (document.getElementById('myExpenseHistory')) updateHomeDisplay();
+    updateCommonUI(); // تحديث العناصر المشتركة (هيدر، إشعارات)
+    
+    // تحديث العناصر الخاصة بكل صفحة
+    if (document.getElementById('expenseForm')) populateParticipants();
+    if (document.getElementById('expensesContainer')) displayHistory();
+    if (document.getElementById('myExpenseHistory')) displayMyExpensesSummary();
 }
 
 function loadData() {
@@ -364,9 +395,7 @@ function loadData() {
                 initializePage();
             } else if (ep === 'notifications') {
                 allNotifications = val ? Object.keys(val).map(k => ({firebaseId: k, ...val[k]})) : [];
-                const unread = allNotifications.filter(n => n.recipientId === currentUserID && !n.read).length;
-                const badge = document.getElementById('notificationBadge');
-                if (badge) badge.style.display = unread > 0 ? 'block' : 'none';
+                initializePage();
             }
         });
     });
@@ -376,15 +405,15 @@ onAuthStateChanged(auth, user => {
     const isAuthPage = window.location.pathname.includes('auth.html');
     if (user) {
         currentUserID = user.uid;
-        // إذا كان المستخدم مسجلاً ودخل لصفحة المصادقة، نوجهه للرئيسية
-        if (isAuthPage) window.location.href = 'index.html';
-        else loadData();
+        if (isAuthPage) {
+            window.location.href = 'index.html';
+        } else {
+            loadData();
+        }
         
-        // تفعيل زر الخروج
         const logoutBtn = document.getElementById('logoutButton');
         if(logoutBtn) logoutBtn.onclick = () => auth.signOut().then(() => window.location.href = 'auth.html');
     } else {
-        // إذا لم يكن مسجلاً وليس في صفحة المصادقة، نوجهه إليها
         if (!isAuthPage) window.location.href = 'auth.html';
     }
 });
