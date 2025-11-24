@@ -3,156 +3,221 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إضافة مصروف محسّن - Smart Dorm Expenses</title>
+    <title>كشف الحساب - Smart Dorm</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 
     <style>
-        /* CSS: الأنماط المخصصة (تم الحفاظ عليها) */
         body {
-            background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
+            background-color: #F3F4F6; /* خلفية رمادية مريحة للعين */
+            font-family: 'Cairo', sans-serif;
+            padding-bottom: 60px;
+        }
+
+        /* --- 1. بطاقة المستخدم (الهيدر) --- */
+        .user-profile-card {
+            background: linear-gradient(135deg, #B91C1C 0%, #991B1B 100%); /* تدرج لوني بسيط */
+            color: white;
+            padding: 25px 20px;
+            border-bottom-left-radius: 25px;
+            border-bottom-right-radius: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 25px -5px rgba(185, 28, 28, 0.4); /* ظل أحمر خفيف */
+        }
+
+        /* زر العودة */
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            padding: 6px 14px;
+            border-radius: 8px;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: background 0.3s;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* --- 2. تحسين بطاقة المعاملة (Bankak Style) --- */
+        .bankak-card {
+            background: white;
+            border: 1px solid #F3F4F6;
+            border-radius: 12px; /* زوايا أكثر انحناءً */
+
+            /* 🔥 التعديل الجمالي: زيادة المسافة والظل */
+            margin-bottom: 20px; /* مسافة أكبر بين البطاقات */
+            padding: 18px;
+
+            position: relative;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); /* ظل ناعم */
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        /* تأثير بسيط عند مرور الماوس */
+        .bankak-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+        }
+
+        /* الصف العلوي */
+        .card-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px dashed #E5E7EB; /* خط فاصل منقط خفيف داخلي */
+        }
+
+        /* تنسيق المبلغ */
+        .amount-display {
+            font-size: 1.3rem; /* تكبير الخط قليلاً */
+            font-weight: 800;
+            direction: ltr; 
+            font-family: sans-serif;
+            letter-spacing: -0.5px;
+        }
+        .amount-pos { color: #059669; } /* أخضر غامق */
+        .amount-neg { color: #DC2626; } /* أحمر */
+
+        /* التاريخ */
+        .date-display {
+            font-size: 0.8rem;
+            color: #9CA3AF;
+            font-weight: 600;
+            background: #F9FAFB;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        /* الصف الأوسط */
+        .card-body-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .details-section {
+            text-align: right;
+            flex-grow: 1;
+            padding-left: 12px;
+        }
+
+        .transaction-title {
+            font-weight: 700;
+            color: #1F2937;
+            font-size: 1rem;
+            margin-bottom: 6px;
+        }
+
+        .transaction-sub {
+            font-size: 0.85rem;
+            color: #4B5563;
+            line-height: 1.6;
+        }
+
+        /* الأيقونة */
+        .bank-icon-container {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
-        }
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            padding: 40px;
-            max-width: 600px;
-            width: 100%;
-            animation: fadeInUp 0.8s ease-out;
-            position: relative; 
-        }
-        /* ... (بقية الأنماط كما هي) ... */
-        
-        /* نمط الأزرار العلوية الموحد */
-        .top-action-btn { 
-            padding: 8px 15px; 
-            border-radius: 10px; 
-            font-size: 14px; 
-            font-weight: 500; 
-            transition: background-color 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
+            flex-shrink: 0;
+            border: 2px solid;
+            position: relative;
+            background-color: #FAFAFA;
         }
 
-        /* زر تسجيل الخروج */
-        .logout-btn { 
-            background-color: #6B7280; 
-            color: white; 
-        }
-        .logout-btn:hover {
-            background-color: #4B5563;
-        }
+        .icon-success { border-color: #059669; color: #059669; }
+        .icon-danger { border-color: #DC2626; color: #DC2626; }
 
-        /* 🆕 زر سجل العمليات (أخضر لتمييزه) */
-        .history-btn {
-            background-color: #10B981; 
-            color: white; 
-        }
-        .history-btn:hover {
-            background-color: #059669;
-        }
-
-        /* حاوية الأزرار العلوية */
-        .top-actions {
+        .arrow-badge {
             position: absolute;
-            top: 20px;
-            right: 20px; /* ليتناسب مع RTL */
+            bottom: -2px; /* تغيير مكان السهم للأسفل */
+            right: -2px;
+            background: white;
+            border-radius: 50%;
+            padding: 3px;
+            font-size: 0.75rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* شريط التمرير للفلاتر */
+        .filter-scroll {
             display: flex;
-            gap: 10px; /* المسافة بين الأزرار */
+            gap: 15px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            scrollbar-width: none; /* إخفاء الشريط لفايرفوكس */
+        }
+        .filter-scroll::-webkit-scrollbar { display: none; } /* إخفاء الشريط لكروم */
+
+        .filter-pill {
+            white-space: nowrap;
+            padding: 6px 16px;
+            border-radius: 20px;
+            background: white;
+            color: #6B7280;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid #E5E7EB;
+            cursor: pointer;
+        }
+        .filter-pill.active {
+            background: #FEF2F2;
+            color: #B91C1C;
+            border-color: #B91C1C;
         }
 
     </style>
 </head>
 <body>
-    <div id="notification" class="notification">
-        <i class="fas fa-check-circle"></i> تم تسجيل المصروف بنجاح! 🎉
-    </div>
 
-    <div class="container">
-        
-        <div class="top-actions">
-            <a href="history.html" class="top-action-btn history-btn">
-                <i class="fas fa-history"></i> سجل العمليات
-            </a>
-            <a href="auth.html" id="logoutButton" class="top-action-btn logout-btn">
-                <i class="fas fa-sign-out-alt"></i> تبديل المستخدم
-            </a>
-        </div>
-
-        <div class="app-description">
-            <i class="fas fa-image icon"></i> نستخدم التطبيق على الصورة – أضف مصروفك بسهولة!
-        </div>
-
-        <div id="currentBalanceCard" class="balance-card">
-            <h3><i class="fas fa-user-circle icon"></i> رصيدك الحالي يا <span id="userNamePlaceholder">...</span></h3>
-            <p id="currentBalance">يتم التحميل...</p>
-        </div>
-
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">
-            <i class="fas fa-plus-circle text-blue-500"></i> إضافة مصروف جديد
-        </h1>
-
-        <form id="expenseForm">
-            <div class="form-group">
-                <label for="expenseTitle"><i class="fas fa-tag icon"></i> اسم المصروف (اكتب أو اختر)</label>
-                <input type="text" id="expenseTitle" placeholder="مثال: شاي المساء" list="suggestions" required>
-                <datalist id="suggestions">
-                    <option value="شاي">
-                    <option value="أكل">
-                    <option value="غاز">
-                    <option value="نظافة">
-                    <option value="أخرى">
-                </datalist>
-            </div>
-
-            <div class="form-group">
-                <label for="expenseAmount"><i class="fas fa-dollar-sign icon"></i> المبلغ الكلي</label>
-                <input type="tel" id="expenseAmount" placeholder="5,000" oninput="formatNumber(this)" required>
-            </div>
-
-            <div class="form-group">
-                <label><i class="fas fa-users icon"></i> المشاركون (اختر من يشارك)</label>
-                <div class="select-all" onclick="selectAllParticipants()">اختر الكل</div>
-                <div class="checkbox-group" id="participantsCheckboxes">
-                    </div>
-            </div>
-
-            <div class="text-center">
-                <button type="button" onclick="previewExpense()" class="btn btn-secondary w-full">
-                    <i class="fas fa-eye"></i> معاينة وحفظ
-                </button>
-            </div>
-        </form>
-    </div>
-
-    <div id="previewModal" class="modal">
-        <div class="modal-content">
-            <div id="warning" class="warning">
-                <i class="fas fa-exclamation-triangle"></i> تحذير: قد يكون هذا المصروف مكرراً! هل تريد المتابعة؟
-            </div>
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">
-                <i class="fas fa-check-circle text-green-500"></i> تأكيد المصروف
-            </h2>
-            <p id="previewText" class="text-gray-600 mb-6 text-right"></p>
+    <div class="user-profile-card">
+        <div class="flex justify-between items-center">
             <div>
-                <button onclick="saveExpense()" class="btn">
-                    <i class="fas fa-save"></i> حفظ نهائي
-                </button>
-                <button onclick="hideModal()" class="btn btn-secondary ml-4">
-                    <i class="fas fa-times"></i> إلغاء
-                </button>
+                <h2 class="text-xl font-bold mb-1">مرحباً، <span id="displayHeaderName">...</span></h2>
+                <p class="text-sm opacity-80 dir-ltr" id="displayHeaderEmail">...</p>
+            </div>
+            <a href="index.html" class="back-btn">
+                <i class="fas fa-arrow-right ml-1"></i> رجوع
+            </a>
+        </div>
+        <div class="mt-6 flex justify-between items-end">
+            <div>
+                <span class="block text-xs opacity-70 mb-1">الرصيد الإجمالي (تقديري)</span>
+                <span class="text-2xl font-bold" id="currentBalance">---</span> <span class="text-sm">SDG</span>
+            </div>
+            <div class="text-xs bg-white/20 px-3 py-1 rounded-full">
+                كشف حساب ذكي
             </div>
         </div>
     </div>
-    
+
+    <div class="max-w-3xl mx-auto px-4">
+
+        <div class="filter-scroll">
+            <div class="filter-pill active">آخر 30 يوم</div>
+            <div class="filter-pill">آخر 3 شهور</div>
+            <div class="filter-pill">الواردة</div>
+            <div class="filter-pill">الصادرة</div>
+        </div>
+
+        <div id="expensesContainer">
+            <p class="text-center text-gray-400 mt-12">
+                <i class="fas fa-spinner fa-spin fa-2x mb-4"></i><br>
+                جاري جلب المعاملات...
+            </p>
+        </div>
+    </div>
+
     <script src="script.js" type="module"></script> 
 </body>
 </html>
