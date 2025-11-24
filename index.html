@@ -8,10 +8,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #F3F4F6; font-family: 'Cairo', sans-serif; min-height: 100vh; padding-top: 80px; }
+        body { background-color: #F3F4F6; font-family: 'Cairo', sans-serif; padding-top: 80px; }
         /* Navbar */
         .navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 900; background-color: white; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 10px 0; }
-        .navbar-link { transition: color 0.3s ease, background 0.3s ease; padding: 8px 15px; border-radius: 8px; font-weight: 600; color: #4B5563; }
+        .navbar-link { transition: color 0.3s ease, background 0.3s ease; padding: 8px 15px; border-radius: 8px; font-weight: 600; color: #4B5563; cursor: pointer; }
         .navbar-link:hover { background: #F3F4F6; color: #1D4ED8; }
         .navbar-link.active { background: #E0F2FE; color: #1D4ED8; }
         .notification-badge { position: absolute; top: 0px; right: 0px; width: 10px; height: 10px; border-radius: 50%; background-color: #EF4444; display: none; border: 2px solid white; }
@@ -20,14 +20,14 @@
         .balance-card.negative { background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%) !important; box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3); }
         .balance-card h3 { font-size: 16px; opacity: 0.9; }
         .balance-card p { font-size: 32px; font-weight: 900; }
-        /* Forms */
-        .card-section { background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07); padding: 30px; max-width: 600px; margin: 0 auto; }
+        /* Main Content */
+        .main-content-single { max-width: 600px; margin: 20px auto; padding: 0 20px; }
+        .card-section { background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07); padding: 30px; }
+        /* Inputs */
         .form-group input { padding: 12px; border: 1px solid #D1D5DB; border-radius: 10px; background: #F9FAFB; font-size: 16px; width: 100%; }
-        .form-group input:focus { border-color: #3B82F6; background: white; outline: none; }
-        /* Checkboxes */
         .checkbox-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
         .checkbox-item { display: flex; align-items: center; background: #F3F4F6; padding: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; }
-        .checkbox-item:hover { background: #E5E7EB; }
+        .checkbox-item:has(input:checked) { background: #E0F2FE; border-color: #3B82F6; }
         .select-all { background: #3B82F6; color: white; padding: 10px; border-radius: 10px; cursor: pointer; text-align: center; margin-bottom: 15px; font-weight: 600; }
         /* Buttons */
         .btn { background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); color: white; padding: 15px; border-radius: 12px; font-weight: 700; width: 100%; transition: 0.2s; }
@@ -62,30 +62,40 @@
         </div>
     </div>
 
-    <div class="card-section">
-        <h1 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-3"><i class="fas fa-file-invoice ml-2 text-blue-600"></i> تسجيل مصروف مشترك</h1>
-        <form id="expenseForm">
-            <div class="form-group mb-4">
-                <label class="block font-semibold text-gray-700 mb-2">اسم المصروف</label>
-                <input type="text" id="expenseTitle" placeholder="مثال: شاي، قهوة" list="suggestions" required>
-                <datalist id="suggestions"><option value="شاي"><option value="قهوة"><option value="كهرباء"><option value="ماء"></datalist>
-            </div>
-            <div class="form-group mb-4">
-                <label class="block font-semibold text-gray-700 mb-2">المبلغ الكلي (SDG)</label>
-                <input type="tel" id="expenseAmount" placeholder="5,000" oninput="formatNumber(this)" required style="direction: ltr; text-align: right;">
-            </div>
-            <div class="form-group mb-6">
-                <label class="block font-semibold text-gray-700 mb-2">المشاركون</label>
-                <div class="select-all" onclick="selectAllParticipants()">تحديد الجميع</div>
-                <div class="checkbox-group" id="participantsCheckboxes"></div>
-            </div>
-            <button type="button" onclick="previewExpense()" class="btn btn-secondary"><i class="fas fa-save ml-2"></i> معاينة وحفظ</button>
-        </form>
+    <div class="main-content-single">
+        <div class="card-section">
+            <h1 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-3"><i class="fas fa-file-invoice ml-2 text-blue-600"></i> تسجيل مصروف مشترك</h1>
+            <form id="expenseForm">
+                <div class="form-group mb-4">
+                    <label class="block font-semibold text-gray-700 mb-2">اسم المصروف</label>
+                    <input type="text" id="expenseTitle" placeholder="مثال: شاي، قهوة" list="suggestions" required>
+                    <datalist id="suggestions"><option value="شاي"><option value="قهوة"><option value="كهرباء"><option value="ماء"></datalist>
+                </div>
+                <div class="form-group mb-4">
+                    <label class="block font-semibold text-gray-700 mb-2">المبلغ الكلي (SDG)</label>
+                    <input type="tel" id="expenseAmount" placeholder="5,000" oninput="formatNumber(this)" required style="direction: ltr; text-align: right;">
+                </div>
+                <div class="form-group mb-6">
+                    <label class="block font-semibold text-gray-700 mb-2">المشاركون</label>
+                    <div class="select-all" onclick="selectAllParticipants()">تحديد الجميع</div>
+                    <div class="checkbox-group" id="participantsCheckboxes"></div>
+                </div>
+                <button type="button" onclick="previewExpense()" class="btn btn-secondary"><i class="fas fa-save ml-2"></i> معاينة وحفظ</button>
+            </form>
+        </div>
     </div>
 
     <div id="previewModal" class="modal"><div class="modal-content"><div id="warning" class="bg-yellow-100 text-yellow-800 p-2 rounded mb-3 hidden">تنبيه: مصروف مكرر!</div><h2 class="text-xl font-bold mb-4">تأكيد المصروف</h2><div id="previewText" class="text-right text-gray-700 mb-6"></div><div class="flex gap-4"><button onclick="saveExpense()" class="btn">حفظ</button><button onclick="hideModal()" class="btn bg-gray-500">إلغاء</button></div></div></div>
     <div id="successModal" class="modal"><div class="modal-content text-center"><h2 class="text-2xl text-green-600 mb-2"><i class="fas fa-check-circle"></i> تم الحفظ!</h2><button onclick="hideSuccessModal()" class="btn mt-4">إغلاق</button></div></div>
-    <div id="notificationModal" class="modal"><div class="modal-content"><h2 class="text-xl font-bold mb-4">الإشعارات</h2><div id="notificationsList" class="space-y-3 max-h-64 overflow-y-auto"></div><button onclick="markAllAsRead()" class="text-blue-600 text-sm mt-2 block">تحديد الكل كمقروء</button><button onclick="hideNotificationModal()" class="btn mt-4 bg-gray-500">إغلاق</button></div></div>
+    
+    <div id="notificationModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4 border-b pb-2">الإشعارات</h2>
+            <div id="notificationsList" class="space-y-3 max-h-64 overflow-y-auto"></div>
+            <button onclick="markAllAsRead()" class="text-blue-600 text-sm mt-2 block hover:underline">تحديد الكل كمقروء</button>
+            <button onclick="hideNotificationModal()" class="btn mt-4 bg-gray-500">إغلاق</button>
+        </div>
+    </div>
 
     <script src="script.js" type="module"></script> 
 </body>
