@@ -8,402 +8,204 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        /* CSS: الأنماط المخصصة والمعدّلة */
+        /* CSS: الأنماط الأساسية */
         body {
-            /* 🛑 التعديل: إزالة الـ centering القديم واستبداله بتخطيط شريط التنقل */
             background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            padding-top: 80px; /* **مهم**: إضافة حشوة لترك مساحة لشريط التنقل الثابت */
-            /* إزالة align-items: center و justify-content: center */
+            padding-top: 80px; 
         }
 
-        /* 🆕 نمط شريط التنقل الثابت الجديد */
+        /* شريط التنقل */
         .navbar {
-            position: fixed; /* تثبيت الشريط في الأعلى */
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 900; /* التأكد من ظهوره فوق باقي العناصر */
-            background-color: white;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-            padding: 10px 0;
+            position: fixed; top: 0; left: 0; right: 0;
+            z-index: 900; background-color: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); padding: 10px 0;
         }
-
         .navbar-link {
             transition: color 0.3s ease, border-bottom 0.3s ease;
-            border-bottom: 2px solid transparent; 
-            padding-bottom: 5px;
-            font-weight: 600;
-            color: #4B5563;
+            border-bottom: 2px solid transparent; padding-bottom: 5px;
+            font-weight: 600; color: #4B5563;
         }
-        .navbar-link:hover {
-            color: #3B82F6;
-            border-bottom-color: #3B82F6;
-        }
-        .navbar-link.active {
-             color: #1D4ED8;
-             border-bottom-color: #1D4ED8;
-        }
+        .navbar-link:hover { color: #3B82F6; border-bottom-color: #3B82F6; }
+        .navbar-link.active { color: #1D4ED8; border-bottom-color: #1D4ED8; }
 
-        /* 🆕 حاوية المحتوى للسماح بـ centering لـ .container */
+        /* الحاوية الرئيسية */
         .content-wrapper {
-            flex-grow: 1; 
-            display: flex;
-            align-items: flex-start; /* تغيير لـ flex-start لعدم الـ centering الرأسي المفرط */
-            justify-content: center;
-            padding: 20px;
+            flex-grow: 1; display: flex; align-items: flex-start;
+            justify-content: center; padding: 20px;
+        }
+        .container {
+            background: white; border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); padding: 40px;
+            max-width: 600px; width: 100%; margin-top: 20px; position: relative;
         }
 
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            padding: 40px;
-            max-width: 600px;
-            width: 100%;
-            animation: fadeInUp 0.8s ease-out;
-            position: relative; 
-            /* 🛑 التعديل: زيادة الهامش العلوي لضمان عدم تداخل الأزرار العلوية مع شريط التنقل */
-            margin-top: 20px; 
+        /* الأزرار العلوية */
+        .top-actions {
+            position: absolute; top: -50px; right: 20px;
+            display: flex; gap: 10px; z-index: 10;
+        }
+        .top-action-btn {
+            padding: 8px 15px; border-radius: 10px; font-size: 14px;
+            font-weight: 500; display: inline-flex; align-items: center; gap: 5px;
+            color: white; text-decoration: none; transition: 0.3s;
+        }
+        .history-btn { background-color: #10B981; }
+        .history-btn:hover { background-color: #059669; }
+        .logout-btn { background-color: #6B7280; }
+        .logout-btn:hover { background-color: #4B5563; }
+
+        /* --- 🔥 بطاقة الرصيد (التعديل المطلوب) --- */
+        .balance-card {
+            /* الحالة الافتراضية (موجب - أخضر) */
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white; padding: 20px; border-radius: 15px;
+            text-align: center; margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+            transition: background 0.5s ease; /* تأثير ناعم عند تغيير اللون */
         }
         
-        /* نمط الأزرار العلوية الموحد */
-        .top-action-btn { 
-            padding: 8px 15px; 
-            border-radius: 10px; 
-            font-size: 14px; 
-            font-weight: 500; 
-            transition: background-color 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
+        /* الحالة السالبة (دين - أحمر) */
+        .balance-card.negative {
+            background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%) !important;
+            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3);
         }
 
-        /* زر تسجيل الخروج */
-        .logout-btn { 
-            background-color: #6B7280; 
-            color: white; 
-        }
-        .logout-btn:hover {
-            background-color: #4B5563;
-        }
+        .balance-card h3 { font-size: 18px; margin-bottom: 5px; opacity: 0.9; }
+        .balance-card p { font-size: 28px; font-weight: 800; letter-spacing: 1px; }
 
-        /* زر سجل العمليات */
-        .history-btn {
-            background-color: #10B981; 
-            color: white; 
-        }
-        .history-btn:hover {
-            background-color: #059669;
-        }
-
-        /* حاوية الأزرار العلوية (تم التعديل ليتموضع بالنسبة للـ Container) */
-        .top-actions {
-            position: absolute;
-            top: -50px; /* **مهم**: رفع الأزرار خارج الـ Container قليلاً ليتم تمييزها */
-            right: 20px; 
-            display: flex;
-            gap: 10px; 
-            z-index: 10;
-        }
-        /* ... (بقية الأنماط كما هي) ... */
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(50px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .form-group {
-            margin-bottom: 25px;
-        }
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
+        /* الحقول والنماذج */
+        .form-group { margin-bottom: 25px; }
+        .form-group label { display: block; font-weight: 600; color: #374151; margin-bottom: 8px; }
         .form-group input {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #E5E7EB;
-            border-radius: 12px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            background: #F9FAFB;
+            width: 100%; padding: 15px; border: 2px solid #E5E7EB;
+            border-radius: 12px; background: #F9FAFB; font-size: 16px;
         }
-        .form-group input:focus {
-            border-color: #3B82F6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-            background: white;
-        }
-        .checkbox-group {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-        }
+        .form-group input:focus { border-color: #3B82F6; background: white; outline: none; }
+
+        /* Checkboxes */
+        .checkbox-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
         .checkbox-item {
-            display: flex;
-            align-items: center;
-            background: #F3F4F6;
-            padding: 12px 15px;
-            border-radius: 10px;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            border: 2px solid transparent;
+            display: flex; align-items: center; background: #F3F4F6;
+            padding: 12px 15px; border-radius: 10px; cursor: pointer;
+            border: 2px solid transparent; transition: 0.3s;
         }
-        .checkbox-item input:checked + i {
-            color: #3B82F6;
-        }
-        .checkbox-item:hover {
-            background: #E5E7EB;
-            transform: translateY(-2px);
-            border-color: #3B82F6;
-        }
-        .checkbox-item input {
-            margin-left: 10px;
-            accent-color: #3B82F6;
-            transform: scale(1.2);
-        }
+        .checkbox-item:hover { background: #E5E7EB; border-color: #3B82F6; }
+        .checkbox-item input { margin-left: 10px; width: auto; }
+        
         .select-all {
-            background: #3B82F6;
-            color: white;
-            padding: 10px 15px;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-            margin-bottom: 15px;
+            background: #3B82F6; color: white; padding: 10px;
+            border-radius: 10px; cursor: pointer; text-align: center; margin-bottom: 15px;
         }
-        .select-all:hover {
-            background: #1D4ED8;
-            transform: translateY(-2px);
-        }
+
+        /* الأزرار */
         .btn {
             background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
-            color: white;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
+            color: white; padding: 15px 30px; border-radius: 12px; font-size: 16px; font-weight: 600;
+            width: 100%; display: inline-flex; justify-content: center; align-items: center; gap: 10px;
         }
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
-        }
-        .btn-secondary {
-            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
-        }
-        .btn-secondary:hover {
-            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
-        }
-        .balance-card {
-            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 15px;
-            text-align: center;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
-        }
-        .balance-card h3 {
-            font-size: 18px;
-            margin-bottom: 5px;
-        }
-        .balance-card p {
-            font-size: 24px;
-            font-weight: bold;
-        }
-        /* لون مختلف للرصيد السالب (عليه) */
-        .balance-card.negative {
-            background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%);
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.6);
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            animation: fadeIn 0.3s ease;
-        }
-        .modal.show { display: flex; }
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            max-width: 400px;
-            width: 90%;
-            text-align: center;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-            animation: slideIn 0.3s ease;
-        }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #10B981;
-            color: white;
-            padding: 15px 20px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
-            display: none;
-            z-index: 1001;
-            animation: slideInRight 0.5s ease;
-        }
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        .warning {
-            background: #F59E0B;
-            color: white;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            display: none;
-        }
-        .icon { color: #6B7280; margin-right: 10px; }
-        .app-description {
-            text-align: center;
-            color: #6B7280;
-            font-size: 14px;
-            margin-bottom: 20px;
-            font-style: italic;
-        }
+        .btn-secondary { background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); }
 
+        /* Modals */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 400px; text-align: center; }
+        
+        .warning { background: #F59E0B; color: white; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none; }
     </style>
 </head>
 <body>
 
     <nav class="navbar">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-6xl mx-auto px-4">
             <div class="flex justify-between items-center h-16">
-                <div class="flex-shrink-0">
-                    <span class="text-2xl font-extrabold text-blue-600">
-                        <i class="fas fa-home"></i> Smart Dorm
-                    </span>
+                <div class="text-2xl font-extrabold text-blue-600">
+                    <i class="fas fa-home"></i> Smart Dorm
                 </div>
-                
-                <div class="flex items-center space-x-4 space-x-reverse">
-                    <a href="index.html" class="navbar-link active">
-                        <i class="fas fa-plus-circle"></i> الرئيسية (إضافة)
-                    </a>
-                    <a href="history.html" class="navbar-link">
-                        <i class="fas fa-history"></i> السجلات والملخص
-                    </a>
-                    <a href="auth.html" class="navbar-link">
-                        <i class="fas fa-cog"></i> تبديل المستخدمين
-                    </a>
+                <div class="flex space-x-4 space-x-reverse">
+                    <a href="index.html" class="navbar-link active"><i class="fas fa-plus-circle"></i> إضافة</a>
+                    <a href="history.html" class="navbar-link"><i class="fas fa-history"></i> السجل</a>
                 </div>
             </div>
         </div>
     </nav>
-    <div id="notification" class="notification">
-        <i class="fas fa-check-circle"></i> تم تسجيل المصروف بنجاح! 🎉
-    </div>
 
     <div class="content-wrapper">
         <div class="container">
-
+            
             <div class="top-actions">
                 <a href="history.html" class="top-action-btn history-btn">
-                    <i class="fas fa-history"></i> سجل العمليات
+                    <i class="fas fa-history"></i> السجل
                 </a>
                 <a href="auth.html" id="logoutButton" class="top-action-btn logout-btn">
-                    <i class="fas fa-sign-out-alt"></i> تبديل المستخدم
+                    <i class="fas fa-sign-out-alt"></i> خروج
                 </a>
             </div>
             
-            <div class="app-description">
-                <i class="fas fa-image icon"></i> نستخدم التطبيق على الصورة – أضف مصروفك بسهولة!
+            <div class="text-center text-gray-500 text-sm mb-6 italic">
+                <i class="fas fa-wallet"></i> نظام إدارة مصروفات السكن الذكي
             </div>
 
             <div id="currentBalanceCard" class="balance-card">
-                <h3><i class="fas fa-user-circle icon"></i> رصيدك الحالي يا <span id="userNamePlaceholder">...</span></h3>
-                <p id="currentBalance">يتم التحميل...</p>
+                <h3>
+                    <i class="fas fa-user-circle ml-1"></i> مرحباً، <span id="userNamePlaceholder" class="font-bold underline">...</span>
+                </h3>
+                <p dir="ltr">
+                    <span id="currentBalance">جاري التحميل...</span> <span class="text-lg font-normal">SDG</span>
+                </p>
             </div>
 
-            <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">
-                <i class="fas fa-plus-circle text-blue-500"></i> إضافة مصروف جديد
+            <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">
+                إضافة مصروف جديد
             </h1>
 
             <form id="expenseForm">
                 <div class="form-group">
-                    <label for="expenseTitle"><i class="fas fa-tag icon"></i> اسم المصروف (اكتب أو اختر)</label>
-                    <input type="text" id="expenseTitle" placeholder="مثال: شاي المساء" list="suggestions" required>
+                    <label for="expenseTitle">اسم المصروف</label>
+                    <input type="text" id="expenseTitle" placeholder="مثال: عشاء، كهرباء..." list="suggestions" required>
                     <datalist id="suggestions">
-                        <option value="شاي">
-                        <option value="أكل">
-                        <option value="غاز">
-                        <option value="نظافة">
-                        <option value="أخرى">
+                        <option value="أكل"><option value="شرب"><option value="كهرباء"><option value="نظافة">
                     </datalist>
                 </div>
 
                 <div class="form-group">
-                    <label for="expenseAmount"><i class="fas fa-dollar-sign icon"></i> المبلغ الكلي</label>
-                    <input type="tel" id="expenseAmount" placeholder="5,000" oninput="formatNumber(this)" required>
+                    <label for="expenseAmount">المبلغ الكلي (SDG)</label>
+                    <input type="tel" id="expenseAmount" placeholder="مثال: 5,000" oninput="formatNumber(this)" required style="direction: ltr; text-align: right;">
                 </div>
 
                 <div class="form-group">
-                    <label><i class="fas fa-users icon"></i> المشاركون (اختر من يشارك)</label>
-                    <div class="select-all" onclick="selectAllParticipants()">اختر الكل</div>
+                    <label>المشاركون</label>
+                    <div class="select-all" onclick="selectAllParticipants()">تحديد الجميع</div>
                     <div class="checkbox-group" id="participantsCheckboxes">
                         </div>
                 </div>
 
-                <div class="text-center">
-                    <button type="button" onclick="previewExpense()" class="btn btn-secondary w-full">
-                        <i class="fas fa-eye"></i> معاينة وحفظ
-                    </button>
-                </div>
+                <button type="button" onclick="previewExpense()" class="btn btn-secondary">
+                    معاينة وحفظ
+                </button>
             </form>
         </div>
     </div>
+
     <div id="previewModal" class="modal">
         <div class="modal-content">
-            <div id="warning" class="warning">
-                <i class="fas fa-exclamation-triangle"></i> تحذير: قد يكون هذا المصروف مكرراً! هل تريد المتابعة؟
-            </div>
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">
-                <i class="fas fa-check-circle text-green-500"></i> تأكيد المصروف
-            </h2>
-            <p id="previewText" class="text-gray-600 mb-6 text-right"></p>
-            <div>
-                <button onclick="saveExpense()" class="btn">
-                    <i class="fas fa-save"></i> حفظ نهائي
-                </button>
-                <button onclick="hideModal()" class="btn btn-secondary ml-4">
-                    <i class="fas fa-times"></i> إلغاء
-                </button>
+            <div id="warning" class="warning"><i class="fas fa-exclamation-triangle"></i> تحذير: مصروف مكرر!</div>
+            <h2 class="text-xl font-bold mb-4">تأكيد المصروف</h2>
+            <div id="previewText" class="text-right text-gray-700 mb-6 text-sm leading-loose"></div>
+            <div class="flex justify-center gap-4">
+                <button onclick="saveExpense()" class="btn w-auto">حفظ</button>
+                <button onclick="hideModal()" class="btn w-auto bg-gray-500 text-white">إلغاء</button>
             </div>
         </div>
     </div>
     
     <div id="successModal" class="modal">
         <div class="modal-content">
-             <h2 class="text-2xl font-bold text-gray-800 mb-4">
-                <i class="fas fa-check-circle text-green-500"></i> تم الحفظ بنجاح!
-            </h2>
-            <p class="text-gray-600 mb-6 text-right">تم تسجيل المصروف وتحديث أرصدة المشاركين.</p>
-            <div>
-                <button onclick="hideSuccessModal()" class="btn">
-                    <i class="fas fa-times"></i> إغلاق
-                </button>
-            </div>
+            <h2 class="text-xl font-bold text-green-600 mb-4"><i class="fas fa-check-circle"></i> تم الحفظ!</h2>
+            <button onclick="hideSuccessModal()" class="btn w-full">إغلاق</button>
         </div>
     </div>
 
