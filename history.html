@@ -10,23 +10,22 @@
 
     <style>
         body {
-            background-color: #F3F4F6; /* خلفية رمادية مريحة للعين */
+            background-color: #F3F4F6;
             font-family: 'Cairo', sans-serif;
             padding-bottom: 60px;
         }
 
         /* --- 1. بطاقة المستخدم (الهيدر) --- */
         .user-profile-card {
-            background: linear-gradient(135deg, #B91C1C 0%, #991B1B 100%); /* تدرج لوني بسيط */
+            background: linear-gradient(135deg, #B91C1C 0%, #991B1B 100%);
             color: white;
             padding: 25px 20px;
             border-bottom-left-radius: 25px;
             border-bottom-right-radius: 25px;
-            margin-bottom: 25px;
-            box-shadow: 0 10px 25px -5px rgba(185, 28, 28, 0.4); /* ظل أحمر خفيف */
+            margin-bottom: 20px;
+            box-shadow: 0 10px 25px -5px rgba(185, 28, 28, 0.4);
         }
 
-        /* زر العودة */
         .back-btn {
             background: rgba(255,255,255,0.2);
             padding: 6px 14px;
@@ -36,144 +35,119 @@
             font-size: 0.9rem;
             transition: background 0.3s;
         }
-        .back-btn:hover {
-            background: rgba(255,255,255,0.3);
-        }
+        .back-btn:hover { background: rgba(255,255,255,0.3); }
 
-        /* --- 2. تحسين بطاقة المعاملة (Bankak Style) --- */
+        /* --- 2. بطاقة المعاملة (التصميم المعدل) --- */
         .bankak-card {
             background: white;
             border: 1px solid #F3F4F6;
-            border-radius: 12px; /* زوايا أكثر انحناءً */
-            
-            /* 🔥 التعديل الجمالي: زيادة المسافة والظل */
-            margin-bottom: 20px; /* مسافة أكبر بين البطاقات */
-            padding: 18px;
-            
+            border-radius: 12px;
+            margin-bottom: 15px; /* مسافة بين البطاقات */
+            padding: 15px 18px;
             position: relative;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); /* ظل ناعم */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
             display: flex;
             flex-direction: column;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            transition: transform 0.2s ease;
         }
+        .bankak-card:hover { transform: translateY(-2px); }
 
-        /* تأثير بسيط عند مرور الماوس */
-        .bankak-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
-        }
-
-        /* الصف العلوي */
-        .card-top-row {
+        /* الجزء العلوي (المحتوى الرئيسي) */
+        .card-main-content {
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 12px;
-            padding-bottom: 12px;
-            border-bottom: 1px dashed #E5E7EB; /* خط فاصل منقط خفيف داخلي */
+            justify-content: space-between; /* توزيع: المبلغ يسار، التفاصيل يمين */
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #E5E7EB; /* الخط الفاصل */
         }
 
-        /* تنسيق المبلغ */
+        /* تنسيق المبلغ (يسار) */
         .amount-display {
-            font-size: 1.3rem; /* تكبير الخط قليلاً */
+            font-size: 1.4rem;
             font-weight: 800;
             direction: ltr; 
             font-family: sans-serif;
-            letter-spacing: -0.5px;
+            order: 2; /* يضمن ظهوره في اليسار في وضع RTL عبر Flexbox adjustment */
+            margin-right: auto; /* يدفعه لأقصى اليسار */
         }
-        .amount-pos { color: #059669; } /* أخضر غامق */
-        .amount-neg { color: #DC2626; } /* أحمر */
+        .amount-pos { color: #059669; }
+        .amount-neg { color: #DC2626; }
 
-        /* التاريخ */
-        .date-display {
-            font-size: 0.8rem;
-            color: #9CA3AF;
-            font-weight: 600;
-            background: #F9FAFB;
-            padding: 4px 8px;
-            border-radius: 6px;
-        }
-
-        /* الصف الأوسط */
-        .card-body-row {
+        /* حاوية التفاصيل والأيقونة (يمين) */
+        .details-wrapper {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            order: 1;
+            flex-grow: 1;
         }
 
-        .details-section {
-            text-align: right;
-            flex-grow: 1;
-            padding-left: 12px;
+        .details-text {
+            margin-right: 10px; /* مسافة بين الأيقونة والنص */
         }
-        
+
         .transaction-title {
             font-weight: 700;
             color: #1F2937;
             font-size: 1rem;
-            margin-bottom: 6px;
         }
         
         .transaction-sub {
             font-size: 0.85rem;
-            color: #4B5563;
-            line-height: 1.6;
+            color: #6B7280;
         }
 
         /* الأيقونة */
         .bank-icon-container {
-            width: 50px;
-            height: 50px;
+            width: 45px;
+            height: 45px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-shrink: 0;
             border: 2px solid;
             position: relative;
             background-color: #FAFAFA;
+            flex-shrink: 0;
         }
-        
         .icon-success { border-color: #059669; color: #059669; }
         .icon-danger { border-color: #DC2626; color: #DC2626; }
-
+        
         .arrow-badge {
             position: absolute;
-            bottom: -2px; /* تغيير مكان السهم للأسفل */
-            right: -2px;
-            background: white;
-            border-radius: 50%;
-            padding: 3px;
-            font-size: 0.75rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            bottom: -2px; right: -2px;
+            background: white; border-radius: 50%;
+            padding: 2px; font-size: 0.7rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        /* شريط التمرير للفلاتر */
-        .filter-scroll {
+        /* --- الجزء السفلي (التاريخ والوقت) --- */
+        .card-footer-date {
+            text-align: right;
+            font-size: 0.75rem;
+            color: #9CA3AF;
+            font-weight: 600;
             display: flex;
-            gap: 15px;
-            overflow-x: auto;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-            scrollbar-width: none; /* إخفاء الشريط لفايرفوكس */
+            justify-content: space-between;
+            align-items: center;
         }
-        .filter-scroll::-webkit-scrollbar { display: none; } /* إخفاء الشريط لكروم */
+
+        /* الفلاتر */
+        .filter-scroll {
+            display: flex; gap: 10px; overflow-x: auto;
+            padding-bottom: 10px; margin-bottom: 10px;
+            scrollbar-width: none;
+        }
+        .filter-scroll::-webkit-scrollbar { display: none; }
 
         .filter-pill {
-            white-space: nowrap;
-            padding: 6px 16px;
-            border-radius: 20px;
-            background: white;
-            color: #6B7280;
-            font-size: 0.85rem;
-            font-weight: 600;
-            border: 1px solid #E5E7EB;
-            cursor: pointer;
+            white-space: nowrap; padding: 6px 16px;
+            border-radius: 20px; background: white;
+            color: #6B7280; font-size: 0.85rem; font-weight: 600;
+            border: 1px solid #E5E7EB; cursor: pointer; transition: 0.2s;
         }
         .filter-pill.active {
-            background: #FEF2F2;
-            color: #B91C1C;
-            border-color: #B91C1C;
+            background: #FEF2F2; color: #B91C1C; border-color: #B91C1C;
         }
 
     </style>
@@ -190,30 +164,22 @@
                 <i class="fas fa-arrow-right ml-1"></i> رجوع
             </a>
         </div>
-        <div class="mt-6 flex justify-between items-end">
-            <div>
-                <span class="block text-xs opacity-70 mb-1">الرصيد الإجمالي (تقديري)</span>
-                <span class="text-2xl font-bold" id="currentBalance">---</span> <span class="text-sm">SDG</span>
-            </div>
-            <div class="text-xs bg-white/20 px-3 py-1 rounded-full">
-                كشف حساب ذكي
-            </div>
         </div>
-    </div>
 
     <div class="max-w-3xl mx-auto px-4">
         
-        <div class="filter-scroll">
-            <div class="filter-pill active">آخر 30 يوم</div>
-            <div class="filter-pill">آخر 3 شهور</div>
-            <div class="filter-pill">الواردة</div>
-            <div class="filter-pill">الصادرة</div>
+        <div class="filter-scroll" id="filtersContainer">
+            <div class="filter-pill active" onclick="setFilter('30days', this)">آخر 30 يوم</div>
+            <div class="filter-pill" onclick="setFilter('3months', this)">آخر 3 شهور</div>
+            <div class="filter-pill" onclick="setFilter('incoming', this)">الواردة (لك)</div>
+            <div class="filter-pill" onclick="setFilter('outgoing', this)">الصادرة (عليك)</div>
+            <div class="filter-pill" onclick="setFilter('all', this)">الكل</div>
         </div>
 
         <div id="expensesContainer">
             <p class="text-center text-gray-400 mt-12">
                 <i class="fas fa-spinner fa-spin fa-2x mb-4"></i><br>
-                جاري جلب المعاملات...
+                جاري التحميل...
             </p>
         </div>
     </div>
