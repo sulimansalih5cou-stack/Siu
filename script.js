@@ -131,25 +131,20 @@ function calculateSettlementSummary() {
     });
 
     allExpenses.forEach(expense => {
-        const payerId = expense.payer_id; // الدافع الفعلي (أنت دائماً)
+        const payerId = expense.payer_id; 
         const share = expense.share; 
-        const amount = expense.amount;
         const isMessenger = expense.is_messenger || false;
 
         // 1. حساب الدافع (أنت) مع كل مشارك
         if (payerId === currentUserID) {
             
-            // إذا كنت مرسالاً، كل المشاركين يدينون لك بحصتهم
             if (isMessenger) {
-                // مجموع الحصص التي تستردها يساوي المبلغ الكلي
                 expense.participants_ids.forEach(participantId => {
-                    // لا نحتاج لعمل تسوية مع مستخدم غير موجود في netBalances (أي نفسه)
                     if (netBalances.hasOwnProperty(participantId)) { 
                         netBalances[participantId] = roundToTwo(netBalances[participantId] + share);
                     }
                 });
             } else {
-                // إذا لم تكن مرسالاً، فأنت تسترد من المشاركين حصصهم (باستثناء حصتك أنت)
                 allUsers.forEach(user => {
                     if (user.uid !== currentUserID && expense.participants_ids.includes(user.uid)) {
                         netBalances[user.uid] = roundToTwo(netBalances[user.uid] + share);
@@ -159,11 +154,8 @@ function calculateSettlementSummary() {
         } 
         // 2. حساب المشارك (المستخدم الآخر) مع الدافع (أنت)
         else if (expense.participants_ids.includes(currentUserID) && payerId !== currentUserID) {
-            // المستخدم الحالي مدين للدافع بحصته
              netBalances[payerId] = roundToTwo(netBalances[payerId] - share);
         }
-        // ملاحظة: المصروفات التي دفعتها أنت (payerId = currentUserID) يتم معالجتها في الخطوة 1
-
     });
 
     // توليد العرض
@@ -181,11 +173,9 @@ function calculateSettlementSummary() {
         let colorClass;
 
         if (netAmount > 0) {
-            // أنت داير من فلان (هو مدين لك)
             summaryText = `أنت داير من **${otherUserName}** مبلغ:`;
             colorClass = "text-green-600 border-green-200 bg-green-50";
         } else {
-            // فلان داير منك (أنت مدين له)
             summaryText = `**${otherUserName}** داير منك مبلغ:`;
             colorClass = "text-red-600 border-red-200 bg-red-50";
         }
@@ -251,11 +241,10 @@ function displayHistory() {
 
         // فلترة النوع
         const isCurrentUserPayer = expense.payer_id === currentUserID;
-        if (activeFilter === 'incoming') return isCurrentUserPayer; // أنت تسترد (وارد لك)
+        if (activeFilter === 'incoming') return isCurrentUserPayer; 
         
-        // يجب أن نكون مشاركين هنا إذا لم نكن الدافع
         const isCurrentUserParticipant = expense.participants_ids.includes(currentUserID);
-        if (activeFilter === 'outgoing') return !isCurrentUserPayer && isCurrentUserParticipant; // أنت تدفع (صادر منك)
+        if (activeFilter === 'outgoing') return !isCurrentUserPayer && isCurrentUserParticipant; 
         
         return true; 
     });
@@ -268,7 +257,7 @@ function displayHistory() {
 
     filteredList.forEach(expense => {
         const isPayer = expense.payer_id === currentUserID;
-        const isMessenger = expense.is_messenger || false; // 🔥 جلب حالة المرسال
+        const isMessenger = expense.is_messenger || false; 
         const share = expense.share;
         let netAmount = 0;
         let isPositive = false;
@@ -277,14 +266,12 @@ function displayHistory() {
 
         if (isPayer) {
             if (isMessenger) {
-                // حالة المرسال: تسترد المبلغ الكلي
                 netAmount = expense.amount; 
                 isPositive = true;
                 const otherParticipantsCount = expense.participants_ids.length;
                 mainTitle = `مرسال: استرداد من ${otherParticipantsCount} مشارك`;
                 detailsText = `دفعت ${expense.amount.toLocaleString(undefined, {maximumFractionDigits: 1})} بالنيابة (حصتك 0)`;
             } else {
-                // حالة الدافع العادي: تسترد المبلغ مطروحاً منه حصتك
                 netAmount = expense.amount - share; 
                 isPositive = true;
                 const otherParticipantsCount = expense.participants_ids.length - 1;
@@ -293,11 +280,10 @@ function displayHistory() {
             }
 
         } else if (expense.participants_ids.includes(currentUserID)) {
-            // أنت مشارك (ولست الدافع)
             netAmount = share;
             isPositive = false;
             const payerName = getUserNameById(expense.payer_id);
-            mainTitle = `مشاركة مع ${payerName}`;
+            mainTitle = `مشاركة في مصروف: ${payerName}`;
             detailsText = `حصتك المطلوبة`;
         } else {
             return;
@@ -345,11 +331,38 @@ function displayHistory() {
 // 💾 منطق الحفظ (Save Expense)
 // ============================================================
 
+window.handleSaveClick = function() {
+    const isMessenger = document.getElementById('isMessenger').checked;
+    const amountStr = document.getElementById('expenseAmount').value.replace(/,/g, '');
+    const amount = parseFloat(amountStr);
+
+    if (isMessenger) {
+        // إذا كان مرسالاً، ننتقل إلى مرحلة التأكيد
+        const confirmationEl = document.getElementById('messengerConfirmation');
+        const detailsEl = document.getElementById('previewDetails');
+        
+        // تحديث رسالة التأكيد بالمبلغ الصحيح
+        const warningContent = confirmationEl.querySelector('.messenger-warning p:first-of-type');
+        warningContent.innerHTML = warningContent.innerHTML.replace(/\$amount\$/g, amount.toLocaleString());
+
+
+        detailsEl.style.display = 'none';
+        confirmationEl.style.display = 'block';
+    } else {
+        // إذا لم يكن مرسالاً، يتم الحفظ مباشرة
+        saveExpense();
+    }
+};
+
 window.previewExpense = function() {
+    // 🔥 إعادة المودال إلى حالة المعاينة (المرحلة الأولى)
+    document.getElementById('previewDetails').style.display = 'block';
+    document.getElementById('messengerConfirmation').style.display = 'none';
+
     const title = document.getElementById('expenseTitle').value;
     const amountStr = document.getElementById('expenseAmount').value.replace(/,/g, '');
     const amount = parseFloat(amountStr);
-    const isMessenger = document.getElementById('isMessenger').checked; // 🔥 جلب حالة المرسال
+    const isMessenger = document.getElementById('isMessenger').checked; 
 
     if (!title || isNaN(amount) || amount <= 0) {
         alert('الرجاء إدخال البيانات بشكل صحيح');
@@ -359,12 +372,10 @@ window.previewExpense = function() {
     const checkboxes = document.querySelectorAll('#participantsCheckboxes input:checked');
     let participants = Array.from(checkboxes).map(cb => cb.getAttribute('data-uid'));
     
-    // 🔥 التأكد من إضافة الدافع كـ مشارك إذا لم يكن مرسالاً
     if (!isMessenger && !participants.includes(currentUserID)) {
         participants.push(currentUserID); 
     }
 
-    // التحقق من وجود مشاركين إذا كان مرسالاً
     if (isMessenger && participants.length === 0) {
         alert('عند اختيار "دفعت كمرسال"، يجب تحديد المشاركين ليتم تقسيم المبلغ عليهم.');
         return;
@@ -372,6 +383,9 @@ window.previewExpense = function() {
     
     const effectiveParticipantsCount = participants.length;
     const finalShare = roundToTwo(amount / effectiveParticipantsCount);
+    
+    // تحديث زر الحفظ الرئيسي في مرحلة المعاينة
+    document.getElementById('mainSaveButton').textContent = isMessenger ? 'متابعة إلى التأكيد' : 'حفظ';
 
     const text = `
         <ul class="list-disc pr-4 space-y-2 text-right" dir="rtl">
@@ -384,21 +398,23 @@ window.previewExpense = function() {
     `;
     document.getElementById('previewText').innerHTML = text;
 
-    // 🔥 عرض رسائل التحذير
+    // عرض رسائل التحذير (تكرار المصروف فقط)
     const today = new Date().toISOString().split('T')[0];
     const isDuplicate = allExpenses.some(e => e.date === today && e.title === title && e.amount === amount);
     
     document.getElementById('warning').style.display = isDuplicate ? 'block' : 'none';
-    document.getElementById('messengerWarning').style.display = isMessenger ? 'block' : 'none';
 
     document.getElementById('previewModal').classList.add('show');
 };
 
 window.saveExpense = async function() {
+    // 💡 هذه الدالة يتم استدعاؤها الآن مباشرة من زر "موافق (تسجيل كمرسال)" 
+    // أو من زر "حفظ" إذا لم يكن المرسال مفعلاً.
+    
     window.hideModal();
     const title = document.getElementById('expenseTitle').value;
     const amount = parseFloat(document.getElementById('expenseAmount').value.replace(/,/g, ''));
-    const isMessenger = document.getElementById('isMessenger').checked; // 🔥 جلب حالة المرسال
+    const isMessenger = document.getElementById('isMessenger').checked; 
     
     const checkboxes = document.querySelectorAll('#participantsCheckboxes input:checked');
     let participantsIDs = Array.from(checkboxes).map(cb => cb.getAttribute('data-uid'));
@@ -409,7 +425,7 @@ window.saveExpense = async function() {
     
     const effectiveParticipantsCount = participantsIDs.length;
     
-    if (isMessenger && effectiveParticipantsCount === 0) return; // تم التحقق منه في previewExpense
+    if (effectiveParticipantsCount === 0) return; // تم التحقق منه مسبقاً
 
     const finalShare = roundToTwo(amount / effectiveParticipantsCount);
     const updates = {};
@@ -420,10 +436,8 @@ window.saveExpense = async function() {
 
         // 1. حساب الدافع (أنت)
         if (user.uid === payerID) {
-            // رصيدك يزيد بالمبلغ الكلي الذي دفعته
             finalBalance += amount;
             
-            // إذا لم تكن مرسالاً، يجب أن تدفع حصتك أيضاً
             if (!isMessenger) {
                 finalBalance -= finalShare;
             }
@@ -431,7 +445,6 @@ window.saveExpense = async function() {
         
         // 2. حساب المشاركين الآخرين
         else if (participantsIDs.includes(user.uid)) {
-            // كل مشارك يدفع حصته للدافع الفعلي (أنت)
             finalBalance -= finalShare;
         }
 
@@ -524,5 +537,10 @@ onAuthStateChanged(auth, (user) => {
 });
 
 // إغلاق النوافذ
-window.hideModal = () => document.getElementById('previewModal').classList.remove('show');
+window.hideModal = () => {
+    document.getElementById('previewModal').classList.remove('show');
+    // عند إغلاق المودال، نضمن عودة الواجهة إلى مرحلة المعاينة الافتراضية
+    document.getElementById('previewDetails').style.display = 'block';
+    document.getElementById('messengerConfirmation').style.display = 'none';
+};
 window.hideSuccessModal = () => document.getElementById('successModal').classList.remove('show');
