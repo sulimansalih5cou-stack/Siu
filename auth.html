@@ -29,7 +29,6 @@
             sendEmailVerification,
             updateProfile
         } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-        // 💡 الدوال المطلوبة للتحقق من الاسم
         import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"; 
 
         // 3. تهيئة Firebase
@@ -148,10 +147,9 @@
                 return;
             }
 
-            // 🟢 المنطق المصحح للتحقق من تكرار الاسم (يسمح بالتسجيل إذا كانت قاعدة البيانات فارغة)
+            // التحقق من تكرار الاسم في قاعدة البيانات (منطقياً صحيح لمعالجة قاعدة البيانات الفارغة)
             try {
                 const dbRef = window.ref(window.db);
-                // 💡 نقوم بالـ get على مسار users
                 const snapshot = await window.get(window.child(dbRef, `users`));
 
                 if (snapshot.exists()) {
@@ -165,11 +163,7 @@
                         return; 
                     }
                 } 
-                // 💡 إذا لم يكن هناك مستخدمون (snapshot.exists() = false)، سنتابع إلى Firebase Auth دون عرض خطأ.
-
             } catch (error) {
-                // 🛑 هذا يمنع رسالة "حدث خطأ أثناء التحقق من الأسماء" من الظهور بسبب خطأ في قراءة قاعدة البيانات
-                // بل سيستمر في عملية التسجيل
                 console.warn("Could not check for name duplication, proceeding with signup. Error:", error);
             }
 
@@ -217,7 +211,7 @@
 
                     user.reload().then(() => {
                         if (user.emailVerified) {
-                            alert('تم تسجيل الدخول بنجاح! مرحباً بك.');
+                            // 💡 عند نجاح تسجيل الدخول، يتم التوجيه للصفحة الرئيسية
                             window.location.href = 'index.html'; 
                         } else {
                             window.auth.signOut();
@@ -234,7 +228,12 @@
                 });
         }
 
-        document.addEventListener('DOMContentLoaded', () => { toggleForm(); });
+        document.addEventListener('DOMContentLoaded', () => { 
+            // 💡 عند تحميل الصفحة، يتم عرض نموذج التسجيل بشكل افتراضي
+            toggleForm(); 
+            // 💡 يتم استدعاء toggleForm مرة أخرى لعرض واجهة تسجيل الدخول إذا لم يكن المستخدم مسجلاً
+            toggleForm(); 
+        });
     </script>
 </body>
 </html>
