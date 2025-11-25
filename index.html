@@ -114,7 +114,10 @@
         .modal.show { display: flex; }
         .modal-content { background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 400px; text-align: center; }
 
+        /* رسالة تحذير المرسال */
         .warning { background: #F59E0B; color: white; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none; }
+        .messenger-warning { background: #FEF2F2; color: #B91C1C; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none; border: 1px solid #FCA5A5; }
+
     </style>
 </head>
 <body>
@@ -176,15 +179,13 @@
                     <input type="tel" id="expenseAmount" placeholder="مثال: 5,000" oninput="formatNumber(this)" required style="direction: ltr; text-align: right;">
                 </div>
 
-                <div class="form-group">
-                    <label for="responsibleUser">المستخدم المسؤول عن المصروف (صاحب الدين)</label>
-                    <select id="responsibleUser" class="w-full p-3 border border-gray-300 rounded-lg bg-white" required>
-                        </select>
-                    <p class="text-sm text-gray-500 mt-1">
-                        <i class="fas fa-info-circle ml-1"></i> هذا الشخص هو من سيتحمل المصروف كدين أولي.
-                    </p>
+                <div class="form-group flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
+                    <label for="isMessenger" class="text-sm font-semibold text-red-700 select-none cursor-pointer">
+                        <i class="fas fa-hand-holding-usd ml-1"></i> دفعت كمُرسال (لست مشاركاً)
+                    </label>
+                    <input type="checkbox" id="isMessenger" class="form-checkbox h-5 w-5 text-red-600">
                 </div>
-                <div class="form-group">
+                <div class="form-group mt-6">
                     <label>المشاركون (من سيقتسمون المبلغ)</label>
                     <div class="select-all" onclick="selectAllParticipants()">تحديد الجميع</div>
                     <div class="checkbox-group" id="participantsCheckboxes">
@@ -200,6 +201,10 @@
 
     <div id="previewModal" class="modal">
         <div class="modal-content">
+            <div id="messengerWarning" class="messenger-warning">
+                <i class="fas fa-exclamation-circle"></i>
+                <span class="font-bold">تأكيد:</span> سيتم تسجيل حصتك **بصفر** ولن تشارك في هذا المصروف.
+            </div>
             <div id="warning" class="warning"><i class="fas fa-exclamation-triangle"></i> تحذير: مصروف مكرر!</div>
             <h2 class="text-xl font-bold mb-4">تأكيد المصروف</h2>
             <div id="previewText" class="text-right text-gray-700 mb-6 text-sm leading-loose"></div>
