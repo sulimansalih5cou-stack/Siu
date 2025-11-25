@@ -21,7 +21,7 @@ const auth = getAuth(app);
 
 // متغيرات عامة
 let allUsers = []; 
-let currentUserID = null; // الدافع الفعلي (Amjad في المثال)
+let currentUserID = null; 
 let currentUserDB = null; 
 let allExpenses = [];
 let activeFilter = '30days'; 
@@ -95,8 +95,8 @@ function populateParticipants() {
 
     if (!currentUserID) return; 
 
-    // 💡 الآن، يتم عرض جميع المستخدمين في قائمة المشاركين، وسيتم تطبيق منطق الاستبعاد في الحفظ
-    allUsers.forEach(user => {
+    // عرض جميع المستخدمين باستثناء الدافع الفعلي (أنت)
+    allUsers.filter(u => u.uid !== currentUserID).forEach(user => {
         const div = document.createElement('div');
         div.className = 'checkbox-item'; 
         div.innerHTML = `
@@ -107,24 +107,6 @@ function populateParticipants() {
         `;
         container.appendChild(div);
     });
-}
-
-function populateResponsibleUserSelect() {
-    const selectEl = document.getElementById('responsibleUser');
-    if (!selectEl) return;
-    selectEl.innerHTML = '';
-    
-    allUsers.forEach(user => {
-        const option = document.createElement('option');
-        option.value = user.uid;
-        option.textContent = user.displayName;
-        selectEl.appendChild(option);
-    });
-    
-    // يفضل تحديد المستخدم الحالي كافتراضي
-    if (currentUserID) {
-        selectEl.value = currentUserID;
-    }
 }
 
 window.selectAllParticipants = function() {
@@ -149,39 +131,40 @@ function calculateSettlementSummary() {
     });
 
     allExpenses.forEach(expense => {
-        // الدافع الفعلي هو actual_payer_id
-        const actualPayerId = expense.actual_payer_id || currentUserID; 
-        // المستخدم المسؤول هو payer_id (الدافع الوهمي)
-        const responsibleId = expense.payer_id; 
+        const payerId = expense.payer_id; // الدافع الفعلي (أنت دائماً)
         const share = expense.share; 
-        const participants = expense.participants_ids;
         const amount = expense.amount;
+        const isMessenger = expense.is_messenger || false;
 
-
-        // 1. التسوية بين الدافع الفعلي (Current User) والمستخدم المسؤول (Responsible User)
-        if (actualPayerId === currentUserID) {
-            // المستخدم الحالي (الدافع الفعلي) يستحق المبلغ الكلي من المسؤول
-            netBalances[responsibleId] = roundToTwo(netBalances[responsibleId] + amount);
-        } else if (responsibleId === currentUserID) {
-             // المستخدم الحالي (المسؤول) مدين بالكامل للدافع الفعلي
-             netBalances[actualPayerId] = roundToTwo(netBalances[actualPayerId] - amount);
+        // 1. حساب الدافع (أنت) مع كل مشارك
+        if (payerId === currentUserID) {
+            
+            // إذا كنت مرسالاً، كل المشاركين يدينون لك بحصتهم
+            if (isMessenger) {
+                // مجموع الحصص التي تستردها يساوي المبلغ الكلي
+                expense.participants_ids.forEach(participantId => {
+                    // لا نحتاج لعمل تسوية مع مستخدم غير موجود في netBalances (أي نفسه)
+                    if (netBalances.hasOwnProperty(participantId)) { 
+                        netBalances[participantId] = roundToTwo(netBalances[participantId] + share);
+                    }
+                });
+            } else {
+                // إذا لم تكن مرسالاً، فأنت تسترد من المشاركين حصصهم (باستثناء حصتك أنت)
+                allUsers.forEach(user => {
+                    if (user.uid !== currentUserID && expense.participants_ids.includes(user.uid)) {
+                        netBalances[user.uid] = roundToTwo(netBalances[user.uid] + share);
+                    }
+                });
+            }
+        } 
+        // 2. حساب المشارك (المستخدم الآخر) مع الدافع (أنت)
+        else if (expense.participants_ids.includes(currentUserID) && payerId !== currentUserID) {
+            // المستخدم الحالي مدين للدافع بحصته
+             netBalances[payerId] = roundToTwo(netBalances[payerId] - share);
         }
+        // ملاحظة: المصروفات التي دفعتها أنت (payerId = currentUserID) يتم معالجتها في الخطوة 1
 
-        // 2. التسوية بين المستخدم المسؤول (Responsible User) والمشاركين
-        if (responsibleId === currentUserID) {
-            // المستخدم الحالي (المسؤول) يسترد حصته من المشاركين
-             participants.forEach(participantId => {
-                if (participantId !== currentUserID) {
-                    // المشارك مدين للمسؤول بحصته
-                    netBalances[participantId] = roundToTwo(netBalances[participantId] + share);
-                }
-            });
-        } else if (participants.includes(currentUserID) && currentUserID !== actualPayerId) {
-            // المستخدم الحالي (المشارك) مدين للمسؤول بحصته
-             netBalances[responsibleId] = roundToTwo(netBalances[responsibleId] - share);
-        }
     });
-
 
     // توليد العرض
     container.innerHTML = '';
@@ -198,9 +181,11 @@ function calculateSettlementSummary() {
         let colorClass;
 
         if (netAmount > 0) {
+            // أنت داير من فلان (هو مدين لك)
             summaryText = `أنت داير من **${otherUserName}** مبلغ:`;
             colorClass = "text-green-600 border-green-200 bg-green-50";
         } else {
+            // فلان داير منك (أنت مدين له)
             summaryText = `**${otherUserName}** داير منك مبلغ:`;
             colorClass = "text-red-600 border-red-200 bg-red-50";
         }
@@ -226,7 +211,6 @@ function calculateSettlementSummary() {
         `;
     }
 }
-
 
 // ============================================================
 // 📜 منطق صفحة السجلات (History Logic - Bankak Style)
@@ -256,13 +240,26 @@ function displayHistory() {
     const now = Date.now();
     const oneDay = 24 * 60 * 60 * 1000;
 
-    // الشرط هنا يجب أن يتضمن الدافع الفعلي والمستخدم المسؤول والمشاركين
     let filteredList = allExpenses.filter(expense => {
-        const actualPayer = expense.actual_payer_id === currentUserID;
-        const responsibleUser = expense.payer_id === currentUserID;
+        const isPayer = expense.payer_id === currentUserID;
         const isParticipant = expense.participants_ids.includes(currentUserID);
-        return actualPayer || responsibleUser || isParticipant; 
+        return isPayer || isParticipant; 
+    }).filter(expense => {
+        // فلترة الوقت
+        if (activeFilter === '30days') return (now - expense.timestamp) <= (30 * oneDay);
+        if (activeFilter === '3months') return (now - expense.timestamp) <= (90 * oneDay);
+
+        // فلترة النوع
+        const isCurrentUserPayer = expense.payer_id === currentUserID;
+        if (activeFilter === 'incoming') return isCurrentUserPayer; // أنت تسترد (وارد لك)
+        
+        // يجب أن نكون مشاركين هنا إذا لم نكن الدافع
+        const isCurrentUserParticipant = expense.participants_ids.includes(currentUserID);
+        if (activeFilter === 'outgoing') return !isCurrentUserPayer && isCurrentUserParticipant; // أنت تدفع (صادر منك)
+        
+        return true; 
     });
+
 
     if (filteredList.length === 0) {
         container.innerHTML = '<p class="text-center text-gray-500 mt-10">لا توجد سجلات مطابقة.</p>';
@@ -270,43 +267,37 @@ function displayHistory() {
     }
 
     filteredList.forEach(expense => {
-        const actualPayerId = expense.actual_payer_id || currentUserID; 
-        const responsibleId = expense.payer_id; // الدافع الوهمي
-        const isActualPayer = actualPayerId === currentUserID;
-        const isResponsibleUser = responsibleId === currentUserID;
+        const isPayer = expense.payer_id === currentUserID;
+        const isMessenger = expense.is_messenger || false; // 🔥 جلب حالة المرسال
         const share = expense.share;
         let netAmount = 0;
         let isPositive = false;
         let mainTitle = "";
         let detailsText = "";
 
-        // 1. المستخدم الحالي هو الدافع الفعلي (استرداد المبلغ الكلي من المسؤول)
-        if (isActualPayer && actualPayerId !== responsibleId) {
-            netAmount = expense.amount; 
-            isPositive = true;
-            mainTitle = `سلفة للمسؤول: ${getUserNameById(responsibleId)}`;
-            detailsText = `دفعت المبلغ بالكامل بالنيابة عنه.`;
+        if (isPayer) {
+            if (isMessenger) {
+                // حالة المرسال: تسترد المبلغ الكلي
+                netAmount = expense.amount; 
+                isPositive = true;
+                const otherParticipantsCount = expense.participants_ids.length;
+                mainTitle = `مرسال: استرداد من ${otherParticipantsCount} مشارك`;
+                detailsText = `دفعت ${expense.amount.toLocaleString(undefined, {maximumFractionDigits: 1})} بالنيابة (حصتك 0)`;
+            } else {
+                // حالة الدافع العادي: تسترد المبلغ مطروحاً منه حصتك
+                netAmount = expense.amount - share; 
+                isPositive = true;
+                const otherParticipantsCount = expense.participants_ids.length - 1;
+                mainTitle = `استرداد من ${otherParticipantsCount} مشارك`;
+                detailsText = `حصتك: ${share.toLocaleString(undefined, {maximumFractionDigits: 1})} SDG`;
+            }
 
-        // 2. المستخدم الحالي هو المسؤول (تسديد الدين للدافع الفعلي)
-        } else if (isResponsibleUser && actualPayerId !== responsibleId) { 
-            netAmount = expense.amount;
-            isPositive = false;
-            mainTitle = `دين للدافع الفعلي: ${getUserNameById(actualPayerId)}`;
-            detailsText = `تتحمل كامل المبلغ كدين أولي.`;
-            
-        // 3. المستخدم الحالي هو المسؤول (استرداد الحصص من المشاركين)
-        } else if (isResponsibleUser && actualPayerId === responsibleId) {
-            netAmount = expense.amount - share; 
-            isPositive = true;
-            mainTitle = `استرداد الحصص من المشاركين`;
-            detailsText = `المبلغ الكلي: ${expense.amount.toLocaleString(undefined, {maximumFractionDigits: 1})}`;
-
-        // 4. المستخدم الحالي هو مشارك (تسديد حصته للمسؤول)
         } else if (expense.participants_ids.includes(currentUserID)) {
+            // أنت مشارك (ولست الدافع)
             netAmount = share;
             isPositive = false;
-            const payerName = getUserNameById(responsibleId);
-            mainTitle = `مشاركة في مصروف: ${payerName}`;
+            const payerName = getUserNameById(expense.payer_id);
+            mainTitle = `مشاركة مع ${payerName}`;
             detailsText = `حصتك المطلوبة`;
         } else {
             return;
@@ -358,36 +349,47 @@ window.previewExpense = function() {
     const title = document.getElementById('expenseTitle').value;
     const amountStr = document.getElementById('expenseAmount').value.replace(/,/g, '');
     const amount = parseFloat(amountStr);
+    const isMessenger = document.getElementById('isMessenger').checked; // 🔥 جلب حالة المرسال
 
     if (!title || isNaN(amount) || amount <= 0) {
         alert('الرجاء إدخال البيانات بشكل صحيح');
         return;
     }
 
-    const responsibleUserID = document.getElementById('responsibleUser').value; 
     const checkboxes = document.querySelectorAll('#participantsCheckboxes input:checked');
-    // المشاركون هم الذين تم تحديدهم يدوياً + المستخدم المسؤول
     let participants = Array.from(checkboxes).map(cb => cb.getAttribute('data-uid'));
-    if (!participants.includes(responsibleUserID)) participants.push(responsibleUserID);
+    
+    // 🔥 التأكد من إضافة الدافع كـ مشارك إذا لم يكن مرسالاً
+    if (!isMessenger && !participants.includes(currentUserID)) {
+        participants.push(currentUserID); 
+    }
 
-    const share = roundToTwo(amount / participants.length);
-    const responsibleUserName = getUserNameById(responsibleUserID);
+    // التحقق من وجود مشاركين إذا كان مرسالاً
+    if (isMessenger && participants.length === 0) {
+        alert('عند اختيار "دفعت كمرسال"، يجب تحديد المشاركين ليتم تقسيم المبلغ عليهم.');
+        return;
+    }
+    
+    const effectiveParticipantsCount = participants.length;
+    const finalShare = roundToTwo(amount / effectiveParticipantsCount);
 
     const text = `
         <ul class="list-disc pr-4 space-y-2 text-right" dir="rtl">
             <li><b>المصروف:</b> ${title}</li>
             <li><b>المبلغ:</b> ${amount.toLocaleString()} SDG</li>
-            <li><b>المسؤول عنه:</b> ${responsibleUserName}</li>
-            <li><b>عدد المشاركين:</b> ${participants.length}</li>
-            <li><b>نصيب الفرد:</b> ${share.toLocaleString(undefined, {maximumFractionDigits: 2})} SDG</li>
+            <li><b>الدافع الفعلي:</b> أنت (${getUserNameById(currentUserID)})</li>
+            <li><b>عدد المشاركين:</b> ${effectiveParticipantsCount} ${isMessenger ? ' (سترد المبلغ كاملاً)' : ''}</li>
+            <li><b>نصيب الفرد:</b> ${finalShare.toLocaleString(undefined, {maximumFractionDigits: 2})} SDG</li>
         </ul>
     `;
     document.getElementById('previewText').innerHTML = text;
 
+    // 🔥 عرض رسائل التحذير
     const today = new Date().toISOString().split('T')[0];
     const isDuplicate = allExpenses.some(e => e.date === today && e.title === title && e.amount === amount);
-    const warningEl = document.getElementById('warning');
-    if(warningEl) warningEl.style.display = isDuplicate ? 'block' : 'none';
+    
+    document.getElementById('warning').style.display = isDuplicate ? 'block' : 'none';
+    document.getElementById('messengerWarning').style.display = isMessenger ? 'block' : 'none';
 
     document.getElementById('previewModal').classList.add('show');
 };
@@ -396,40 +398,41 @@ window.saveExpense = async function() {
     window.hideModal();
     const title = document.getElementById('expenseTitle').value;
     const amount = parseFloat(document.getElementById('expenseAmount').value.replace(/,/g, ''));
-    
-    // المستخدم المسؤول عن المصروف (الدافع الوهمي في التسويات)
-    const responsibleUserID = document.getElementById('responsibleUser').value; 
+    const isMessenger = document.getElementById('isMessenger').checked; // 🔥 جلب حالة المرسال
     
     const checkboxes = document.querySelectorAll('#participantsCheckboxes input:checked');
     let participantsIDs = Array.from(checkboxes).map(cb => cb.getAttribute('data-uid'));
-    if (!participantsIDs.includes(responsibleUserID)) participantsIDs.push(responsibleUserID); // يجب أن يكون المسؤول مشاركاً
     
-    const share = roundToTwo(amount / participantsIDs.length);
+    if (!isMessenger && !participantsIDs.includes(currentUserID)) {
+        participantsIDs.push(currentUserID); 
+    }
+    
+    const effectiveParticipantsCount = participantsIDs.length;
+    
+    if (isMessenger && effectiveParticipantsCount === 0) return; // تم التحقق منه في previewExpense
+
+    const finalShare = roundToTwo(amount / effectiveParticipantsCount);
     const updates = {};
-    const actualPayerID = currentUserID; // الدافع الفعلي (أنت)
+    const payerID = currentUserID;
 
     allUsers.forEach(user => {
         let finalBalance = user.balance || 0;
 
-        // 1. التسوية مع الدافع الفعلي (PayerID):
-        if (user.uid === actualPayerID) {
-            // الدافع الفعلي (أنت) يسترد المبلغ الكلي المدفوع.
-            finalBalance += amount; 
-        }
-
-        // 2. المستخدم المسؤول (ResponsibleUserID) يتحمل الدين الكلي:
-        if (user.uid === responsibleUserID) {
-            // المستخدم المسؤول يدفع المبلغ الكلي كدين
-            finalBalance -= amount; 
-            // المستخدم المسؤول يسترد حصص المشاركين
-            const totalSharesFromOthers = amount - share;
-            finalBalance += totalSharesFromOthers;
+        // 1. حساب الدافع (أنت)
+        if (user.uid === payerID) {
+            // رصيدك يزيد بالمبلغ الكلي الذي دفعته
+            finalBalance += amount;
+            
+            // إذا لم تكن مرسالاً، يجب أن تدفع حصتك أيضاً
+            if (!isMessenger) {
+                finalBalance -= finalShare;
+            }
         } 
         
-        // 3. المشاركون الآخرون (Participants):
+        // 2. حساب المشاركين الآخرين
         else if (participantsIDs.includes(user.uid)) {
-            // المشارك يدفع حصته للمستخدم المسؤول
-            finalBalance -= share;
+            // كل مشارك يدفع حصته للدافع الفعلي (أنت)
+            finalBalance -= finalShare;
         }
 
         updates[`users/${user.uid}/balance`] = roundToTwo(finalBalance);
@@ -437,14 +440,13 @@ window.saveExpense = async function() {
 
     const newKey = push(ref(db, 'expenses')).key;
     updates[`expenses/${newKey}`] = {
-        title, amount, share,
-        // الدافع الوهمي في السجل هو المسؤول عن المصروف
-        payer_id: responsibleUserID, 
-        // الدافع الفعلي (الحقيقي) هو المستخدم الحالي
-        actual_payer_id: actualPayerID, 
+        title, amount, 
+        share: finalShare,
+        payer_id: payerID, 
         participants_ids: participantsIDs,
         timestamp: Date.now(),
-        date: new Date().toISOString().split('T')[0]
+        date: new Date().toISOString().split('T')[0],
+        is_messenger: isMessenger 
     };
 
     try {
@@ -452,6 +454,7 @@ window.saveExpense = async function() {
         document.getElementById('successModal').classList.add('show');
         document.getElementById('expenseForm').reset();
         document.querySelectorAll('#participantsCheckboxes input[type=checkbox]').forEach(c => c.checked = false); 
+        document.getElementById('isMessenger').checked = false;
     } catch (e) {
         console.error("Error saving expense:", e);
         alert('خطأ في الاتصال بقاعدة البيانات.');
@@ -475,7 +478,6 @@ function loadData() {
             updateHomeDisplay();
             updateHistoryHeader();
             populateParticipants();
-            populateResponsibleUserSelect(); 
         }
     });
 
