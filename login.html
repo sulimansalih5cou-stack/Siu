@@ -1,3 +1,6 @@
+ملف login.html
+
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -147,12 +150,12 @@
                 displayError('الرجاء إدخال اسمك كاملاً.');
                 return;
             }
-            
+
             // 🆕 التحقق من تكرار الاسم في قاعدة البيانات
             try {
                 const dbRef = window.ref(window.db);
                 const snapshot = await window.get(window.child(dbRef, `users`));
-                
+
                 if (snapshot.exists()) {
                     const users = snapshot.val();
                     const nameExists = Object.values(users).some(user => 
@@ -169,7 +172,7 @@
                 displayError('حدث خطأ أثناء التحقق من الأسماء.');
                 return; 
             }
-            
+
             // المتابعة بإنشاء الحساب في Firebase Auth
             window.createUserWithEmailAndPassword(window.auth, email, password)
                 .then((userCredential) => {
