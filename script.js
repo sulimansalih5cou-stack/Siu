@@ -1,5 +1,3 @@
-script.js
-
 // 🔥 تهيئة واستيراد Firebase SDK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { getDatabase, ref, onValue, set, push, update } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
@@ -26,10 +24,10 @@ let allUsers = [];
 let currentUserID = null; 
 let currentUserDB = null; 
 let allExpenses = [];
-let activeFilter = '30days'; // لصفحة السجلات
+let activeFilter = '30days'; 
 
 // ============================================================
-// 🛠️ دوال مساعدة عامة (تعمل في كل الصفحات)
+// 🛠️ دوال مساعدة عامة
 // ============================================================
 
 function getUserNameById(uid) {
@@ -54,7 +52,8 @@ function formatBankDate(timestamp) {
     if (!timestamp) return { date: '--', time: '--' };
     const dateObj = new Date(timestamp);
     const day = dateObj.getDate();
-    const month = dateObj.toLocaleString('en-US', { month: 'short' });
+    // استخدام 'ar-EG' للعرض بالعربية، أو 'en-US' للحصول على الاختصار (كما كان مطلوباً في الكود الأصلي)
+    const month = dateObj.toLocaleString('en-US', { month: 'short' }); 
     const year = dateObj.getFullYear();
     const date = `${day}-${month}-${year}`;
     const time = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -66,12 +65,12 @@ function formatBankDate(timestamp) {
 // ============================================================
 
 function updateHomeDisplay() {
-    // التحقق من وجود عناصر الصفحة الرئيسية قبل التشغيل
     const balanceEl = document.getElementById('currentBalance');
     const nameEl = document.getElementById('userNamePlaceholder');
     const cardEl = document.getElementById('currentBalanceCard');
-
-    if (!balanceEl) return; // لسنا في الصفحة الرئيسية
+    
+    // 💡 التحقق من وجود العناصر لتفادي الأخطاء في صفحة history.html
+    if (!balanceEl && !nameEl) return; 
 
     // 1. تحديث الاسم
     let displayName = "مستخدم";
@@ -82,12 +81,17 @@ function updateHomeDisplay() {
 
     // 2. تحديث الرصيد واللون
     const balance = (currentUserDB && currentUserDB.balance) ? currentUserDB.balance : 0;
-    balanceEl.textContent = balance.toLocaleString('en-US', {minimumFractionDigits: 1});
+    if (balanceEl) {
+        // يعرض الرصيد مع رقم عشري واحد على الأقل
+        balanceEl.textContent = balance.toLocaleString('en-US', {minimumFractionDigits: 1, maximumFractionDigits: 2});
+    }
 
-    if (balance < -0.1) {
-        cardEl.classList.add('negative');
-    } else {
-        cardEl.classList.remove('negative');
+    if (cardEl) {
+        if (balance < -0.1) {
+            cardEl.classList.add('negative');
+        } else {
+            cardEl.classList.remove('negative');
+        }
     }
 }
 
@@ -96,9 +100,13 @@ function populateParticipants() {
     if (!container) return;
     container.innerHTML = '';
 
+    // 💡 التأكد من وجود currentUserID لتصفية الدافع
+    if (!currentUserID) return; 
+
     allUsers.filter(u => u.uid !== currentUserID).forEach(user => {
         const div = document.createElement('div');
-        div.className = 'participant-checkbox'; // استخدام الكلاس الجديد من CSS
+        // تم استبدال 'participant-checkbox' بـ 'checkbox-item' ليتطابق مع CSS في index.html
+        div.className = 'checkbox-item'; 
         div.innerHTML = `
             <label class="flex items-center w-full cursor-pointer">
                 <input type="checkbox" data-uid="${user.uid}" class="form-checkbox h-5 w-5 text-blue-600">
@@ -125,13 +133,20 @@ window.setFilter = function(filterType, element) {
     displayHistory();
 }
 
+function updateHistoryHeader() {
+    const headerName = document.getElementById('displayHeaderName');
+    const headerEmail = document.getElementById('displayHeaderEmail');
+
+    if (headerName && auth.currentUser) headerName.textContent = auth.currentUser.displayName || 'مستخدم';
+    if (headerEmail && auth.currentUser) headerEmail.textContent = auth.currentUser.email || '';
+}
+
 function displayHistory() {
     const container = document.getElementById('expensesContainer');
     if (!container) return; // لسنا في صفحة السجلات
 
     container.innerHTML = ''; 
 
-    // الفلاتر
     const now = Date.now();
     const oneDay = 24 * 60 * 60 * 1000;
 
@@ -161,16 +176,20 @@ function displayHistory() {
         let mainTitle = "";
         let detailsText = "";
 
+        // 💡 منطق عرض الدافع والمشارك (تم تحسين النص)
         if (isPayer) {
-            netAmount = expense.amount - share;
+            // المبلغ الذي يعود للدافع (الاسترداد)
+            netAmount = expense.amount - share; 
             isPositive = true;
-            mainTitle = `تحويل نقدي (أنت الدافع)`;
-            detailsText = `المبلغ الكلي: ${expense.amount.toLocaleString('en-US')} SDG`;
+            const otherParticipantsCount = expense.participants_ids.length - 1;
+            mainTitle = `استرداد من ${otherParticipantsCount} مشارك`;
+            detailsText = `دفعت: ${expense.amount.toLocaleString(undefined, {maximumFractionDigits: 1})} | حصتك: ${share.toLocaleString(undefined, {maximumFractionDigits: 1})} SDG`;
         } else {
+            // المبلغ المستحق على المشارك (دين)
             netAmount = share;
             isPositive = false;
             const payerName = getUserNameById(expense.payer_id);
-            mainTitle = `مشاركة (دفع: ${payerName})`;
+            mainTitle = `مشاركة مع ${payerName}`;
             detailsText = `حصتك المطلوبة`;
         }
 
@@ -184,7 +203,7 @@ function displayHistory() {
         <div class="bankak-card">
             <div class="card-main-content">
                 <div class="amount-display ${colorClass}">
-                    ${sign} ${netAmount.toLocaleString('en-US', {minimumFractionDigits: 1})}
+                    ${sign} ${netAmount.toLocaleString('en-US', {minimumFractionDigits: 1, maximumFractionDigits: 2})}
                 </div>
                 <div class="details-wrapper">
                     <div class="bank-icon-container ${iconClass} ml-3">
@@ -230,14 +249,14 @@ window.previewExpense = function() {
     const participants = Array.from(checkboxes).map(cb => cb.getAttribute('data-uid'));
     if (!participants.includes(currentUserID)) participants.push(currentUserID);
 
-    const share = amount / participants.length;
+    const share = roundToTwo(amount / participants.length);
 
     const text = `
         <ul class="list-disc pr-4 space-y-2 text-right" dir="rtl">
             <li><b>المصروف:</b> ${title}</li>
             <li><b>المبلغ:</b> ${amount.toLocaleString()} SDG</li>
             <li><b>عدد المشاركين:</b> ${participants.length}</li>
-            <li><b>نصيب الفرد:</b> ${share.toLocaleString(undefined, {maximumFractionDigits: 1})} SDG</li>
+            <li><b>نصيب الفرد:</b> ${share.toLocaleString(undefined, {maximumFractionDigits: 2})} SDG</li>
         </ul>
     `;
     document.getElementById('previewText').innerHTML = text;
@@ -264,7 +283,9 @@ window.saveExpense = async function() {
 
     allUsers.forEach(user => {
         let bal = user.balance || 0;
+        // الدافع: يضاف له (المبلغ الكلي - حصته)
         if (user.uid === currentUserID) bal += (amount - share);
+        // المشاركون: يطرح منهم حصتهم
         else if (participantsIDs.includes(user.uid)) bal -= share;
         updates[`users/${user.uid}/balance`] = roundToTwo(bal);
     });
@@ -282,10 +303,11 @@ window.saveExpense = async function() {
         await update(ref(db), updates);
         document.getElementById('successModal').classList.add('show');
         document.getElementById('expenseForm').reset();
-        document.querySelectorAll('input[type=checkbox]').forEach(c => c.checked = false);
+        // 💡 إعادة تحديد المشاركين للملائمة (إلغاء تحديد الكل)
+        document.querySelectorAll('#participantsCheckboxes input[type=checkbox]').forEach(c => c.checked = false); 
     } catch (e) {
-        console.error(e);
-        alert('خطأ في الاتصال');
+        console.error("Error saving expense:", e);
+        alert('خطأ في الاتصال بقاعدة البيانات.');
     }
 };
 
@@ -303,8 +325,9 @@ function loadData() {
             allUsers = Object.keys(val).map(k => ({uid: k, ...val[k]}));
             currentUserDB = allUsers.find(u => u.uid === currentUserID);
 
-            // تحديث الشاشات
+            // 💡 تحديث الشاشات بعد تحميل المستخدمين
             updateHomeDisplay();
+            updateHistoryHeader();
             populateParticipants();
         }
     });
@@ -332,22 +355,21 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUserID = user.uid;
 
-        // تحديث الهيدر في الصفحتين
+        // 💡 تحديث اسم المستخدم والبريد الإلكتروني في الهيدر مباشرة
         const headerName = document.getElementById('displayHeaderName');
         const headerEmail = document.getElementById('displayHeaderEmail');
-        const homeName = document.getElementById('userNamePlaceholder');
-
+        
         if (headerName) headerName.textContent = user.displayName || 'مستخدم';
         if (headerEmail) headerEmail.textContent = user.email || '';
-        if (homeName) homeName.textContent = user.displayName || 'مستخدم';
-
+        
+        // 💡 بدء تحميل البيانات
         loadData();
 
         const logoutBtn = document.getElementById('logoutButton');
         if (logoutBtn) logoutBtn.onclick = () => auth.signOut().then(() => window.location.href = 'auth.html');
 
     } else {
-        // السماح بالبقاء في صفحة الدخول فقط
+        // إذا لم يكن المستخدم مسجلاً، يتم توجيهه لصفحة الدخول إلا إذا كان موجوداً بالفعل فيها
         if (!window.location.href.includes('auth.html')) {
             window.location.href = 'auth.html';
         }
