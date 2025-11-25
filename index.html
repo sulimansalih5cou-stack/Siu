@@ -58,14 +58,14 @@
         .logout-btn { background-color: #6B7280; }
         .logout-btn:hover { background-color: #4B5563; }
 
-        /* --- 🔥 بطاقة الرصيد (التعديل المطلوب) --- */
+        /* --- 🔥 بطاقة الرصيد --- */
         .balance-card {
             /* الحالة الافتراضية (موجب - أخضر) */
             background: linear-gradient(135deg, #10B981 0%, #059669 100%);
             color: white; padding: 20px; border-radius: 15px;
             text-align: center; margin-bottom: 30px;
             box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
-            transition: background 0.5s ease; /* تأثير ناعم عند تغيير اللون */
+            transition: background 0.5s ease;
         }
 
         /* الحالة السالبة (دين - أحمر) */
@@ -80,11 +80,11 @@
         /* الحقول والنماذج */
         .form-group { margin-bottom: 25px; }
         .form-group label { display: block; font-weight: 600; color: #374151; margin-bottom: 8px; }
-        .form-group input {
+        .form-group input, .form-group select {
             width: 100%; padding: 15px; border: 2px solid #E5E7EB;
             border-radius: 12px; background: #F9FAFB; font-size: 16px;
         }
-        .form-group input:focus { border-color: #3B82F6; background: white; outline: none; }
+        .form-group input:focus, .form-group select:focus { border-color: #3B82F6; background: white; outline: none; }
 
         /* Checkboxes */
         .checkbox-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
@@ -177,7 +177,15 @@
                 </div>
 
                 <div class="form-group">
-                    <label>المشاركون</label>
+                    <label for="responsibleUser">المستخدم المسؤول عن المصروف (صاحب الدين)</label>
+                    <select id="responsibleUser" class="w-full p-3 border border-gray-300 rounded-lg bg-white" required>
+                        </select>
+                    <p class="text-sm text-gray-500 mt-1">
+                        <i class="fas fa-info-circle ml-1"></i> هذا الشخص هو من سيتحمل المصروف كدين أولي.
+                    </p>
+                </div>
+                <div class="form-group">
+                    <label>المشاركون (من سيقتسمون المبلغ)</label>
                     <div class="select-all" onclick="selectAllParticipants()">تحديد الجميع</div>
                     <div class="checkbox-group" id="participantsCheckboxes">
                         </div>
