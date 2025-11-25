@@ -127,6 +127,7 @@ window.previewExpense = function() {
     window.pendingExpense = { title, amount, participants, share };
 };
 
+// الدالة المسؤولة عن تسجيل المصروفات وتعديل الأرصدة (المنطق الصحيح المعتمد)
 window.saveExpense = async function() {
     window.hideModal();
     if (!window.pendingExpense) return;
@@ -136,17 +137,24 @@ window.saveExpense = async function() {
     const newKey = push(ref(db, 'expenses')).key;
     const payerName = currentUserDB ? currentUserDB.displayName : 'مستخدم';
 
+    // 1. تسجيل المصروف في قاعدة البيانات (/expenses)
     updates[`expenses/${newKey}`] = {
         title, amount, share, payer_id: currentUserID, participants_ids: participants, timestamp: Date.now()
     };
 
+    // 2. المرور على جميع المشاركين لتعديل الأرصدة وإرسال الإشعارات
     participants.forEach(uid => {
         const userObj = allUsers.find(u => u.uid === uid);
         let bal = userObj ? userObj.balance : 0;
         
-        if (uid === currentUserID) bal += (amount - share);
-        else {
+        if (uid === currentUserID) {
+            // الدافع: زيادة رصيده بمقدار (المبلغ الكلي - حصته الذاتية)
+            bal += (amount - share);
+        } else {
+            // المشارك: خصم حصته (مما يجعله مديناً للدافع)
             bal -= share;
+            
+            // إرسال إشعار للمشارك
             const notifKey = push(ref(db, 'notifications')).key;
             updates[`notifications/${notifKey}`] = {
                 recipientId: uid,
@@ -154,10 +162,13 @@ window.saveExpense = async function() {
                 timestamp: Date.now(), read: false
             };
         }
+        // تحديث الرصيد في حزمة التحديثات
         updates[`users/${uid}/balance`] = roundToTwo(bal);
     });
 
+    // 3. إرسال جميع التحديثات
     await update(ref(db), updates);
+    
     document.getElementById('successModal').classList.add('show');
     document.getElementById('expenseForm').reset();
     populateParticipants();
@@ -195,7 +206,7 @@ function displayMyExpensesSummary() {
 }
 
 // ============================================================
-// 📜 دوال صفحة السجلات (history.html)
+// 📜 دوال صفحة السجلات والتسوية (history.html)
 // ============================================================
 
 window.setFilter = function(type, el) {
@@ -265,14 +276,24 @@ function displaySummary() {
     let balances = {};
     allUsers.forEach(u => { if(u.uid !== currentUserID) balances[u.uid] = 0; });
     
+    // هذا المنطق يحسب صافي الدين بينك وبين كل شخص
     allExpenses.forEach(e => {
         const isPayer = e.payer_id === currentUserID;
-        e.participants_ids.forEach(pId => {
-            if (pId === currentUserID) return;
-            if (isPayer) balances[pId] += e.share;
-        });
-        if (!isPayer && e.participants_ids.includes(currentUserID)) {
-            if (e.payer_id !== currentUserID) balances[e.payer_id] -= e.share;
+        
+        // إذا كنت أنت الدافع
+        if (isPayer) {
+            e.participants_ids.forEach(pId => {
+                if (pId !== currentUserID) {
+                    // هذا الشخص مدين لك (دين إيجابي لك)
+                    balances[pId] += e.share; 
+                }
+            });
+        } 
+        
+        // إذا لم تكن أنت الدافع ولكنك مشارك
+        else if (e.participants_ids.includes(currentUserID)) {
+            // أنت مدين للدافع (دين سلبي عليك)
+            balances[e.payer_id] -= e.share;
         }
     });
 
@@ -281,7 +302,7 @@ function displaySummary() {
         const bal = roundToTwo(balances[uid]);
         if (Math.abs(bal) < 1) return;
         
-        const isPos = bal > 0;
+        const isPos = bal > 0; // إذا كان الرصيد موجبًا، يعني أن الشخص الآخر مدين لك
         html += `
         <div class="p-4 border-r-4 ${isPos ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'} rounded-lg mb-3 shadow-sm">
             <div class="flex justify-between items-center">
@@ -299,6 +320,9 @@ function displaySummary() {
 
 // --- التسوية ---
 window.openSettleModal = function(uid, name, type, amount) {
+    const settleModalEl = document.getElementById('settleModal');
+    if (!settleModalEl) return;
+    
     settleTargetUID = uid; settleTargetName = name; settleActionType = type; settleMaxAmount = amount;
     const summary = document.getElementById('settleSummary');
     const btn = document.getElementById('confirmSettleButton');
@@ -307,17 +331,21 @@ window.openSettleModal = function(uid, name, type, amount) {
     document.getElementById('settleAmountInput').value = amount.toLocaleString();
     document.getElementById('settleReference').value = '';
     btn.textContent = 'تأكيد'; btn.disabled = false;
-    document.getElementById('settleModal').classList.add('show');
+    settleModalEl.classList.add('show');
 };
 
 window.confirmSettleUp = async function() {
-    const amount = parseFloat(document.getElementById('settleAmountInput').value.replace(/,/g, ''));
-    const refNum = document.getElementById('settleReference').value;
+    const settleAmountInputEl = document.getElementById('settleAmountInput');
+    const settleReferenceEl = document.getElementById('settleReference');
+    if(!settleAmountInputEl || !settleReferenceEl) return;
+    
+    const amount = parseFloat(settleAmountInputEl.value.replace(/,/g, ''));
+    const refNum = settleReferenceEl.value;
     
     if (!amount || !refNum || refNum.length < 4) { alert('بيانات غير صحيحة'); return; }
     
     document.getElementById('confirmSettleButton').disabled = true;
-    window.hideSettleModal();
+    window.hideModal(); // إخفاء جميع النوافذ
 
     const updates = {};
     const myChange = settleActionType === 'pay' ? amount : -amount;
@@ -343,7 +371,8 @@ window.confirmSettleUp = async function() {
 // --- الإشعارات ---
 window.openNotificationModal = function() {
     const list = document.getElementById('notificationsList');
-    if(!list) return;
+    const modal = document.getElementById('notificationModal');
+    if(!list || !modal) return; // تحقق ضروري ليعمل الكود في كل الصفحات
     
     const myNotifs = allNotifications.filter(n => n.recipientId === currentUserID).sort((a,b) => b.timestamp - a.timestamp);
     
@@ -354,7 +383,7 @@ window.openNotificationModal = function() {
         html += `<div class="p-3 rounded border ${n.read ? 'bg-gray-50' : 'bg-blue-50 border-blue-200'}"><p class="text-sm">${n.message}</p><span class="text-xs text-gray-400">${date}</span></div>`;
     });
     list.innerHTML = html;
-    document.getElementById('notificationModal').classList.add('show');
+    modal.classList.add('show');
 };
 
 window.markAllAsRead = async function() {
@@ -367,13 +396,12 @@ window.markAllAsRead = async function() {
 
 window.hideNotificationModal = () => document.getElementById('notificationModal').classList.remove('show');
 window.hideModal = () => document.querySelectorAll('.modal').forEach(m => m.classList.remove('show'));
-window.hideSuccessModal = () => document.querySelectorAll('.modal').forEach(m => m.classList.remove('show'));
 
 // --- التحميل والمصادقة ---
 function initializePage() {
     updateCommonUI(); // تحديث العناصر المشتركة (هيدر، إشعارات)
     
-    // تحديث العناصر الخاصة بكل صفحة
+    // تحديث العناصر الخاصة بكل صفحة بشكل شرطي
     if (document.getElementById('expenseForm')) populateParticipants();
     if (document.getElementById('expensesContainer')) displayHistory();
     if (document.getElementById('myExpenseHistory')) displayMyExpensesSummary();
@@ -384,19 +412,19 @@ function loadData() {
     const endpoints = ['users', 'expenses', 'notifications'];
     
     endpoints.forEach(ep => {
+        // نستخدم onValue للاستماع للتغييرات في كل نقطة بيانات
         onValue(ref(db, ep), snap => {
             const val = snap.val();
             if (ep === 'users') {
                 allUsers = val ? Object.keys(val).map(k => ({uid: k, ...val[k]})) : [];
                 currentUserDB = allUsers.find(u => u.uid === currentUserID);
-                initializePage();
             } else if (ep === 'expenses') {
                 allExpenses = val ? Object.keys(val).map(k => ({firebaseId: k, ...val[k]})) : [];
-                initializePage();
             } else if (ep === 'notifications') {
                 allNotifications = val ? Object.keys(val).map(k => ({firebaseId: k, ...val[k]})) : [];
-                initializePage();
             }
+            // بعد تحديث جميع البيانات، نقوم بتهيئة الصفحة
+            initializePage();
         });
     });
 }
@@ -406,6 +434,7 @@ onAuthStateChanged(auth, user => {
     if (user) {
         currentUserID = user.uid;
         if (isAuthPage) {
+            // حل مشكلة حلقة إعادة التوجيه
             window.location.href = 'index.html';
         } else {
             loadData();
