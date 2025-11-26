@@ -31,7 +31,8 @@
         }
         .navbar-link:hover { color: #3B82F6; border-bottom-color: #3B82F6; }
         .navbar-link.active { color: #1D4ED8; border-bottom-color: #1D4ED8; }
-        .navbar-link.active-me { color: #10B981; border-bottom-color: #10B981; }
+        /* تحديد الرابط النشط لصفحة المصروفات الشخصية بلون مختلف */
+        .navbar-link.active-me { color: #DC2626; border-bottom-color: #DC2626; } 
 
         .content-wrapper {
             flex-grow: 1; display: flex; align-items: flex-start;
@@ -154,6 +155,13 @@
                 <i class="fas fa-file-invoice-dollar ml-2 text-red-600"></i> سجل حصصي الشخصية
             </h1>
             
+            <div id="totalExpensesCard" class="p-5 mb-8 rounded-xl text-center" style="background: linear-gradient(145deg, #FEE2E2 0%, #FCA5A5 100%); border: 1px solid #F87171;">
+                <p class="text-lg font-semibold text-red-800 mb-1">إجمالي الديون/المصروفات المستحقة عليك</p>
+                <p class="text-4xl font-extrabold text-red-700" dir="ltr">
+                    <span id="totalPersonalExpenses">0.00</span> 
+                    <span class="text-xl font-medium">SDG</span>
+                </p>
+            </div>
             <div id="personalExpensesContainer" class="space-y-4">
                 </div>
 
