@@ -3,69 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مصروفاتي - Smart Dorm</title>
+    <title>مصروفاتي الشخصية - Smart Dorm Expenses</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #F3F4F6; font-family: 'Cairo', sans-serif; padding-top: 80px; }
-        /* Navbar & Balance Card (Consistent Styles) */
-        .navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 900; background-color: white; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 10px 0; }
-        .navbar-link { padding: 8px 15px; border-radius: 8px; font-weight: 600; color: #4B5563; transition: 0.3s; }
-        .navbar-link:hover { background: #F3F4F6; color: #1D4ED8; }
-        .navbar-link.active { background: #E0F2FE; color: #1D4ED8; }
-        .notification-badge { position: absolute; top: 0px; right: 0px; width: 10px; height: 10px; border-radius: 50%; background-color: #EF4444; display: none; border: 2px solid white; }
-        .balance-card { background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; padding: 30px; border-radius: 20px; text-align: center; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3); }
-        .balance-card.negative { background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%) !important; }
-        .balance-card p { font-size: 32px; font-weight: 900; }
-        .card-section { background: white; border-radius: 20px; padding: 30px; max-width: 600px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-        /* Expense Item */
-        .expense-item-card { background: #FAFAFA; border: 1px solid #E5E7EB; padding: 15px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        /* Modals */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; }
-        .modal.show { display: flex; }
-        .modal-content { background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 450px; }
+        /* (احتفظ بنفس الأنماط الموجودة في صفحة السجل history.html) */
+        /* أضف أنماط البطاقة هنا bankak-card style */
+        /* ... */
+        .navbar-link.active-me { color: #10B981; border-bottom-color: #10B981; }
+        .content-wrapper { padding-top: 100px; }
+        /* ... */
     </style>
 </head>
 <body>
     <nav class="navbar">
-        <div class="max-w-6xl mx-auto px-4 flex justify-between items-center h-16">
-            <div class="text-2xl font-extrabold text-blue-600"><i class="fas fa-home"></i> Smart Dorm</div>
-            <div class="flex items-center space-x-4 space-x-reverse">
-                <a href="index.html" class="navbar-link"><i class="fas fa-plus-circle"></i> إضافة</a>
-                <a href="history.html" class="navbar-link"><i class="fas fa-history"></i> السجل</a>
-                <a href="my_expenses.html" class="navbar-link active"><i class="fas fa-chart-pie"></i> مصروفاتي</a>
-                <div class="relative cursor-pointer navbar-link" onclick="openNotificationModal()">
-                    <i class="fas fa-bell text-xl"></i>
-                    <span id="notificationBadge" class="notification-badge"></span>
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <div class="text-2xl font-extrabold text-blue-600">
+                    <i class="fas fa-home"></i> Smart Dorm
                 </div>
-                <button id="logoutButton" class="text-gray-500 hover:text-red-600"><i class="fas fa-sign-out-alt text-xl"></i></button>
+                <div class="flex space-x-4 space-x-reverse">
+                    <a href="index.html" class="navbar-link"><i class="fas fa-plus-circle"></i> إضافة</a>
+                    <a href="my_expenses.html" class="navbar-link active-me"><i class="fas fa-file-invoice-dollar"></i> مصروفاتي</a>
+                    <a href="history.html" class="navbar-link"><i class="fas fa-history"></i> السجل</a>
+                    
+                    <button id="notificationButton" class="navbar-link relative text-gray-500 hover:text-red-500" onclick="showNotifications()">
+                        <i class="fas fa-bell"></i>
+                        <span id="notificationBadge" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full hidden">
+                            0
+                        </span>
+                    </button>
+                    </div>
             </div>
         </div>
     </nav>
+    
+    <div class="content-wrapper">
+        <div class="container max-w-4xl">
+            <h1 class="text-3xl font-bold text-gray-800 text-center mb-8">
+                <i class="fas fa-file-invoice-dollar ml-2"></i> سجل حصصي الشخصية
+            </h1>
+            
+            <div id="personalExpensesContainer" class="space-y-4">
+                </div>
 
-    <div class="max-w-6xl mx-auto px-4 mt-8">
-        <div id="currentBalanceCard" class="balance-card">
-            <h3><i class="fas fa-user-circle ml-1"></i> مرحباً، <span id="userNamePlaceholder">...</span></h3>
-            <p dir="ltr"><span id="currentBalance">...</span> <span class="text-xl font-light">SDG</span></p>
+            <div id="noPersonalExpenses" class="hidden text-center text-gray-500 mt-10">
+                <i class="fas fa-box-open text-6xl mb-4"></i>
+                <p>لا توجد لديك حصص مصروفات شخصية مسجلة حتى الآن.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div id="notificationModal" class="modal">
+        <div class="modal-content max-w-md text-right">
+            <h2 class="text-xl font-bold mb-4 border-b pb-2"><i class="fas fa-bell ml-1"></i> الإشعارات</h2>
+            <div id="notificationsList" class="space-y-3 text-sm">
+                </div>
+            <button onclick="hideNotificationModal()" class="btn w-full mt-6 bg-gray-500 text-white">إغلاق</button>
         </div>
     </div>
 
-    <div id="myExpensesSection" class="card-section">
-        <h2 class="text-2xl font-extrabold text-gray-800 mb-6 border-b pb-3 text-center">
-            <i class="fas fa-chart-pie ml-2 text-red-600"></i> إجمالي مصروفاتي
-        </h2>
-        <div class="bg-red-500 text-white p-5 rounded-xl text-center mb-6 shadow-md">
-            <p class="text-sm opacity-90">المجموع</p>
-            <p class="text-3xl font-extrabold dir-ltr"><span id="totalMyExpenses">0.00</span> SDG</p>
-        </div>
-        <div id="myExpenseHistory" class="space-y-3 max-h-96 overflow-y-auto pr-2">
-            <p class="text-center text-gray-400">جاري التحميل...</p>
-        </div>
-    </div>
-
-    <div id="notificationModal" class="modal"><div class="modal-content"><h2 class="text-xl font-bold mb-4">الإشعارات</h2><div id="notificationsList" class="space-y-3 max-h-64 overflow-y-auto"></div><button onclick="markAllAsRead()" class="text-blue-600 text-sm mt-2 block">تحديد الكل كمقروء</button><button onclick="hideNotificationModal()" class="btn mt-4 w-full bg-gray-500 text-white p-2 rounded">إغلاق</button></div></div>
-
-    <script src="script.js" type="module"></script> 
+    <script src="script.js" type="module"></script>
 </body>
 </html>
