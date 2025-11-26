@@ -31,6 +31,8 @@
         }
         .navbar-link:hover { color: #3B82F6; border-bottom-color: #3B82F6; }
         .navbar-link.active { color: #1D4ED8; border-bottom-color: #1D4ED8; }
+        .navbar-link.active-me { color: #10B981; border-bottom-color: #10B981; } /* للرابط الجديد */
+
 
         /* الحاوية الرئيسية */
         .content-wrapper {
@@ -124,6 +126,9 @@
         /* إخفاء المحتوى الافتراضي في المودال في البداية */
         #previewDetails { display: block; }
         #messengerConfirmation { display: none; } 
+
+        /* أنماط الإشعارات */
+        .max-h-96 { max-height: 24rem; } 
     </style>
 </head>
 <body>
@@ -136,8 +141,16 @@
                 </div>
                 <div class="flex space-x-4 space-x-reverse">
                     <a href="index.html" class="navbar-link active"><i class="fas fa-plus-circle"></i> إضافة</a>
+                    <a href="my_expenses.html" class="navbar-link"><i class="fas fa-file-invoice-dollar"></i> مصروفاتي</a>
                     <a href="history.html" class="navbar-link"><i class="fas fa-history"></i> السجل</a>
-                </div>
+                    
+                    <button id="notificationButton" class="navbar-link relative text-gray-500 hover:text-red-500" onclick="showNotifications()">
+                        <i class="fas fa-bell"></i>
+                        <span id="notificationBadge" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full hidden">
+                            0
+                        </span>
+                    </button>
+                    </div>
             </div>
         </div>
     </nav>
@@ -223,7 +236,7 @@
                 <div class="messenger-warning">
                     <h3 class="font-extrabold mb-2 text-xl"><i class="fas fa-exclamation-triangle ml-1"></i> تنبيه هام: وضع المرسال!</h3>
                     <p class="text-base leading-relaxed">
-                        أنت على وشك تسجيل المصروف كـ **مُرسال**. هذا يعني أنك دفعت المبلغ ${'($amount$)'} بالنيابة عن المشاركين، وحصتك ستكون **صفراً**.
+                        أنت على وشك تسجيل المصروف كـ **مُرسال**. هذا يعني أنك دفعت المبلغ (سيظهر هنا) بالنيابة عن المشاركين، وحصتك ستكون **صفراً**.
                     </p>
                     <p class="mt-2 font-bold">
                         هل أنت متأكد من المتابعة بتسجيل المصروف كـ مُرسال؟
@@ -244,7 +257,15 @@
             <button onclick="hideSuccessModal()" class="btn w-full">إغلاق</button>
         </div>
     </div>
-
+    
+    <div id="notificationModal" class="modal">
+        <div class="modal-content max-w-md text-right">
+            <h2 class="text-xl font-bold mb-4 border-b pb-2"><i class="fas fa-bell ml-1"></i> الإشعارات</h2>
+            <div id="notificationsList" class="space-y-3 text-sm max-h-96 overflow-y-auto">
+                </div>
+            <button onclick="hideNotificationModal()" class="btn w-full mt-6 bg-gray-500 text-white">إغلاق</button>
+        </div>
+    </div>
     <script src="script.js" type="module"></script> 
 </body>
 </html>
