@@ -121,16 +121,20 @@ window.selectAllParticipants = function() {
 function displayPersonalExpenses() {
     const container = document.getElementById('personalExpensesContainer');
     const noExpensesEl = document.getElementById('noPersonalExpenses');
+    const totalExpensesEl = document.getElementById('totalPersonalExpenses'); // 🔥 جلب عنصر المجموع الكلي
+    
     if (!container) return; 
     
     container.innerHTML = '';
-    
+    let totalPersonalDebt = 0; // 🔥 متغير لتجميع الديون/المصروفات
+
     const personalList = allExpenses.filter(expense => 
         expense.participants_ids.includes(currentUserID)
     ).sort((a, b) => b.timestamp - a.timestamp);
 
     if (personalList.length === 0) {
         if(noExpensesEl) noExpensesEl.classList.remove('hidden');
+        if(totalExpensesEl) totalExpensesEl.textContent = '0.00'; // 🔥 تحديث المجموع
         return;
     }
     if(noExpensesEl) noExpensesEl.classList.add('hidden');
@@ -145,18 +149,21 @@ function displayPersonalExpenses() {
         
         const { date, time } = formatBankDate(expense.timestamp);
 
-        // إذا كنت الدافع والمرسال وحصتك صفر، لا تعرضها في السجل الشخصي
+        // إذا كنت الدافع والمرسال وحصتك صفر، لا تعرضها في السجل الشخصي (لكن لا تزال تؤثر على الإجمالي الفعلي إذا كان هناك)
         if (isPayer && isMessenger && share < 0.1) return; 
         
         if (isPayer && !isMessenger) {
             // أنت الدافع ومشارك (مصروف منك - صادر)
             displayAmount = share;
             mainTitle = `حصتك الخاصة في مصروف: ${expense.title}`;
+            // المصروفات الشخصية هنا تعني حصتك التي دفعتها كجزء من المبلغ الكلي.
+            totalPersonalDebt += displayAmount; // 🔥 تجميع الحصة الشخصية
         } else if (expense.participants_ids.includes(currentUserID) && !isPayer) {
             // أنت مشارك ولست الدافع (دين عليك - صادر)
             displayAmount = share;
             const payerName = getUserNameById(expense.payer_id);
             mainTitle = `دين عليك لـ ${payerName} في مصروف: ${expense.title}`;
+            totalPersonalDebt += displayAmount; // 🔥 تجميع الدين
         } else {
             return; 
         }
@@ -189,6 +196,11 @@ function displayPersonalExpenses() {
         `;
         container.innerHTML += cardHTML;
     });
+
+    // 🔥 التعديل: حساب وعرض المجموع الكلي
+    if (totalExpensesEl) {
+        totalExpensesEl.textContent = totalPersonalDebt.toLocaleString('en-US', {minimumFractionDigits: 1, maximumFractionDigits: 2});
+    }
 }
 
 
