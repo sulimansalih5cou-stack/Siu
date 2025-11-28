@@ -6,120 +6,13 @@
     <title>مصروفاتي الشخصية - Smart Dorm Expenses</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
     <style>
-        /* CSS: الأنماط الأساسية */
-        body {
-            background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            padding-top: 80px; 
-        }
-
-        /* شريط التنقل */
-        .navbar {
-            position: fixed; top: 0; left: 0; right: 0;
-            z-index: 900; background-color: white;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); padding: 10px 0;
-        }
-        .navbar-link {
-            transition: color 0.3s ease, border-bottom 0.3s ease;
-            border-bottom: 2px solid transparent; padding-bottom: 5px;
-            font-weight: 600; color: #4B5563;
-        }
-        .navbar-link:hover { color: #3B82F6; border-bottom-color: #3B82F6; }
-        .navbar-link.active { color: #1D4ED8; border-bottom-color: #1D4ED8; }
-        /* تحديد الرابط النشط لصفحة المصروفات الشخصية بلون مختلف */
-        .navbar-link.active-me { color: #DC2626; border-bottom-color: #DC2626; } 
-
-        .content-wrapper {
-            flex-grow: 1; display: flex; align-items: flex-start;
-            justify-content: center; padding: 20px;
-        }
-        .container {
-            background: white; border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); padding: 40px;
-            max-width: 900px; width: 100%; margin-top: 20px; position: relative;
-        }
-
-        /* --- 🔥 أنماط البطاقة الجديدة للمصروفات الشخصية (الخصم) 🔥 --- */
-        .bankak-card {
-            display: flex; flex-direction: column; 
-            padding: 15px 20px; border-radius: 12px; background: #ffffff;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05); 
-            border: 1px solid #FCA5A5; /* إطار خفيف */
-            border-right: 5px solid #DC2626; /* خط أحمر سميك على اليمين */
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .bankak-card:hover { 
-            transform: translateY(-3px); 
-            box-shadow: 0 10px 15px rgba(220, 38, 38, 0.1);
-        }
-        
-        .card-main-content { 
-            display: flex; justify-content: space-between; align-items: center; 
-            width: 100%; padding-bottom: 10px; border-bottom: 1px dashed #FEE2E2; 
-        }
-        
-        /* المبلغ (جهة اليسار) */
-        .amount-display { 
-            font-size: 24px; 
-            font-weight: 800; 
-            direction: ltr; 
-            color: #DC2626; /* أحمر داكن */
-        }
-        .amount-neg { color: #DC2626; } 
-
-        /* التفاصيل (جهة اليمين) */
-        .details-wrapper { 
-            display: flex; 
-            align-items: center; 
-            flex-grow: 1; 
-            text-align: right; 
-        }
-        .bank-icon-container {
-            position: relative; width: 45px; height: 45px; border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center;
-            background-color: #FEF2F2; /* خلفية حمراء فاتحة */
-            color: #DC2626; /* أيقونة حمراء */
-            font-size: 1.2rem;
-            box-shadow: 0 0 0 5px #FFFFFF;
-        }
-        .icon-danger { background-color: #FEF2F2; }
-        
-        .details-text { margin-right: 15px; flex-grow: 1; }
-        .transaction-title { 
-            font-weight: 700; 
-            color: #1F2937; 
-            font-size: 16px;
-        }
-        .transaction-sub { 
-            font-size: 13px; 
-            color: #6B7280; 
-            line-height: 1.4; 
-        }
-        
-        /* قسم التاريخ والساعة */
-        .card-footer-date {
-            display: flex; justify-content: flex-start; 
-            font-size: 12px; color: #9CA3AF; 
-            padding-top: 10px;
-            gap: 15px; 
-        }
-        .card-footer-date i { color: #EF4444; margin-left: 5px; }
-
-        /* الأنماط الإضافية (مثل الإشعارات والمودال) */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; }
-        .modal.show { display: flex; }
-        .modal-content { background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 400px; text-align: center; }
-        .btn {
-            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
-            color: white; padding: 15px 30px; border-radius: 12px; font-size: 16px; font-weight: 600;
-            width: 100%; display: inline-flex; justify-content: center; align-items: center; gap: 10px;
-        }
-        .max-h-96 { max-height: 24rem; } 
+        /* (احتفظ بنفس الأنماط الموجودة في صفحة السجل history.html) */
+        /* أضف أنماط البطاقة هنا bankak-card style */
+        /* ... */
+        .navbar-link.active-me { color: #10B981; border-bottom-color: #10B981; }
+        .content-wrapper { padding-top: 100px; }
+        /* ... */
     </style>
 </head>
 <body>
@@ -140,28 +33,17 @@
                             0
                         </span>
                     </button>
-                </div>
+                    </div>
             </div>
         </div>
     </nav>
     
     <div class="content-wrapper">
-        <div class="container">
-            <a href="auth.html" id="logoutButton" class="absolute top-4 left-4 p-2 text-sm text-white bg-gray-500 rounded-lg hover:bg-gray-600">
-                <i class="fas fa-sign-out-alt"></i> خروج
-            </a>
-
+        <div class="container max-w-4xl">
             <h1 class="text-3xl font-bold text-gray-800 text-center mb-8">
-                <i class="fas fa-file-invoice-dollar ml-2 text-red-600"></i> سجل حصصي الشخصية
+                <i class="fas fa-file-invoice-dollar ml-2"></i> سجل حصصي الشخصية
             </h1>
             
-            <div id="totalExpensesCard" class="p-5 mb-8 rounded-xl text-center" style="background: linear-gradient(145deg, #FEE2E2 0%, #FCA5A5 100%); border: 1px solid #F87171;">
-                <p class="text-lg font-semibold text-red-800 mb-1">إجمالي مصروفاتي الشخصية  </p>
-                <p class="text-4xl font-extrabold text-red-700" dir="ltr">
-                    <span id="totalPersonalExpenses">0.00</span> 
-                    <span class="text-xl font-medium">SDG</span>
-                </p>
-            </div>
             <div id="personalExpensesContainer" class="space-y-4">
                 </div>
 
@@ -175,7 +57,7 @@
     <div id="notificationModal" class="modal">
         <div class="modal-content max-w-md text-right">
             <h2 class="text-xl font-bold mb-4 border-b pb-2"><i class="fas fa-bell ml-1"></i> الإشعارات</h2>
-            <div id="notificationsList" class="space-y-3 text-sm max-h-96 overflow-y-auto">
+            <div id="notificationsList" class="space-y-3 text-sm">
                 </div>
             <button onclick="hideNotificationModal()" class="btn w-full mt-6 bg-gray-500 text-white">إغلاق</button>
         </div>
