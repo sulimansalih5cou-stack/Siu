@@ -31,8 +31,6 @@
         }
         .navbar-link:hover { color: #3B82F6; border-bottom-color: #3B82F6; }
         .navbar-link.active { color: #1D4ED8; border-bottom-color: #1D4ED8; }
-        .navbar-link.active-me { color: #10B981; border-bottom-color: #10B981; } /* للرابط الجديد */
-
 
         /* الحاوية الرئيسية */
         .content-wrapper {
@@ -60,14 +58,14 @@
         .logout-btn { background-color: #6B7280; }
         .logout-btn:hover { background-color: #4B5563; }
 
-        /* --- 🔥 بطاقة الرصيد --- */
+        /* --- 🔥 بطاقة الرصيد (التعديل المطلوب) --- */
         .balance-card {
             /* الحالة الافتراضية (موجب - أخضر) */
             background: linear-gradient(135deg, #10B981 0%, #059669 100%);
             color: white; padding: 20px; border-radius: 15px;
             text-align: center; margin-bottom: 30px;
             box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
-            transition: background 0.5s ease;
+            transition: background 0.5s ease; /* تأثير ناعم عند تغيير اللون */
         }
 
         /* الحالة السالبة (دين - أحمر) */
@@ -82,11 +80,11 @@
         /* الحقول والنماذج */
         .form-group { margin-bottom: 25px; }
         .form-group label { display: block; font-weight: 600; color: #374151; margin-bottom: 8px; }
-        .form-group input, .form-group select {
+        .form-group input {
             width: 100%; padding: 15px; border: 2px solid #E5E7EB;
             border-radius: 12px; background: #F9FAFB; font-size: 16px;
         }
-        .form-group input:focus, .form-group select:focus { border-color: #3B82F6; background: white; outline: none; }
+        .form-group input:focus { border-color: #3B82F6; background: white; outline: none; }
 
         /* Checkboxes */
         .checkbox-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
@@ -116,19 +114,7 @@
         .modal.show { display: flex; }
         .modal-content { background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 400px; text-align: center; }
 
-        /* رسالة تحذير المرسال */
         .warning { background: #F59E0B; color: white; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none; }
-        .messenger-warning { 
-            background: #FEF2F2; color: #B91C1C; padding: 15px; border-radius: 8px; margin-bottom: 15px; 
-            border: 1px solid #FCA5A5; text-align: right;
-        }
-        
-        /* إخفاء المحتوى الافتراضي في المودال في البداية */
-        #previewDetails { display: block; }
-        #messengerConfirmation { display: none; } 
-
-        /* أنماط الإشعارات */
-        .max-h-96 { max-height: 24rem; } 
     </style>
 </head>
 <body>
@@ -141,16 +127,8 @@
                 </div>
                 <div class="flex space-x-4 space-x-reverse">
                     <a href="index.html" class="navbar-link active"><i class="fas fa-plus-circle"></i> إضافة</a>
-                    <a href="my_expenses.html" class="navbar-link"><i class="fas fa-file-invoice-dollar"></i> مصروفاتي</a>
                     <a href="history.html" class="navbar-link"><i class="fas fa-history"></i> السجل</a>
-                    
-                    <button id="notificationButton" class="navbar-link relative text-gray-500 hover:text-red-500" onclick="showNotifications()">
-                        <i class="fas fa-bell"></i>
-                        <span id="notificationBadge" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full hidden">
-                            0
-                        </span>
-                    </button>
-                    </div>
+                </div>
             </div>
         </div>
     </nav>
@@ -193,20 +171,13 @@
                     </datalist>
                 </div>
 
-                <div class="form-group flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
-                    <label for="isMessenger" class="text-sm font-semibold text-red-700 select-none cursor-pointer">
-                        <i class="fas fa-hand-holding-usd ml-1"></i> دفعت كمُرسال (لست مشاركاً)
-                    </label>
-                    <input type="checkbox" id="isMessenger" class="form-checkbox h-5 w-5 text-red-600">
-                </div>
                 <div class="form-group">
                     <label for="expenseAmount">المبلغ الكلي (SDG)</label>
                     <input type="tel" id="expenseAmount" placeholder="مثال: 5,000" oninput="formatNumber(this)" required style="direction: ltr; text-align: right;">
                 </div>
 
-
-                <div class="form-group mt-6">
-                    <label>المشاركون (من سيقتسمون المبلغ)</label>
+                <div class="form-group">
+                    <label>المشاركون</label>
                     <div class="select-all" onclick="selectAllParticipants()">تحديد الجميع</div>
                     <div class="checkbox-group" id="participantsCheckboxes">
                         </div>
@@ -221,33 +192,13 @@
 
     <div id="previewModal" class="modal">
         <div class="modal-content">
-            
-            <div id="previewDetails">
-                <div id="warning" class="warning"><i class="fas fa-exclamation-triangle"></i> تحذير: مصروف مكرر!</div>
-                <h2 class="text-xl font-bold mb-4">تأكيد المصروف</h2>
-                <div id="previewText" class="text-right text-gray-700 mb-6 text-sm leading-loose"></div>
-                <div class="flex justify-center gap-4">
-                    <button id="mainSaveButton" onclick="handleSaveClick()" class="btn w-auto">حفظ</button>
-                    <button onclick="hideModal()" class="btn w-auto bg-gray-500 text-white">إلغاء</button>
-                </div>
+            <div id="warning" class="warning"><i class="fas fa-exclamation-triangle"></i> تحذير: مصروف مكرر!</div>
+            <h2 class="text-xl font-bold mb-4">تأكيد المصروف</h2>
+            <div id="previewText" class="text-right text-gray-700 mb-6 text-sm leading-loose"></div>
+            <div class="flex justify-center gap-4">
+                <button onclick="saveExpense()" class="btn w-auto">حفظ</button>
+                <button onclick="hideModal()" class="btn w-auto bg-gray-500 text-white">إلغاء</button>
             </div>
-
-            <div id="messengerConfirmation">
-                <div class="messenger-warning">
-                    <h3 class="font-extrabold mb-2 text-xl"><i class="fas fa-exclamation-triangle ml-1"></i> تنبيه هام: وضع المرسال!</h3>
-                    <p class="text-base leading-relaxed">
-                        أنت على وشك تسجيل المصروف كـ **مُرسال**. هذا يعني أنك دفعت المبلغ (سيظهر هنا) بالنيابة عن المشاركين، وحصتك ستكون **صفراً**.
-                    </p>
-                    <p class="mt-2 font-bold">
-                        هل أنت متأكد من المتابعة بتسجيل المصروف كـ مُرسال؟
-                    </p>
-                </div>
-                <div class="flex justify-center gap-4">
-                    <button onclick="saveExpense()" class="btn w-auto bg-red-600 hover:bg-red-700">موافق (تسجيل كمرسال)</button>
-                    <button onclick="hideModal()" class="btn w-auto bg-gray-500 text-white">إلغاء</button>
-                </div>
-            </div>
-
         </div>
     </div>
 
@@ -257,15 +208,7 @@
             <button onclick="hideSuccessModal()" class="btn w-full">إغلاق</button>
         </div>
     </div>
-    
-    <div id="notificationModal" class="modal">
-        <div class="modal-content max-w-md text-right">
-            <h2 class="text-xl font-bold mb-4 border-b pb-2"><i class="fas fa-bell ml-1"></i> الإشعارات</h2>
-            <div id="notificationsList" class="space-y-3 text-sm max-h-96 overflow-y-auto">
-                </div>
-            <button onclick="hideNotificationModal()" class="btn w-full mt-6 bg-gray-500 text-white">إغلاق</button>
-        </div>
-    </div>
+
     <script src="script.js" type="module"></script> 
 </body>
 </html>
