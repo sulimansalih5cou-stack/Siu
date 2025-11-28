@@ -66,7 +66,7 @@ function updateHomeDisplay() {
     const balanceEl = document.getElementById('currentBalance');
     const nameEl = document.getElementById('userNamePlaceholder');
     const cardEl = document.getElementById('currentBalanceCard');
-    
+
     if (!balanceEl && !nameEl) return; 
 
     let displayName = "مستخدم";
@@ -121,16 +121,20 @@ window.selectAllParticipants = function() {
 function displayPersonalExpenses() {
     const container = document.getElementById('personalExpensesContainer');
     const noExpensesEl = document.getElementById('noPersonalExpenses');
+    const totalExpensesEl = document.getElementById('totalPersonalExpenses'); // 🔥 جلب عنصر المجموع الكلي
+
     if (!container) return; 
-    
+
     container.innerHTML = '';
-    
+    let totalPersonalDebt = 0; // 🔥 متغير لتجميع الديون/المصروفات
+
     const personalList = allExpenses.filter(expense => 
         expense.participants_ids.includes(currentUserID)
     ).sort((a, b) => b.timestamp - a.timestamp);
 
     if (personalList.length === 0) {
         if(noExpensesEl) noExpensesEl.classList.remove('hidden');
+        if(totalExpensesEl) totalExpensesEl.textContent = '0.00'; // 🔥 تحديث المجموع
         return;
     }
     if(noExpensesEl) noExpensesEl.classList.add('hidden');
@@ -139,24 +143,27 @@ function displayPersonalExpenses() {
         const isPayer = expense.payer_id === currentUserID;
         const isMessenger = expense.is_messenger || false;
         const share = expense.share;
-        
+
         let displayAmount;
         let mainTitle;
-        
+
         const { date, time } = formatBankDate(expense.timestamp);
 
-        // إذا كنت الدافع والمرسال وحصتك صفر، لا تعرضها في السجل الشخصي
+        // إذا كنت الدافع والمرسال وحصتك صفر، لا تعرضها في السجل الشخصي (لكن لا تزال تؤثر على الإجمالي الفعلي إذا كان هناك)
         if (isPayer && isMessenger && share < 0.1) return; 
-        
+
         if (isPayer && !isMessenger) {
             // أنت الدافع ومشارك (مصروف منك - صادر)
             displayAmount = share;
             mainTitle = `حصتك الخاصة في مصروف: ${expense.title}`;
+            // المصروفات الشخصية هنا تعني حصتك التي دفعتها كجزء من المبلغ الكلي.
+            totalPersonalDebt += displayAmount; // 🔥 تجميع الحصة الشخصية
         } else if (expense.participants_ids.includes(currentUserID) && !isPayer) {
             // أنت مشارك ولست الدافع (دين عليك - صادر)
             displayAmount = share;
             const payerName = getUserNameById(expense.payer_id);
             mainTitle = `دين عليك لـ ${payerName} في مصروف: ${expense.title}`;
+            totalPersonalDebt += displayAmount; // 🔥 تجميع الدين
         } else {
             return; 
         }
@@ -189,6 +196,11 @@ function displayPersonalExpenses() {
         `;
         container.innerHTML += cardHTML;
     });
+
+    // 🔥 التعديل: حساب وعرض المجموع الكلي
+    if (totalExpensesEl) {
+        totalExpensesEl.textContent = totalPersonalDebt.toLocaleString('en-US', {minimumFractionDigits: 1, maximumFractionDigits: 2});
+    }
 }
 
 
@@ -215,7 +227,7 @@ function calculateSettlementSummary() {
 
         // 1. أنت الدافع
         if (payerId === currentUserID) {
-            
+
             if (isMessenger) {
                 // إذا كنت مرسالاً، كل مشارك مدين لك بحصته
                 expense.participants_ids.forEach(participantId => {
@@ -260,7 +272,7 @@ function calculateSettlementSummary() {
             summaryText = `**${otherUserName}** داير منك مبلغ:`;
             colorClass = "text-red-600 border-red-200 bg-red-50";
         }
-        
+
         const amountDisplay = Math.abs(netAmount).toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 2});
 
         const itemHTML = `
@@ -323,10 +335,10 @@ function displayHistory() {
         // فلترة النوع
         const isCurrentUserPayer = expense.payer_id === currentUserID;
         if (activeFilter === 'incoming') return isCurrentUserPayer; // المدفوع منك
-        
+
         const isCurrentUserParticipant = expense.participants_ids.includes(currentUserID);
         if (activeFilter === 'outgoing') return !isCurrentUserPayer && isCurrentUserParticipant; // المدفوع عليك (دين)
-        
+
         return true; 
     }).sort((a, b) => b.timestamp - a.timestamp); // ترتيب حسب الأحدث
 
@@ -421,12 +433,12 @@ function loadNotifications() {
     onValue(ref(db, 'notifications'), (snapshot) => {
         if (snapshot.exists()) {
             const val = snapshot.val();
-            
+
             userNotifications = Object.keys(val)
                 .map(key => ({ id: key, ...val[key] }))
                 .filter(n => n.uid === currentUserID)
                 .sort((a, b) => b.timestamp - a.timestamp); 
-            
+
             displayNotifications();
         } else {
             userNotifications = [];
@@ -438,11 +450,11 @@ function loadNotifications() {
 function displayNotifications() {
     const listContainer = document.getElementById('notificationsList');
     const badge = document.getElementById('notificationBadge');
-    
+
     if (!listContainer || !badge) return;
 
     const unreadCount = userNotifications.filter(n => !n.is_read).length;
-    
+
     // تحديث زر الجرس (Badge)
     badge.textContent = unreadCount;
     if (unreadCount > 0) {
@@ -502,11 +514,11 @@ window.handleSaveClick = function() {
     const isMessenger = document.getElementById('isMessenger').checked;
     const amountStr = document.getElementById('expenseAmount').value.replace(/,/g, '');
     const amount = parseFloat(amountStr);
-    
+
     if (isMessenger) {
         const confirmationEl = document.getElementById('messengerConfirmation');
         const detailsEl = document.getElementById('previewDetails');
-        
+
         // تحديث رسالة التأكيد بناءً على المبلغ
         const warningContent = confirmationEl.querySelector('.messenger-warning p:first-of-type');
         warningContent.innerHTML = `أنت على وشك تسجيل المصروف كـ **مُرسال**. هذا يعني أنك دفعت المبلغ ${amount.toLocaleString()} SDG بالنيابة عن المشاركين، وحصتك ستكون **صفراً**.`;
@@ -534,7 +546,7 @@ window.previewExpense = function() {
 
     const checkboxes = document.querySelectorAll('#participantsCheckboxes input:checked');
     let participants = Array.from(checkboxes).map(cb => cb.getAttribute('data-uid'));
-    
+
     if (!isMessenger && !participants.includes(currentUserID)) {
         participants.push(currentUserID); 
     }
@@ -543,10 +555,10 @@ window.previewExpense = function() {
         alert('عند اختيار "دفعت كمرسال"، يجب تحديد المشاركين ليتم تقسيم المبلغ عليهم.');
         return;
     }
-    
+
     const effectiveParticipantsCount = participants.length;
     const finalShare = roundToTwo(amount / effectiveParticipantsCount);
-    
+
     document.getElementById('mainSaveButton').textContent = isMessenger ? 'متابعة إلى التأكيد' : 'حفظ';
 
     const text = `
@@ -562,7 +574,7 @@ window.previewExpense = function() {
 
     const today = new Date().toISOString().split('T')[0];
     const isDuplicate = allExpenses.some(e => e.date === today && e.title === title && e.amount === amount);
-    
+
     document.getElementById('warning').style.display = isDuplicate ? 'block' : 'none';
 
     document.getElementById('previewModal').classList.add('show');
@@ -573,16 +585,16 @@ window.saveExpense = async function() {
     const title = document.getElementById('expenseTitle').value;
     const amount = parseFloat(document.getElementById('expenseAmount').value.replace(/,/g, ''));
     const isMessenger = document.getElementById('isMessenger').checked; 
-    
+
     const checkboxes = document.querySelectorAll('#participantsCheckboxes input:checked');
     let participantsIDs = Array.from(checkboxes).map(cb => cb.getAttribute('data-uid'));
-    
+
     if (!isMessenger && !participantsIDs.includes(currentUserID)) {
         participantsIDs.push(currentUserID); 
     }
-    
+
     const effectiveParticipantsCount = participantsIDs.length;
-    
+
     if (effectiveParticipantsCount === 0) return;
 
     const finalShare = roundToTwo(amount / effectiveParticipantsCount);
@@ -596,13 +608,13 @@ window.saveExpense = async function() {
         if (user.uid === payerID) {
             // الدافع (أنت) رصيدك يزيد بالمبلغ الكلي
             finalBalance += amount;
-            
+
             if (!isMessenger) {
                 // إذا لم تكن مرسالاً، رصيدك ينقص بحصتك الشخصية
                 finalBalance -= finalShare;
             }
         } 
-        
+
         else if (participantsIDs.includes(user.uid)) {
             // المشارك (الآخرون) رصيده ينقص بحصته
             finalBalance -= finalShare;
@@ -641,7 +653,7 @@ window.saveExpense = async function() {
             };
         }
     });
-    
+
     if (isMessenger) {
         participantsIDs.forEach(participantID => {
             if (participantID !== payerID) {
@@ -723,10 +735,10 @@ onAuthStateChanged(auth, (user) => {
 
         const headerName = document.getElementById('displayHeaderName');
         const headerEmail = document.getElementById('displayHeaderEmail');
-        
+
         if (headerName) headerName.textContent = user.displayName || 'مستخدم';
         if (headerEmail) headerEmail.textContent = user.email || '';
-        
+
         loadData();
 
         const logoutBtn = document.getElementById('logoutButton');
