@@ -3,124 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>السجل - Smart Dorm</title>
+    <title>كشف الحساب - Smart Dorm</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
     <style>
-        body { background-color: #F3F4F6; font-family: 'Cairo', sans-serif; padding-top: 80px; }
-        /* Navbar */
-        .navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 900; background-color: white; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 10px 0; }
-        .navbar-link { transition: color 0.3s ease, background 0.3s ease; padding: 8px 15px; border-radius: 8px; font-weight: 600; color: #4B5563; cursor: pointer; }
-        .navbar-link:hover { background: #F3F4F6; color: #1D4ED8; }
-        .navbar-link.active { background: #E0F2FE; color: #1D4ED8; }
-        .notification-badge { position: absolute; top: 0px; right: 0px; width: 10px; height: 10px; border-radius: 50%; background-color: #EF4444; display: none; border: 2px solid white; }
-        /* Balance Card */
-        .balance-card { background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; padding: 30px; border-radius: 20px; text-align: center; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3); transition: background 0.5s ease; }
-        .balance-card.negative { background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%) !important; box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3); }
-        .balance-card p { font-size: 32px; font-weight: 900; }
-        /* Filter Pills */
-        .filter-pill { padding: 8px 15px; border-radius: 20px; border: 1px solid #D1D5DB; cursor: pointer; transition: 0.2s; background: white; font-size: 14px; }
-        .filter-pill.active { background: #1D4ED8; color: white; border-color: #1D4ED8; }
-        /* Bankak Card Style for History */
-        .bankak-card { background: white; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); padding: 15px; }
-        .card-main-content { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #E5E7EB; padding-bottom: 10px; margin-bottom: 10px; }
-        .amount-display { font-size: 20px; font-weight: 900; direction: ltr; margin-left: 10px; }
+        body {
+            background-color: #F3F4F6;
+            font-family: 'Cairo', sans-serif;
+            padding-bottom: 60px;
+        }
+
+        /* --- 1. بطاقة المستخدم (الهيدر) --- */
+        .user-profile-card {
+            background: linear-gradient(135deg, #B91C1C 0%, #991B1B 100%);
+            color: white;
+            padding: 25px 20px;
+            border-bottom-left-radius: 25px;
+            border-bottom-right-radius: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 25px -5px rgba(185, 28, 28, 0.4);
+        }
+
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            padding: 6px 14px;
+            border-radius: 8px;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: background 0.3s;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.3); }
+
+        /* --- 2. بطاقة المعاملة (التصميم المعدل) --- */
+        .bankak-card {
+            background: white;
+            border: 1px solid #F3F4F6;
+            border-radius: 12px;
+            margin-bottom: 15px; /* مسافة بين البطاقات */
+            padding: 15px 18px;
+            position: relative;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease;
+        }
+        .bankak-card:hover { transform: translateY(-2px); }
+
+        /* الجزء العلوي (المحتوى الرئيسي) */
+        .card-main-content {
+            display: flex;
+            justify-content: space-between; /* توزيع: المبلغ يسار، التفاصيل يمين */
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #E5E7EB; /* الخط الفاصل */
+        }
+
+        /* تنسيق المبلغ (يسار) */
+        .amount-display {
+            font-size: 1.4rem;
+            font-weight: 800;
+            direction: ltr; 
+            font-family: sans-serif;
+            order: 2; /* يضمن ظهوره في اليسار في وضع RTL عبر Flexbox adjustment */
+            margin-right: auto; /* يدفعه لأقصى اليسار */
+        }
         .amount-pos { color: #059669; }
         .amount-neg { color: #DC2626; }
-        .details-wrapper { display: flex; align-items: center; text-align: right; }
-        .bank-icon-container { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; }
-        .icon-success { background: #D1FAE5; color: #059669; }
-        .icon-danger { background: #FEE2E2; color: #DC2626; }
-        .arrow-badge { position: absolute; bottom: -5px; right: -5px; background: white; border-radius: 50%; padding: 3px; font-size: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
-        .transaction-title { font-weight: 700; color: #1F2937; }
-        .transaction-sub { font-size: 13px; color: #6B7280; line-height: 1.3; }
-        .card-footer-date { display: flex; justify-content: flex-start; gap: 15px; font-size: 12px; color: #9CA3AF; }
-        /* Modals */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; }
-        .modal.show { display: flex; }
-        .modal-content { background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 450px; }
-        .btn { background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); color: white; padding: 15px; border-radius: 12px; font-weight: 700; width: 100%; transition: 0.2s; }
+
+        /* حاوية التفاصيل والأيقونة (يمين) */
+        .details-wrapper {
+            display: flex;
+            align-items: center;
+            order: 1;
+            flex-grow: 1;
+        }
+
+        .details-text {
+            margin-right: 10px; /* مسافة بين الأيقونة والنص */
+        }
+
+        .transaction-title {
+            font-weight: 700;
+            color: #1F2937;
+            font-size: 1rem;
+        }
+
+        .transaction-sub {
+            font-size: 0.85rem;
+            color: #6B7280;
+        }
+
+        /* الأيقونة */
+        .bank-icon-container {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid;
+            position: relative;
+            background-color: #FAFAFA;
+            flex-shrink: 0;
+        }
+        .icon-success { border-color: #059669; color: #059669; }
+        .icon-danger { border-color: #DC2626; color: #DC2626; }
+
+        .arrow-badge {
+            position: absolute;
+            bottom: -2px; right: -2px;
+            background: white; border-radius: 50%;
+            padding: 2px; font-size: 0.7rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* --- الجزء السفلي (التاريخ والوقت) --- */
+        .card-footer-date {
+            text-align: right;
+            font-size: 0.75rem;
+            color: #9CA3AF;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* الفلاتر */
+        .filter-scroll {
+            display: flex; gap: 10px; overflow-x: auto;
+            padding-bottom: 10px; margin-bottom: 10px;
+            scrollbar-width: none;
+        }
+        .filter-scroll::-webkit-scrollbar { display: none; }
+
+        .filter-pill {
+            white-space: nowrap; padding: 6px 16px;
+            border-radius: 20px; background: white;
+            color: #6B7280; font-size: 0.85rem; font-weight: 600;
+            border: 1px solid #E5E7EB; cursor: pointer; transition: 0.2s;
+        }
+        .filter-pill.active {
+            background: #FEF2F2; color: #B91C1C; border-color: #B91C1C;
+        }
+
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="max-w-6xl mx-auto px-4 flex justify-between items-center h-16">
-            <div class="text-2xl font-extrabold text-blue-600"><i class="fas fa-history"></i> Smart Dorm</div>
-            <div class="flex items-center space-x-4 space-x-reverse">
-                <a href="index.html" class="navbar-link"><i class="fas fa-plus-circle"></i> إضافة</a>
-                <a href="history.html" class="navbar-link active"><i class="fas fa-history"></i> السجل</a>
-                <a href="my_expenses.html" class="navbar-link"><i class="fas fa-chart-pie"></i> مصروفاتي</a>
-                <div class="relative cursor-pointer navbar-link" onclick="openNotificationModal()">
-                    <i class="fas fa-bell text-xl"></i>
-                    <span id="notificationBadge" class="notification-badge"></span>
-                </div>
-                <button id="logoutButton" class="text-gray-500 hover:text-red-600"><i class="fas fa-sign-out-alt text-xl"></i></button>
+
+    <div class="user-profile-card">
+        <div class="flex justify-between items-center">
+            <div>
+                <h2 class="text-xl font-bold mb-1">مرحباً، <span id="displayHeaderName">...</span></h2>
+                <p class="text-sm opacity-80 dir-ltr" id="displayHeaderEmail">...</p>
             </div>
+            <a href="index.html" class="back-btn">
+                <i class="fas fa-arrow-right ml-1"></i> رجوع
+            </a>
         </div>
-    </nav>
-
-    <div class="max-w-6xl mx-auto px-4 mt-8">
-        <div id="currentBalanceCard" class="balance-card">
-            <h3><i class="fas fa-user-circle ml-1"></i> مرحباً، <span id="userNamePlaceholder">...</span></h3>
-            <p dir="ltr"><span id="currentBalance">...</span> <span class="text-xl font-light">SDG</span></p>
         </div>
-    </div>
 
-    <div class="max-w-6xl mx-auto px-4 mt-8">
-        <div class="flex flex-wrap gap-2 mb-6">
+    <div class="max-w-3xl mx-auto px-4">
+
+        <div class="filter-scroll" id="filtersContainer">
             <div class="filter-pill active" onclick="setFilter('30days', this)">آخر 30 يوم</div>
-            <div class="filter-pill" onclick="setFilter('summary', this)">ملخص التسوية</div>
-            <div class="filter-pill" onclick="setFilter('incoming', this)">تحويلات واردة</div>
-            <div class="filter-pill" onclick="setFilter('outgoing', this)">تحويلات صادرة</div>
+            <div class="filter-pill" onclick="setFilter('3months', this)">آخر 3 شهور</div>
+            <div class="filter-pill" onclick="setFilter('incoming', this)">الواردة (لك)</div>
+            <div class="filter-pill" onclick="setFilter('outgoing', this)">الصادرة (عليك)</div>
             <div class="filter-pill" onclick="setFilter('all', this)">الكل</div>
         </div>
 
-        <div id="expensesContainer" class="space-y-3">
-            <p class="text-center text-gray-500 mt-10">جاري تحميل السجلات...</p>
-        </div>
-
-        <div id="summaryContainer" class="space-y-3 hidden">
-            <p class="text-center text-gray-500 mt-10">جاري حساب الملخص...</p>
-        </div>
-    </div>
-
-    <div id="notificationModal" class="modal">
-        <div class="modal-content">
-            <h2 class="text-xl font-bold mb-4 border-b pb-2">الإشعارات</h2>
-            <div id="notificationsList" class="space-y-3 max-h-64 overflow-y-auto"></div>
-            <button onclick="markAllAsRead()" class="text-blue-600 text-sm mt-2 block hover:underline">تحديد الكل كمقروء</button>
-            <button onclick="hideNotificationModal()" class="btn mt-4 bg-gray-500">إغلاق</button>
+        <div id="expensesContainer">
+            <p class="text-center text-gray-400 mt-12">
+                <i class="fas fa-spinner fa-spin fa-2x mb-4"></i><br>
+                جاري التحميل...
+            </p>
         </div>
     </div>
 
-    <div id="settleModal" class="modal">
-        <div class="modal-content">
-            <h2 class="text-xl font-bold mb-4">تسوية رصيد</h2>
-            <div id="settleSummary" class="bg-gray-100 p-3 rounded mb-4 text-center"></div>
-            <div class="form-group mb-4">
-                <label class="block font-semibold text-gray-700 mb-2">المبلغ المراد تسويته (SDG)</label>
-                <input type="tel" id="settleAmountInput" placeholder="المبلغ" oninput="formatNumber(this)" required style="direction: ltr; text-align: right;" class="w-full p-3 border border-gray-300 rounded-lg">
-            </div>
-            <div class="form-group mb-4">
-                <label class="block font-semibold text-gray-700 mb-2">رقم مرجع (مثال: رقم تحويل بنكي)</label>
-                <input type="text" id="settleReference" placeholder="رقم مرجع" required class="w-full p-3 border border-gray-300 rounded-lg">
-            </div>
-            <div class="flex gap-4">
-                <button onclick="confirmSettleUp()" id="confirmSettleButton" class="btn">تأكيد التسوية</button>
-                <button onclick="hideSettleModal()" class="btn bg-gray-500">إلغاء</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="successModal" class="modal">
-        <div class="modal-content text-center">
-            <h2 class="text-2xl text-green-600 mb-2"><i class="fas fa-check-circle"></i> تم بنجاح!</h2>
-            <p class="text-gray-700">تم تحديث الأرصدة وتسجيل العملية.</p>
-            <button onclick="hideSuccessModal()" class="btn mt-4">إغلاق</button>
-        </div>
-    </div>
-    
-    <script src="script.js" type="module"></script>
+    <script src="script.js" type="module"></script> 
 </body>
 </html>
