@@ -8,30 +8,70 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        /* CSS: الأنماط الأساسية */
+        /* CSS: الأنماط الأساسية (المستعادة من تصميمك) */
         body {
             background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            padding-top: 80px; 
+            padding-top: 64px; /* تم تعديلها لتناسب ارتفاع شريط التنقل الجديد */
         }
 
         /* شريط التنقل */
         .navbar {
             position: fixed; top: 0; left: 0; right: 0;
             z-index: 900; background-color: white;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); padding: 10px 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            height: 64px; /* تحديد ارتفاع ثابت */
+            padding: 0 16px; 
         }
-        .navbar-link {
-            transition: color 0.3s ease, border-bottom 0.3s ease;
-            border-bottom: 2px solid transparent; padding-bottom: 5px;
-            font-weight: 600; color: #4B5563;
+
+        /* --- 🔥 أنماط القائمة الجانبية (Sidebar) 🔥 --- */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: 0; /* في وضع RTL تظهر القائمة من اليمين */
+            height: 100%;
+            width: 250px;
+            background: white;
+            z-index: 1000;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+            transform: translateX(100%); /* إخفاء القائمة في البداية */
+            transition: transform 0.3s ease-out;
+            padding-top: 64px;
         }
-        .navbar-link:hover { color: #3B82F6; border-bottom-color: #3B82F6; }
-        .navbar-link.active { color: #1D4ED8; border-bottom-color: #1D4ED8; }
-        .navbar-link.active-me { color: #10B981; border-bottom-color: #10B981; } /* للرابط الجديد */
+        .sidebar.open {
+            transform: translateX(0); /* إظهار القائمة */
+        }
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        .sidebar.open + .sidebar-overlay {
+            display: block;
+        }
+        .sidebar-link {
+            display: block;
+            padding: 15px 20px;
+            font-weight: 600;
+            color: #4B5563;
+            transition: background-color 0.3s, color 0.3s;
+            border-right: 4px solid transparent; /* خط التحديد لليمين */
+        }
+        .sidebar-link:hover {
+            background-color: #F3F4F6;
+            color: #3B82F6;
+        }
+        .sidebar-link.active {
+            color: #1D4ED8;
+            background-color: #EBF5FF;
+            border-right-color: #1D4ED8;
+        }
+        /* نهاية أنماط القائمة الجانبية */
 
 
         /* الحاوية الرئيسية */
@@ -50,16 +90,9 @@
             position: absolute; top: -50px; right: 20px;
             display: flex; gap: 10px; z-index: 10;
         }
-        .top-action-btn {
-            padding: 8px 15px; border-radius: 10px; font-size: 14px;
-            font-weight: 500; display: inline-flex; align-items: center; gap: 5px;
-            color: white; text-decoration: none; transition: 0.3s;
-        }
-        .history-btn { background-color: #10B981; }
-        .history-btn:hover { background-color: #059669; }
-        .logout-btn { background-color: #6B7280; }
-        .logout-btn:hover { background-color: #4B5563; }
-
+        /* ملاحظة: تم حذف هذا القسم مؤقتاً في الـ HTML حيث سيتم نقل أزرار السجل والخروج إلى القائمة الجانبية */
+        /* إذا كنت تريد إبقاء هذه الأزرار (السجل والخروج) على الواجهة الرئيسية، أعد إضافة هذا القسم إلى الـ HTML، لكن التعديل الحالي نقلهما إلى القائمة الجانبية */
+        
         /* --- 🔥 بطاقة الرصيد --- */
         .balance-card {
             /* الحالة الافتراضية (موجب - أخضر) */
@@ -122,7 +155,7 @@
             background: #FEF2F2; color: #B91C1C; padding: 15px; border-radius: 8px; margin-bottom: 15px; 
             border: 1px solid #FCA5A5; text-align: right;
         }
-        
+
         /* إخفاء المحتوى الافتراضي في المودال في البداية */
         #previewDetails { display: block; }
         #messengerConfirmation { display: none; } 
@@ -134,38 +167,46 @@
 <body>
 
     <nav class="navbar">
-        <div class="max-w-6xl mx-auto px-4">
-            <div class="flex justify-between items-center h-16">
-                <div class="text-2xl font-extrabold text-blue-600">
+        <div class="max-w-6xl mx-auto px-4 h-full">
+            <div class="flex justify-between items-center h-full">
+                
+                <button id="menuButton" class="text-2xl text-gray-600 hover:text-blue-500 p-2 focus:outline-none">
+                    <i class="fas fa-bars"></i>
+                </button>
+                
+                <div class="text-2xl font-extrabold text-blue-600 absolute right-1/2 transform translate-x-1/2 hidden sm:block">
                     <i class="fas fa-home"></i> Smart Dorm
                 </div>
-                <div class="flex space-x-4 space-x-reverse">
-                    <a href="index.html" class="navbar-link active"><i class="fas fa-plus-circle"></i> إضافة</a>
-                    <a href="my_expenses.html" class="navbar-link"><i class="fas fa-file-invoice-dollar"></i> مصروفاتي</a>
-                    <a href="history.html" class="navbar-link"><i class="fas fa-history"></i> السجل</a>
-                    
-                    <button id="notificationButton" class="navbar-link relative text-gray-500 hover:text-red-500" onclick="showNotifications()">
-                        <i class="fas fa-bell"></i>
+
+                <div class="flex items-center">
+                    <button id="notificationButton" class="relative text-gray-500 hover:text-red-500 p-2 focus:outline-none" onclick="showNotifications()">
+                        <i class="fas fa-bell text-2xl"></i>
                         <span id="notificationBadge" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full hidden">
-                            0
+                            0 
                         </span>
                     </button>
-                    </div>
+                </div>
             </div>
         </div>
     </nav>
+    
+    <div id="sidebar" class="sidebar">
+        <div class="p-4 border-b">
+            <h3 class="text-lg font-bold text-gray-800" id="sidebarUserName">جاري التحميل...</h3>
+            <p class="text-sm text-gray-500" id="sidebarUserEmail">...</p>
+        </div>
+        <a href="index.html" class="sidebar-link active"><i class="fas fa-plus-circle ml-2"></i> إضافة مصروف</a>
+        <a href="my_expenses.html" class="sidebar-link"><i class="fas fa-file-invoice-dollar ml-2"></i> مصروفاتي</a>
+        <a href="history.html" class="sidebar-link"><i class="fas fa-history ml-2"></i> السجل</a>
+        <a href="auth.html" id="logoutSidebarButton" class="sidebar-link text-red-600 hover:text-red-800 mt-4">
+            <i class="fas fa-sign-out-alt ml-2"></i> خروج
+        </a>
+    </div>
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+
 
     <div class="content-wrapper">
         <div class="container">
-
-            <div class="top-actions">
-                <a href="history.html" class="top-action-btn history-btn">
-                    <i class="fas fa-history"></i> السجل
-                </a>
-                <a href="auth.html" id="logoutButton" class="top-action-btn logout-btn">
-                    <i class="fas fa-sign-out-alt"></i> خروج
-                </a>
-            </div>
 
             <div class="text-center text-gray-500 text-sm mb-6 italic">
                 <i class="fas fa-wallet"></i> نظام إدارة مصروفات السكن الذكي
@@ -221,7 +262,7 @@
 
     <div id="previewModal" class="modal">
         <div class="modal-content">
-            
+
             <div id="previewDetails">
                 <div id="warning" class="warning"><i class="fas fa-exclamation-triangle"></i> تحذير: مصروف مكرر!</div>
                 <h2 class="text-xl font-bold mb-4">تأكيد المصروف</h2>
@@ -257,7 +298,7 @@
             <button onclick="hideSuccessModal()" class="btn w-full">إغلاق</button>
         </div>
     </div>
-    
+
     <div id="notificationModal" class="modal">
         <div class="modal-content max-w-md text-right">
             <h2 class="text-xl font-bold mb-4 border-b pb-2"><i class="fas fa-bell ml-1"></i> الإشعارات</h2>
@@ -266,6 +307,21 @@
             <button onclick="hideNotificationModal()" class="btn w-full mt-6 bg-gray-500 text-white">إغلاق</button>
         </div>
     </div>
+    
+    <script>
+        window.toggleSidebar = function() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('open');
+            document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : 'auto';
+        }
+        window.closeSidebar = function() {
+            document.getElementById('sidebar').classList.remove('open');
+            document.body.style.overflow = 'auto';
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('menuButton').addEventListener('click', window.toggleSidebar);
+        });
+    </script>
     <script src="script.js" type="module"></script> 
 </body>
 </html>
