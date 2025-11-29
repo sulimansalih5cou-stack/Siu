@@ -13,9 +13,68 @@
             background-color: #F3F4F6;
             font-family: 'Cairo', sans-serif;
             padding-bottom: 60px;
+            /* تم إزالة padding-top هنا لأننا سنستخدم شريط تنقل ثابت في الأعلى */
+        }
+        
+        /* شريط التنقل العلوي الجديد (يحل محل جزء من user-profile-card) */
+        .navbar {
+            position: fixed; top: 0; left: 0; right: 0;
+            z-index: 900; background-color: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            height: 64px; /* تحديد ارتفاع ثابت */
+            padding: 0 16px; 
         }
 
+        /* --- 🔥 أنماط القائمة الجانبية (Sidebar) 🔥 --- */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: 0; 
+            height: 100%;
+            width: 250px;
+            background: white;
+            z-index: 1000;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+            transform: translateX(100%); /* إخفاء القائمة في البداية */
+            transition: transform 0.3s ease-out;
+            padding-top: 64px;
+        }
+        .sidebar.open {
+            transform: translateX(0); /* إظهار القائمة */
+        }
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        .sidebar.open + .sidebar-overlay {
+            display: block;
+        }
+        .sidebar-link {
+            display: block;
+            padding: 15px 20px;
+            font-weight: 600;
+            color: #4B5563;
+            transition: background-color 0.3s, color 0.3s;
+            border-right: 4px solid transparent; 
+        }
+        .sidebar-link:hover {
+            background-color: #F3F4F6;
+            color: #3B82F6;
+        }
+        /* اللون النشط لهذه الصفحة هو الأحمر الداكن (الخاص بكشف الحساب) */
+        .sidebar-link.active-history { 
+            color: #B91C1C; 
+            background-color: #FEF2F2;
+            border-right-color: #B91C1C;
+        }
+        /* نهاية أنماط القائمة الجانبية */
+
+
         /* --- 1. بطاقة المستخدم (الهيدر) --- */
+        /* تعديل الهيدر ليأتي تحت شريط التنقل الثابت */
         .user-profile-card {
             background: linear-gradient(135deg, #B91C1C 0%, #991B1B 100%);
             color: white;
@@ -24,25 +83,18 @@
             border-bottom-right-radius: 25px;
             margin-bottom: 20px;
             box-shadow: 0 10px 25px -5px rgba(185, 28, 28, 0.4);
+            margin-top: 64px; /* إضافة مسافة من الأعلى لتجنب تغطية شريط التنقل */
         }
+        
+        /* تم إزالة back-btn لأنه تم استبداله بزر القائمة والإشعارات */
 
-        .back-btn {
-            background: rgba(255,255,255,0.2);
-            padding: 6px 14px;
-            border-radius: 8px;
-            color: white;
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: background 0.3s;
-        }
-        .back-btn:hover { background: rgba(255,255,255,0.3); }
 
         /* --- 2. بطاقة المعاملة (التصميم المعدل) --- */
         .bankak-card {
             background: white;
             border: 1px solid #F3F4F6;
             border-radius: 12px;
-            margin-bottom: 15px; /* مسافة بين البطاقات */
+            margin-bottom: 15px;
             padding: 15px 18px;
             position: relative;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -55,11 +107,11 @@
         /* الجزء العلوي (المحتوى الرئيسي) */
         .card-main-content {
             display: flex;
-            justify-content: space-between; /* توزيع: المبلغ يسار، التفاصيل يمين */
+            justify-content: space-between;
             align-items: center;
             margin-bottom: 10px;
             padding-bottom: 10px;
-            border-bottom: 1px dashed #E5E7EB; /* الخط الفاصل */
+            border-bottom: 1px dashed #E5E7EB;
         }
 
         /* تنسيق المبلغ (يسار) */
@@ -68,8 +120,8 @@
             font-weight: 800;
             direction: ltr; 
             font-family: sans-serif;
-            order: 2; /* يضمن ظهوره في اليسار في وضع RTL عبر Flexbox adjustment */
-            margin-right: auto; /* يدفعه لأقصى اليسار */
+            order: 2;
+            margin-right: auto;
         }
         .amount-pos { color: #059669; }
         .amount-neg { color: #DC2626; }
@@ -82,40 +134,22 @@
             flex-grow: 1;
         }
 
-        .details-text {
-            margin-right: 10px; /* مسافة بين الأيقونة والنص */
-        }
-
-        .transaction-title {
-            font-weight: 700;
-            color: #1F2937;
-            font-size: 1rem;
-        }
-
-        .transaction-sub {
-            font-size: 0.85rem;
-            color: #6B7280;
-        }
+        .details-text { margin-right: 10px; }
+        .transaction-title { font-weight: 700; color: #1F2937; font-size: 1rem; }
+        .transaction-sub { font-size: 0.85rem; color: #6B7280; }
 
         /* الأيقونة */
         .bank-icon-container {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid;
-            position: relative;
-            background-color: #FAFAFA;
+            width: 45px; height: 45px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid; position: relative; background-color: #FAFAFA;
             flex-shrink: 0;
         }
         .icon-success { border-color: #059669; color: #059669; }
         .icon-danger { border-color: #DC2626; color: #DC2626; }
 
         .arrow-badge {
-            position: absolute;
-            bottom: -2px; right: -2px;
+            position: absolute; bottom: -2px; right: -2px;
             background: white; border-radius: 50%;
             padding: 2px; font-size: 0.7rem;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -123,12 +157,9 @@
 
         /* --- الجزء السفلي (التاريخ والوقت) --- */
         .card-footer-date {
-            text-align: right;
-            font-size: 0.75rem;
-            color: #9CA3AF;
-            font-weight: 600;
-            display: flex;
-            justify-content: space-between;
+            text-align: right; font-size: 0.75rem;
+            color: #9CA3AF; font-weight: 600;
+            display: flex; justify-content: space-between;
             align-items: center;
         }
 
@@ -147,12 +178,60 @@
             border: 1px solid #E5E7EB; cursor: pointer; transition: 0.2s;
         }
         .filter-pill.active {
-            background: #FEF2F2; color: #B91C1C; border-color: #B91C1C;
+            background: #FEE2E2; color: #B91C1C; border-color: #B91C1C;
         }
 
+        /* أنماط الإشعارات والمودال (من index) */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 400px; text-align: center; }
+        .btn {
+            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+            color: white; padding: 15px 30px; border-radius: 12px; font-size: 16px; font-weight: 600;
+            width: 100%; display: inline-flex; justify-content: center; align-items: center; gap: 10px;
+        }
+        .max-h-96 { max-height: 24rem; } 
     </style>
 </head>
 <body>
+
+    <nav class="navbar">
+        <div class="max-w-6xl mx-auto px-4 h-full">
+            <div class="flex justify-between items-center h-full">
+                
+                <button id="menuButton" class="text-2xl text-gray-600 hover:text-blue-500 p-2 focus:outline-none">
+                    <i class="fas fa-bars"></i>
+                </button>
+                
+                <div class="text-2xl font-extrabold text-blue-600 absolute right-1/2 transform translate-x-1/2 hidden sm:block">
+                    <i class="fas fa-home"></i> Smart Dorm
+                </div>
+
+                <div class="flex items-center">
+                    <button id="notificationButton" class="relative text-gray-500 hover:text-red-500 p-2 focus:outline-none" onclick="showNotifications()">
+                        <i class="fas fa-bell text-2xl"></i>
+                        <span id="notificationBadge" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full hidden">
+                            0 
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <div id="sidebar" class="sidebar">
+        <div class="p-4 border-b">
+            <h3 class="text-lg font-bold text-gray-800" id="sidebarUserName">جاري التحميل...</h3>
+            <p class="text-sm text-gray-500" id="sidebarUserEmail">...</p>
+        </div>
+        <a href="index.html" class="sidebar-link"><i class="fas fa-plus-circle ml-2"></i> إضافة مصروف</a>
+        <a href="my_expenses.html" class="sidebar-link"><i class="fas fa-file-invoice-dollar ml-2"></i> مصروفاتي</a>
+        <a href="history.html" class="sidebar-link active-history"><i class="fas fa-history ml-2"></i> السجل</a>
+        <a href="auth.html" id="logoutSidebarButton" class="sidebar-link text-red-600 hover:text-red-800 mt-4">
+            <i class="fas fa-sign-out-alt ml-2"></i> خروج
+        </a>
+    </div>
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
 
     <div class="user-profile-card">
         <div class="flex justify-between items-center">
@@ -160,11 +239,9 @@
                 <h2 class="text-xl font-bold mb-1">مرحباً، <span id="displayHeaderName">...</span></h2>
                 <p class="text-sm opacity-80 dir-ltr" id="displayHeaderEmail">...</p>
             </div>
-            <a href="index.html" class="back-btn">
-                <i class="fas fa-arrow-right ml-1"></i> رجوع
-            </a>
+            <i class="fas fa-chart-line text-3xl opacity-80"></i>
         </div>
-        </div>
+    </div>
 
     <div class="max-w-3xl mx-auto px-4">
 
@@ -184,6 +261,39 @@
         </div>
     </div>
 
+    <div id="notificationModal" class="modal">
+        <div class="modal-content max-w-md text-right">
+            <h2 class="text-xl font-bold mb-4 border-b pb-2"><i class="fas fa-bell ml-1"></i> الإشعارات</h2>
+            <div id="notificationsList" class="space-y-3 text-sm max-h-96 overflow-y-auto">
+                </div>
+            <button onclick="hideNotificationModal()" class="btn w-full mt-6 bg-gray-500 text-white">إغلاق</button>
+        </div>
+    </div>
+
+    <script>
+        window.toggleSidebar = function() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('open');
+            document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : 'auto';
+        }
+        window.closeSidebar = function() {
+            document.getElementById('sidebar').classList.remove('open');
+            document.body.style.overflow = 'auto';
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('menuButton').addEventListener('click', window.toggleSidebar);
+
+            // 🔥 لضمان عمل زر الخروج في القائمة الجانبية (Logout Button)
+            const logoutSidebarBtn = document.getElementById('logoutSidebarButton');
+            if (logoutSidebarBtn) {
+                // يفترض أن المنطق الحقيقي موجود في script.js، لكن هذا لضمان وجود رابط احتياطي
+                logoutSidebarBtn.onclick = (e) => {
+                    e.preventDefault();
+                    window.location.href = 'auth.html';
+                };
+            }
+        });
+    </script>
     <script src="script.js" type="module"></script> 
 </body>
 </html>
