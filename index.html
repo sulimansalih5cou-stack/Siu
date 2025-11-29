@@ -71,6 +71,14 @@
             background-color: #EBF5FF;
             border-right-color: #1D4ED8;
         }
+        
+        /* 🔥 النمط الجديد لقص النص الزائد 🔥 */
+        .sidebar-profile-text {
+            white-space: nowrap; 
+            overflow: hidden;    
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
         /* نهاية أنماط القائمة الجانبية */
 
 
@@ -92,7 +100,7 @@
         }
         /* ملاحظة: تم حذف هذا القسم مؤقتاً في الـ HTML حيث سيتم نقل أزرار السجل والخروج إلى القائمة الجانبية */
         /* إذا كنت تريد إبقاء هذه الأزرار (السجل والخروج) على الواجهة الرئيسية، أعد إضافة هذا القسم إلى الـ HTML، لكن التعديل الحالي نقلهما إلى القائمة الجانبية */
-        
+
         /* --- 🔥 بطاقة الرصيد --- */
         .balance-card {
             /* الحالة الافتراضية (موجب - أخضر) */
@@ -169,11 +177,11 @@
     <nav class="navbar">
         <div class="max-w-6xl mx-auto px-4 h-full">
             <div class="flex justify-between items-center h-full">
-                
+
                 <button id="menuButton" class="text-2xl text-gray-600 hover:text-blue-500 p-2 focus:outline-none">
                     <i class="fas fa-bars"></i>
                 </button>
-                
+
                 <div class="text-2xl font-extrabold text-blue-600 absolute right-1/2 transform translate-x-1/2 hidden sm:block">
                     <i class="fas fa-home"></i> Smart Dorm
                 </div>
@@ -189,11 +197,11 @@
             </div>
         </div>
     </nav>
-    
+
     <div id="sidebar" class="sidebar">
         <div class="p-4 border-b">
-            <h3 class="text-lg font-bold text-gray-800" id="sidebarUserName">جاري التحميل...</h3>
-            <p class="text-sm text-gray-500" id="sidebarUserEmail">...</p>
+            <h3 class="text-lg font-bold text-gray-800 sidebar-profile-text" id="sidebarUserName">جاري التحميل...</h3>
+            <p class="text-sm text-gray-500 sidebar-profile-text" id="sidebarUserEmail">...</p>
         </div>
         <a href="index.html" class="sidebar-link active"><i class="fas fa-plus-circle ml-2"></i> إضافة مصروف</a>
         <a href="my_expenses.html" class="sidebar-link"><i class="fas fa-file-invoice-dollar ml-2"></i> مصروفاتي</a>
@@ -307,7 +315,7 @@
             <button onclick="hideNotificationModal()" class="btn w-full mt-6 bg-gray-500 text-white">إغلاق</button>
         </div>
     </div>
-    
+
     <script>
         window.toggleSidebar = function() {
             const sidebar = document.getElementById('sidebar');
