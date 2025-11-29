@@ -6,33 +6,74 @@
     <title>مصروفاتي الشخصية - Smart Dorm Expenses</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
+
     <style>
-        /* CSS: الأنماط الأساسية */
+        /* CSS: الأنماط الأساسية (المحدثة لتضمين القائمة الجانبية) */
         body {
             background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            padding-top: 80px; 
+            padding-top: 64px; /* تم تعديلها لتناسب ارتفاع شريط التنقل الجديد */
         }
 
         /* شريط التنقل */
         .navbar {
             position: fixed; top: 0; left: 0; right: 0;
             z-index: 900; background-color: white;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); padding: 10px 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            height: 64px; /* تحديد ارتفاع ثابت */
+            padding: 0 16px; 
         }
-        .navbar-link {
-            transition: color 0.3s ease, border-bottom 0.3s ease;
-            border-bottom: 2px solid transparent; padding-bottom: 5px;
-            font-weight: 600; color: #4B5563;
+
+        /* --- 🔥 أنماط القائمة الجانبية (Sidebar) 🔥 --- */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: 0; 
+            height: 100%;
+            width: 250px;
+            background: white;
+            z-index: 1000;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+            transform: translateX(100%); /* إخفاء القائمة في البداية */
+            transition: transform 0.3s ease-out;
+            padding-top: 64px;
         }
-        .navbar-link:hover { color: #3B82F6; border-bottom-color: #3B82F6; }
-        .navbar-link.active { color: #1D4ED8; border-bottom-color: #1D4ED8; }
-        /* تحديد الرابط النشط لصفحة المصروفات الشخصية بلون مختلف */
-        .navbar-link.active-me { color: #DC2626; border-bottom-color: #DC2626; } 
+        .sidebar.open {
+            transform: translateX(0); /* إظهار القائمة */
+        }
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        .sidebar.open + .sidebar-overlay {
+            display: block;
+        }
+        .sidebar-link {
+            display: block;
+            padding: 15px 20px;
+            font-weight: 600;
+            color: #4B5563;
+            transition: background-color 0.3s, color 0.3s;
+            border-right: 4px solid transparent; 
+        }
+        .sidebar-link:hover {
+            background-color: #F3F4F6;
+            color: #3B82F6;
+        }
+        /* اللون النشط لهذه الصفحة هو الأحمر الداكن (active-me) */
+        .sidebar-link.active-me { 
+            color: #DC2626; 
+            background-color: #FEE2E2;
+            border-right-color: #DC2626;
+        }
+        /* نهاية أنماط القائمة الجانبية */
+
 
         .content-wrapper {
             flex-grow: 1; display: flex; align-items: flex-start;
@@ -57,12 +98,12 @@
             transform: translateY(-3px); 
             box-shadow: 0 10px 15px rgba(220, 38, 38, 0.1);
         }
-        
+
         .card-main-content { 
             display: flex; justify-content: space-between; align-items: center; 
             width: 100%; padding-bottom: 10px; border-bottom: 1px dashed #FEE2E2; 
         }
-        
+
         /* المبلغ (جهة اليسار) */
         .amount-display { 
             font-size: 24px; 
@@ -88,7 +129,7 @@
             box-shadow: 0 0 0 5px #FFFFFF;
         }
         .icon-danger { background-color: #FEF2F2; }
-        
+
         .details-text { margin-right: 15px; flex-grow: 1; }
         .transaction-title { 
             font-weight: 700; 
@@ -100,7 +141,7 @@
             color: #6B7280; 
             line-height: 1.4; 
         }
-        
+
         /* قسم التاريخ والساعة */
         .card-footer-date {
             display: flex; justify-content: flex-start; 
@@ -123,38 +164,51 @@
     </style>
 </head>
 <body>
+
     <nav class="navbar">
-        <div class="max-w-6xl mx-auto px-4">
-            <div class="flex justify-between items-center h-16">
-                <div class="text-2xl font-extrabold text-blue-600">
+        <div class="max-w-6xl mx-auto px-4 h-full">
+            <div class="flex justify-between items-center h-full">
+                
+                <button id="menuButton" class="text-2xl text-gray-600 hover:text-blue-500 p-2 focus:outline-none">
+                    <i class="fas fa-bars"></i>
+                </button>
+                
+                <div class="text-2xl font-extrabold text-blue-600 absolute right-1/2 transform translate-x-1/2 hidden sm:block">
                     <i class="fas fa-home"></i> Smart Dorm
                 </div>
-                <div class="flex space-x-4 space-x-reverse">
-                    <a href="index.html" class="navbar-link"><i class="fas fa-plus-circle"></i> إضافة</a>
-                    <a href="my_expenses.html" class="navbar-link active-me"><i class="fas fa-file-invoice-dollar"></i> مصروفاتي</a>
-                    <a href="history.html" class="navbar-link"><i class="fas fa-history"></i> السجل</a>
-                    
-                    <button id="notificationButton" class="navbar-link relative text-gray-500 hover:text-red-500" onclick="showNotifications()">
-                        <i class="fas fa-bell"></i>
+
+                <div class="flex items-center">
+                    <button id="notificationButton" class="relative text-gray-500 hover:text-red-500 p-2 focus:outline-none" onclick="showNotifications()">
+                        <i class="fas fa-bell text-2xl"></i>
                         <span id="notificationBadge" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full hidden">
-                            0
+                            0 
                         </span>
                     </button>
                 </div>
             </div>
         </div>
     </nav>
-    
+
+    <div id="sidebar" class="sidebar">
+        <div class="p-4 border-b">
+            <h3 class="text-lg font-bold text-gray-800" id="sidebarUserName">جاري التحميل...</h3>
+            <p class="text-sm text-gray-500" id="sidebarUserEmail">...</p>
+        </div>
+        <a href="index.html" class="sidebar-link"><i class="fas fa-plus-circle ml-2"></i> إضافة مصروف</a>
+        <a href="my_expenses.html" class="sidebar-link active-me"><i class="fas fa-file-invoice-dollar ml-2"></i> مصروفاتي</a>
+        <a href="history.html" class="sidebar-link"><i class="fas fa-history ml-2"></i> السجل</a>
+        <a href="auth.html" id="logoutSidebarButton" class="sidebar-link text-red-600 hover:text-red-800 mt-4">
+            <i class="fas fa-sign-out-alt ml-2"></i> خروج
+        </a>
+    </div>
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+
     <div class="content-wrapper">
         <div class="container">
-            <a href="auth.html" id="logoutButton" class="absolute top-4 left-4 p-2 text-sm text-white bg-gray-500 rounded-lg hover:bg-gray-600">
-                <i class="fas fa-sign-out-alt"></i> خروج
-            </a>
-
             <h1 class="text-3xl font-bold text-gray-800 text-center mb-8">
                 <i class="fas fa-file-invoice-dollar ml-2 text-red-600"></i> سجل حصصي الشخصية
             </h1>
-            
+
             <div id="totalExpensesCard" class="p-5 mb-8 rounded-xl text-center" style="background: linear-gradient(145deg, #FEE2E2 0%, #FCA5A5 100%); border: 1px solid #F87171;">
                 <p class="text-lg font-semibold text-red-800 mb-1">إجمالي الديون/المصروفات المستحقة عليك</p>
                 <p class="text-4xl font-extrabold text-red-700" dir="ltr">
@@ -171,7 +225,7 @@
             </div>
         </div>
     </div>
-    
+
     <div id="notificationModal" class="modal">
         <div class="modal-content max-w-md text-right">
             <h2 class="text-xl font-bold mb-4 border-b pb-2"><i class="fas fa-bell ml-1"></i> الإشعارات</h2>
@@ -181,6 +235,30 @@
         </div>
     </div>
 
+    <script>
+        window.toggleSidebar = function() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('open');
+            document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : 'auto';
+        }
+        window.closeSidebar = function() {
+            document.getElementById('sidebar').classList.remove('open');
+            document.body.style.overflow = 'auto';
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('menuButton').addEventListener('click', window.toggleSidebar);
+
+            // 🔥 لضمان عمل زر الخروج في القائمة الجانبية (Logout Button)
+            const logoutSidebarBtn = document.getElementById('logoutSidebarButton');
+            if (logoutSidebarBtn) {
+                // يفترض أن المنطق الحقيقي موجود في script.js، لكن هذا لضمان وجود رابط احتياطي
+                logoutSidebarBtn.onclick = (e) => {
+                    e.preventDefault();
+                    window.location.href = 'auth.html';
+                };
+            }
+        });
+    </script>
     <script src="script.js" type="module"></script>
 </body>
 </html>
