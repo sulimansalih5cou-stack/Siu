@@ -9,13 +9,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 
     <style>
+        /* 🔥 أنماط منع التحديد (النسخ) 🔥 */
         body {
             background-color: #F3F4F6;
             font-family: 'Cairo', sans-serif;
             padding-bottom: 60px;
-            /* تم إزالة padding-top هنا لأننا سنستخدم شريط تنقل ثابت في الأعلى */
+            
+            /* أنماط منع التحديد */
+            -webkit-user-select: none; 
+            -moz-user-select: none;    
+            -ms-user-select: none;     
+            user-select: none;         
         }
-        
+
         /* شريط التنقل العلوي الجديد (يحل محل جزء من user-profile-card) */
         .navbar {
             position: fixed; top: 0; left: 0; right: 0;
@@ -35,12 +41,12 @@
             background: white;
             z-index: 1000;
             box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
-            transform: translateX(100%); /* إخفاء القائمة في البداية */
+            transform: translateX(100%); 
             transition: transform 0.3s ease-out;
             padding-top: 64px;
         }
         .sidebar.open {
-            transform: translateX(0); /* إظهار القائمة */
+            transform: translateX(0); 
         }
         .sidebar-overlay {
             display: none;
@@ -70,6 +76,14 @@
             background-color: #FEF2F2;
             border-right-color: #B91C1C;
         }
+        
+        /* 🔥 النمط الجديد لقص النص الزائد 🔥 */
+        .sidebar-profile-text {
+            white-space: nowrap; 
+            overflow: hidden;    
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
         /* نهاية أنماط القائمة الجانبية */
 
 
@@ -83,11 +97,8 @@
             border-bottom-right-radius: 25px;
             margin-bottom: 20px;
             box-shadow: 0 10px 25px -5px rgba(185, 28, 28, 0.4);
-            margin-top: 64px; /* إضافة مسافة من الأعلى لتجنب تغطية شريط التنقل */
+            margin-top: 64px; 
         }
-        
-        /* تم إزالة back-btn لأنه تم استبداله بزر القائمة والإشعارات */
-
 
         /* --- 2. بطاقة المعاملة (التصميم المعدل) --- */
         .bankak-card {
@@ -198,11 +209,11 @@
     <nav class="navbar">
         <div class="max-w-6xl mx-auto px-4 h-full">
             <div class="flex justify-between items-center h-full">
-                
+
                 <button id="menuButton" class="text-2xl text-gray-600 hover:text-blue-500 p-2 focus:outline-none">
                     <i class="fas fa-bars"></i>
                 </button>
-                
+
                 <div class="text-2xl font-extrabold text-blue-600 absolute right-1/2 transform translate-x-1/2 hidden sm:block">
                     <i class="fas fa-home"></i> Smart Dorm
                 </div>
@@ -218,15 +229,16 @@
             </div>
         </div>
     </nav>
-    
+
     <div id="sidebar" class="sidebar">
         <div class="p-4 border-b">
-            <h3 class="text-lg font-bold text-gray-800" id="sidebarUserName">جاري التحميل...</h3>
-            <p class="text-sm text-gray-500" id="sidebarUserEmail">...</p>
+            <h3 class="text-lg font-bold text-gray-800 sidebar-profile-text" id="sidebarUserName">جاري التحميل...</h3>
+            <p class="text-sm text-gray-500 sidebar-profile-text" id="sidebarUserEmail">...</p>
         </div>
         <a href="index.html" class="sidebar-link"><i class="fas fa-plus-circle ml-2"></i> إضافة مصروف</a>
         <a href="my_expenses.html" class="sidebar-link"><i class="fas fa-file-invoice-dollar ml-2"></i> مصروفاتي</a>
         <a href="history.html" class="sidebar-link active-history"><i class="fas fa-history ml-2"></i> السجل</a>
+        <a href="summary.html" class="sidebar-link"><i class="fas fa-handshake ml-2"></i> تسوية الأرصدة</a> 
         <a href="auth.html" id="logoutSidebarButton" class="sidebar-link text-red-600 hover:text-red-800 mt-4">
             <i class="fas fa-sign-out-alt ml-2"></i> خروج
         </a>
@@ -282,11 +294,21 @@
         }
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('menuButton').addEventListener('click', window.toggleSidebar);
+            
+            // 🔥 تعطيل النسخ بالزر الأيمن 🔥
+            document.addEventListener('contextmenu', function(e) {
+                e.preventDefault(); 
+            });
 
-            // 🔥 لضمان عمل زر الخروج في القائمة الجانبية (Logout Button)
+            // 🔥 تعطيل اختصار النسخ (Ctrl+C / Cmd+C) 🔥
+            document.addEventListener('keydown', function(e) {
+                if ((e.key === 'c' || e.key === 'C') && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault(); 
+                }
+            });
+
             const logoutSidebarBtn = document.getElementById('logoutSidebarButton');
             if (logoutSidebarBtn) {
-                // يفترض أن المنطق الحقيقي موجود في script.js، لكن هذا لضمان وجود رابط احتياطي
                 logoutSidebarBtn.onclick = (e) => {
                     e.preventDefault();
                     window.location.href = 'auth.html';
