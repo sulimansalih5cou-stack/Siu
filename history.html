@@ -14,7 +14,7 @@
             background-color: #F3F4F6;
             font-family: 'Cairo', sans-serif;
             padding-bottom: 60px;
-            
+
             /* أنماط منع التحديد */
             -webkit-user-select: none; 
             -moz-user-select: none;    
@@ -76,7 +76,7 @@
             background-color: #FEF2F2;
             border-right-color: #B91C1C;
         }
-        
+
         /* 🔥 النمط الجديد لقص النص الزائد 🔥 */
         .sidebar-profile-text {
             white-space: nowrap; 
@@ -271,7 +271,11 @@
                 جاري التحميل...
             </p>
         </div>
-    </div>
+        
+        <button id="loadMoreButton" onclick="loadMoreHistory()" class="btn w-full mt-4 bg-red-600 hover:bg-red-700 hidden">
+            <i class="fas fa-redo-alt ml-2"></i> عرض المزيد من السجلات
+        </button>
+        </div>
 
     <div id="notificationModal" class="modal">
         <div class="modal-content max-w-md text-right">
@@ -294,7 +298,7 @@
         }
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('menuButton').addEventListener('click', window.toggleSidebar);
-            
+
             // 🔥 تعطيل النسخ بالزر الأيمن 🔥
             document.addEventListener('contextmenu', function(e) {
                 e.preventDefault(); 
