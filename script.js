@@ -1097,7 +1097,6 @@ window.nudgeUser = async function(user, uid) {
 }
 
 // 🔥 دالة التسوية الفعلية (تعديل الأرصدة)
-// تم تعديل هذه الدالة لإضافة رقم العملية إلى الإشعار
 window.sendSettleTransaction = async function(recipientUID, amount, opNumber) {
     if (!currentUserID || !recipientUID || amount <= 0 || !db) {
         alert("خطأ في بيانات التسوية أو عدم اتصال بقاعدة البيانات.");
@@ -1129,24 +1128,21 @@ window.sendSettleTransaction = async function(recipientUID, amount, opNumber) {
         payer_id: currentUserID, 
         recipient_id: recipientUID, 
         amount: amount,
-        operation_number: opNumber,
+        operation_number: opNumber, // تم إزالة .slice(-4) من هنا ليتم أخذها من الدالة المستدعية
         timestamp: Date.now()
     };
 
-    // 4. إشعار للمستلم (تم التعديل هنا)
+    // 4. إشعار للمستلم
     const notificationTime = Date.now();
     const newNotifKey = push(ref(db, 'notifications')).key;
-    const opNumLastFour = opNumber; // opNumber يحتوي على آخر 4 أرقام من الدالة المستدعية
 
     updates[`notifications/${newNotifKey}`] = {
         uid: recipientUID,
-        // 🔥 تم دمج رقم العملية في الرسالة هنا 🔥
-        message: `${payerName} قام بتسوية دين بمبلغ ${amount.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG لك. رقم العملية: ${opNumLastFour}`,
+        message: `${payerName} قام بتسوية دين بمبلغ ${amount.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG لك.`,
         timestamp: notificationTime,
         is_read: false,
         type: 'settlement_received',
-        settlement_id: newSettleKey,
-        operation_number: opNumLastFour // حفظ رقم العملية في الإشعار أيضاً
+        settlement_id: newSettleKey
     };
 
     try {
