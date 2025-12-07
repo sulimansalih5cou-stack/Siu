@@ -71,7 +71,45 @@
             padding: 40px;
             max-width: 800px; 
             width: 100%; margin-top: 20px;
+            position: relative; /* مهم لشاشة التحميل */
         }
+
+        /* ------------------------------------------------ */
+        /* ✨ أنماط شاشة التحميل الجديدة ✨ */
+        /* ------------------------------------------------ */
+        .loading-overlay {
+            position: absolute; 
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex; 
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 50; 
+            transition: opacity 0.3s;
+            border-radius: 20px;
+        }
+        .loading-overlay.hidden {
+            display: none;
+            opacity: 0;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3B82F6; /* لون أزرق جذاب */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* ------------------------------------------------ */
+
 
         /* --- بطاقات الملخص العلوية (المصغرة) --- */
         .summary-card {
@@ -91,7 +129,6 @@
 
 
         /* --- تصميم بطاقة الرصيد الفردية (للدفع فقط) --- */
-        /* ملاحظة: سيتم إضافة data-user-id و data-amount عبر JavaScript */
         .balance-card {
             display: flex; justify-content: space-between; align-items: center;
             padding: 15px 20px; border-radius: 12px; margin-bottom: 12px;
@@ -116,8 +153,8 @@
         .form-group input {
             padding: 15px; border: 3px solid #E5E7EB; border-radius: 12px; background: #F9FAFB; font-size: 18px; font-weight: 600; direction: ltr; text-align: right;
         }
-        
-        /* زر التأكيد الأساسي المُعدَّل */
+
+        /* زر التأكيد الأساسي المُعدَّل */
         .btn-submit {
             background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
             color: white; 
@@ -132,11 +169,16 @@
             gap: 10px;
             transition: background 0.3s;
         }
-        .btn-submit:hover {
+        .btn-submit:hover:not(:disabled) { /* تعديل: عدم تغيير اللون عند التعطيل */
             background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%);
         }
+        /* نمط التعطيل */
+        .btn-submit:disabled {
+            background: #9CA3AF; /* لون رمادي للإشارة إلى التعطيل */
+            cursor: not-allowed;
+        }
 
-        /* نمط الأزرار الثانوية (إلغاء/إغلاق) المُعدَّل */
+        /* نمط الأزرار الثانوية (إلغاء/إغلاق) المُعدَّل */
         .btn-secondary-action {
              background: #E5E7EB; 
              color: #4B5563; 
@@ -210,18 +252,23 @@
 
     <div class="content-wrapper">
         <div class="container">
+            
+            <div id="loadingOverlay" class="loading-overlay">
+                <div class="spinner"></div>
+                <p class="mt-4 text-gray-700 font-semibold">جاري تحميل ملخص الأرصدة...</p>
+            </div>
             <h1 class="text-2xl font-extrabold text-gray-800 text-center mb-8 border-b pb-4">
                 <i class="fas fa-balance-scale ml-2 text-blue-600"></i> ملخص الأرصدة وإدارة التسوية
             </h1>
-            
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
-                
+
                 <div class="summary-card debt">
                     <p>إجمالي ديونك المستحقة</p>
                     <h3 id="totalDebt">0.00 <span class="text-base font-normal">SDG</span></h3>
                     <p class="small-desc">المبالغ التي يجب عليك دفعها.</p>
                 </div>
-                
+
                 <div class="summary-card credit" onclick="showClaimModal()">
                     <p>إجمالي مستحقاتك من الآخرين</p>
                     <h3 id="totalCredit">0.00 <span class="text-base font-normal">SDG</span></h3>
@@ -233,7 +280,7 @@
             <h2 class="text-xl font-bold text-gray-700 mb-4"><i class="fas fa-money-bill-wave ml-1 text-red-500"></i> الديون التي تحتاج إلى تسوية منك</h2>
 
             <div id="debtContainer" class="space-y-3">
-                </div>
+            </div>
 
              <div id="noDebts" class="hidden text-center text-gray-500 mt-10 p-6 border-2 border-dashed border-green-300 rounded-lg">
                 <i class="fas fa-check-circle text-6xl mb-4 text-green-500"></i>
@@ -243,17 +290,17 @@
 
         </div>
     </div>
-    
+
     <div id="claimModal" class="modal">
         <div class="modal-content">
             <h2 class="text-2xl font-bold mb-4 border-b pb-2 text-green-700"><i class="fas fa-money-check-dollar ml-1"></i> مستحقاتك من الآخرين</h2>
             <p class="text-sm text-gray-600 mb-4">يمكنك "نكز" (تذكير) كل شخص على حدة لتسديد المبلغ.</p>
-            
+
             <div id="claimList" class="space-y-3 max-h-64 overflow-y-auto mb-6 p-2 border rounded-lg">
                  <p class="text-center text-gray-400 py-4">جاري تحميل المستحقات...</p>
             </div>
             
-            <button onclick="sendClaimNotification()" class="btn-submit w-full bg-green-600 hover:bg-green-700">
+            <button id="sendClaimButton" onclick="sendClaimNotification()" class="btn-submit w-full bg-green-600 hover:bg-green-700">
                  <i class="fas fa-bullhorn ml-2"></i> إرسال مطالبة عامة "ادفعوا لي"
             </button>
             <button type="button" onclick="hideClaimModal()" class="btn-secondary-action mt-2">إغلاق</button>
@@ -264,17 +311,17 @@
     <div id="settleModal" class="modal">
         <div class="modal-content">
             <h2 class="text-2xl font-bold mb-4 border-b pb-2 text-blue-700"><i class="fas fa-money-bill-transfer ml-1"></i> دفع التسوية</h2>
-            
+
             <div id="settleDetails" class="text-right text-base mb-6 space-y-2 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
                 <p id="settleRelation" class="font-semibold text-gray-800 text-lg">تسوية الدين المستحق لـ [اسم المستلم]</p>
                 <p class="text-sm text-gray-600">المبلغ الأقصى المطلوب دفعه هو: <span class="font-bold text-blue-800" id="maxSettleAmountDisplay">0.00</span> SDG.</p>
             </div>
-            
+
             <form id="settleForm">
                 <div class="form-group mb-5">
                     <label for="operationNumber">رقم العملية البنكية (آخر 4 أرقام)</label>
                     <input type="tel" id="operationNumber" placeholder="xxxx" 
-                           maxlength="4" pattern="\d{4}" title="يجب أن يكون 4 أرقام فقط" required>
+                            maxlength="4" pattern="\d{4}" title="يجب أن يكون 4 أرقام فقط" required>
                 </div>
 
                 <div class="form-group mb-6">
@@ -286,8 +333,8 @@
                     <span>الرصيد المتبقي عليك:</span>
                     <span id="remainingValue">0.00 SDG</span>
                 </div>
-                
-                <button type="submit" class="btn-submit">
+
+                <button type="submit" id="submitSettleButton" class="btn-submit" disabled>
                     <i class="fas fa-check-circle"></i> تأكيد الدفع والتسوية
                 </button>
                 <button type="button" onclick="hideSettleModal()" class="btn-secondary-action mt-2">
@@ -308,8 +355,8 @@
 
     <script>
         // --- وظائف المودال (للتفاعل مع الـ HTML قبل تحميل Firebase) ---
-        // يتم تعريف هذه الدوال هنا لأنها تُستخدم مباشرة في الـ HTML
-        
+        // تم تجميع الدوال في دالة واحدة لتقليل التكرار.
+
         window.toggleSidebar = function() {
             const sidebar = document.getElementById('sidebar');
             sidebar.classList.toggle('open');
@@ -322,7 +369,7 @@
         window.showNotifications = function() {
              document.getElementById('notificationModal').classList.add('show');
         };
-         window.hideNotificationModal = function() {
+        window.hideNotificationModal = function() {
             document.getElementById('notificationModal').classList.remove('show');
         }
         window.showClaimModal = function() {
@@ -331,36 +378,74 @@
         window.hideClaimModal = function() {
             document.getElementById('claimModal').classList.remove('show');
         }
+        window.hideSettleModal = function() { // تم إضافة هذه الدالة المؤقتة
+             document.getElementById('settleModal').classList.remove('show');
+        }
 
-        // --- وظائف الـ Modal الخاصة بالتسوية ---
-        // سيتم إعادة تعريف وظائف showSettleModal, nudgeUser, sendClaimNotification 
-        // وتعيين مُستمع حدث submit داخل 'script.js' لربطها بـ Firebase.
-        
-        // دالة مؤقتة لتحديث الرصيد المتبقي (المنطق الرئيسي في script.js)
+
+        // ** وظيفة تحديث الرصيد المتبقي (مؤقتة - يتم التحكم بها بشكل رئيسي في script.js) **
         document.getElementById('settleAmount').addEventListener('input', function() {
-            // هذا المنطق يُعاد تنفيذه بشكل كامل في script.js ليعتمد على currentSettleMaxAmount
-            const amountPaid = parseFloat(this.value) || 0;
-            const maxAmount = parseFloat(this.getAttribute('max')) || 0;
+            // يتم استدعاء المنطق الفعلي داخل script.js، لكن هذا يضمن عمل الـ CSS/التأثيرات الأولية
+            const amountInput = this;
+            const submitBtn = document.getElementById('submitSettleButton');
+            const amountPaid = parseFloat(amountInput.value) || 0;
+            const maxAmount = parseFloat(amountInput.getAttribute('max')) || 0;
             const remaining = maxAmount - amountPaid;
             const remainingDisplay = document.getElementById('remainingBalance');
             const remainingValue = document.getElementById('remainingValue');
 
+            // تفعيل/تعطيل زر الإرسال بناءً على القيمة المدخلة
+            if (amountPaid > 0 && amountPaid <= maxAmount) {
+                submitBtn.disabled = false;
+            } else {
+                submitBtn.disabled = true;
+            }
+
+            // عرض الرصيد المتبقي
             if (amountPaid > 0 && remaining >= 0) {
                 remainingValue.textContent = remaining.toLocaleString(undefined, { minimumFractionDigits: 2 }) + ' SDG';
                 remainingDisplay.classList.remove('hidden');
-                
-                remainingDisplay.style.backgroundColor = remaining > 0 ? '#FEF3C7' : '#D1FAE5'; 
-                remainingDisplay.style.color = remaining > 0 ? '#B45309' : '#059669';
-                remainingValue.style.color = remaining > 0 ? '#9A3412' : '#047857';
+
+                // تأثيرات الألوان
+                if (remaining > 0) {
+                    remainingDisplay.style.backgroundColor = '#FEF3C7'; // أصفر فاتح (تبقى جزء)
+                    remainingDisplay.style.color = '#B45309';
+                    remainingValue.style.color = '#9A3412';
+                } else {
+                    remainingDisplay.style.backgroundColor = '#D1FAE5'; // أخضر فاتح (تم التسوية)
+                    remainingDisplay.style.color = '#059669';
+                    remainingValue.style.color = '#047857';
+                }
             } else {
                 remainingDisplay.classList.add('hidden');
             }
         });
-        
+
         // منع النسخ والأحداث
         document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('menuButton').addEventListener('click', window.toggleSidebar);
+            
+            // 🔥 تعطيل اختصار النسخ/التحديد/الكل/اللصق (Ctrl+C/U/A/V) 🔥
+            document.addEventListener('keydown', function(e) {
+                const targetTag = e.target.tagName;
+                // السماح بالاختصارات داخل حقول الإدخال
+                if (targetTag === 'INPUT' || targetTag === 'TEXTAREA' || e.target.getAttribute('contenteditable') === 'true') {
+                    return; 
+                }
+                // منع التحديد/النسخ/الكل/اللصق في الصفحة العامة
+                if ((e.key === 'c' || e.key === 'C' || e.key === 'u' || e.key === 'U' || e.key === 'a' || e.key === 'A' || e.key === 'v' || e.key === 'V') && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault(); 
+                }
+            });
+            // لضمان عمل زر الخروج
+            const logoutSidebarBtn = document.getElementById('logoutSidebarButton');
+            if (logoutSidebarBtn) {
+                logoutSidebarBtn.onclick = (e) => {
+                    e.preventDefault();
+                    window.location.href = 'auth.html'; 
+                };
+            }
         });
     </script>
     <script src="script.js" type="module"></script> 
