@@ -35,7 +35,7 @@
         if (targetTag === 'INPUT' || targetTag === 'TEXTAREA' || e.target.getAttribute('contenteditable') === 'true') {
              return; // السماح بالاختصارات إذا كان المستخدم يكتب
         }
-        
+
         if (e.ctrlKey || e.metaKey) {
             // منع C: نسخ، U: مصدر الصفحة، A: تحديد الكل
             if (e.key === 'c' || e.key === 'C' || e.key === 'u' || e.key === 'U' || e.key === 'a' || e.key === 'A') {
@@ -78,6 +78,8 @@ try {
     alert("خطأ حاسم في تهيئة الاتصال بقاعدة البيانات. تحقق من إعدادات Firebase.");
 }
 
+// 🔥 متغير جديد لحالة الحماية من الضغط المزدوج 🔥
+let isProcessingExpense = false;
 
 // متغيرات عامة
 let allUsers = [];
@@ -144,7 +146,7 @@ function updateHomeDisplay() {
     else if (auth.currentUser && auth.currentUser.displayName) displayName = auth.currentUser.displayName;
 
     if (nameEl) nameEl.textContent = displayName;
-    
+
     // تحديث بيانات الهيدر في history.html
     const displayHeaderName = document.getElementById('displayHeaderName');
     const displayHeaderEmail = document.getElementById('displayHeaderEmail');
@@ -205,7 +207,7 @@ function calculateShare(amount, participantsCount) {
     return roundToTwo(amount / participantsCount);
 }
 
-// 🔥 الدالة الرئيسية للمعاينة
+// 🔥 الدالة الرئيسية للمعاينة - تم إضافة إعادة تعيين حالة المعالجة للزر
 window.previewExpense = function() {
     const title = document.getElementById('expenseTitle').value.trim();
     const amountStr = document.getElementById('expenseAmount').value.replace(/,/g, '');
@@ -274,18 +276,43 @@ window.previewExpense = function() {
     document.getElementById('previewDetails').style.display = 'block';
     document.getElementById('messengerConfirmation').style.display = 'none';
 
+    // ** منطق منع الضغط المزدوج: إعادة تفعيل الزر عند فتح المودال **
+    const saveButton = document.getElementById('finalSaveButton');
+    if(saveButton) {
+        saveButton.disabled = false;
+        saveButton.textContent = 'نعم، حفظ المصروف'; // إعادة تعيين النص الأصلي
+    }
+    isProcessingExpense = false; // إعادة تعيين علم الحالة
+    // -----------------------------------------------------------------
+
     // إخفاء تحذير التكرار مؤقتاً
     document.getElementById('warning').style.display = 'none';
 };
 
-// 🔥 دالة التعامل مع زر الحفظ
+// 🔥 دالة التعامل مع زر الحفظ - التعديل هنا لتأمين الزر
 window.handleSaveClick = function() {
     if (!window.tempExpenseData) return;
+
+    const saveButton = document.getElementById('finalSaveButton');
+    
+    // ** منطق الحماية الجديد **
+    if (isProcessingExpense) {
+        console.warn("Attempted double click - action blocked.");
+        return; // منع أي تنفيذ إضافي إذا كانت عملية سابقة قيد التنفيذ
+    }
+    
+    isProcessingExpense = true; // تعيين العلم إلى 'صحيح' قبل البدء
+    if(saveButton) {
+        saveButton.disabled = true; // تعطيل الزر فور النقر
+        saveButton.textContent = 'جاري الحفظ...';
+    }
+    // ** نهاية منطق الحماية الجديد **
 
     if (window.tempExpenseData.isMessenger) {
         // إذا كان مرسالاً، اعرض التنبيه الخاص بالمرسال
         document.getElementById('previewDetails').style.display = 'none';
         document.getElementById('messengerConfirmation').style.display = 'block';
+        
         // تحديث نص المبلغ في تنبيه المرسال (اختياري)
         const messengerWarningP = document.querySelector('#messengerConfirmation .messenger-warning p');
         if(messengerWarningP) messengerWarningP.innerHTML = messengerWarningP.innerHTML.replace('سيظهر هنا', window.tempExpenseData.amount.toLocaleString('en-US') + ' SDG');
@@ -296,7 +323,7 @@ window.handleSaveClick = function() {
 };
 
 
-// 🔥 الدالة النهائية لحفظ المصروف وتحديث الأرصدة
+// 🔥 الدالة النهائية لحفظ المصروف وتحديث الأرصدة - التعديل هنا
 window.saveExpense = async function() {
     const data = window.tempExpenseData;
     if (!data || !currentUserID || !db) return;
@@ -310,6 +337,8 @@ window.saveExpense = async function() {
         is_messenger: data.isMessenger,
         timestamp: Date.now()
     };
+    
+    const saveButton = document.getElementById('finalSaveButton'); // مرجع الزر
 
     try {
         // 1. تحديث رصيد الدافع
@@ -371,6 +400,13 @@ window.saveExpense = async function() {
     } catch (e) {
         console.error("Error saving expense and updating balances:", e);
         alert("حدث خطأ أثناء حفظ المصروف. الرجاء المحاولة مرة أخرى.");
+    } finally {
+        // ** ضمان إعادة تعيين الحالة وإعادة تفعيل الزر (الأهم لمنع الضغط المزدوج) **
+        isProcessingExpense = false; // إعادة تعيين علم الحالة
+        if(saveButton) {
+            saveButton.disabled = false; // إعادة تفعيل الزر
+            saveButton.textContent = 'نعم، حفظ المصروف';
+        }
     }
 };
 // نهاية إضافة منطق حفظ المصروفات
@@ -452,7 +488,7 @@ function displayPersonalExpenses() {
     });
 
     if (totalExpensesEl) {
-        totalExpensesEl.textContent = totalPersonalDebt.toLocaleString('en-US', {minimumFractionDigits: 1, maximumFractionDigits: 2});
+        totalPersonalDebt.toLocaleString('en-US', {minimumFractionDigits: 1, maximumFractionDigits: 2});
     }
 }
 
@@ -630,7 +666,7 @@ function combineAndSortHistory() {
         // نضمّن المصروفات التي أنت الدافع لها، أو التي أنت مشارك فيها (مدين)
         const isPayer = expense.payer_id === currentUserID;
         const isParticipant = expense.participants_ids.includes(currentUserID);
-        
+
         // إذا كان الدافع ومرسال والحصة 0، نتجاهل هذا المصروف من العرض المباشر في السجل
         if (isPayer && (expense.is_messenger || false) && expense.share < 0.1 && expense.total_amount < 0.1) return;
 
@@ -666,7 +702,7 @@ function combineAndSortHistory() {
 function filterHistory(filter) {
     const allHistory = combineAndSortHistory();
     const now = Date.now();
-    
+
     filteredHistory = allHistory.filter(record => {
         // فلاتر الوقت
         if (filter === '30days') {
@@ -749,7 +785,7 @@ function displayHistory() {
             if (isPayer) {
                 // أنت الدافع. المبلغ الذي تستحقه من الآخرين
                 const amountClaimed = (record.is_messenger || false) ? record.total_amount : roundToTwo(record.total_amount - share);
-                
+
                 if (amountClaimed > 0.1) {
                     amountText = `+ ${amountClaimed.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
                     iconClass = 'icon-success';
@@ -826,7 +862,7 @@ function displayHistory() {
                 </div>
             `;
         }
-        
+
         container.innerHTML += cardHTML;
     });
 
