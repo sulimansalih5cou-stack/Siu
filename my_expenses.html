@@ -100,7 +100,43 @@
             max-width: 900px; width: 100%; margin-top: 20px; position: relative;
         }
 
-        /* ... بقية أنماط المصروفات الشخصية (كما هي) ... */
+        /* ------------------------------------------------ */
+        /* ✨ أنماط شاشة التحميل الجديدة ✨ */
+        /* ------------------------------------------------ */
+        .loading-overlay {
+            position: absolute; /* داخل container */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex; 
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 50; /* أقل من المودال وأعلى من المحتوى */
+            transition: opacity 0.3s;
+            border-radius: 20px;
+        }
+        .loading-overlay.hidden {
+            display: none;
+            opacity: 0;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3B82F6; /* لون أزرق جذاب */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* ------------------------------------------------ */
+
+
         .bankak-card {
             display: flex; flex-direction: column; 
             padding: 15px 20px; border-radius: 12px; background: #ffffff;
@@ -217,19 +253,24 @@
 
     <div class="content-wrapper">
         <div class="container">
+            
+            <div id="loadingOverlay" class="loading-overlay">
+                <div class="spinner"></div>
+                <p class="mt-4 text-gray-700 font-semibold">جاري تحميل مصروفاتك الشخصية...</p>
+            </div>
             <h1 class="text-3xl font-bold text-gray-800 text-center mb-8">
                 <i class="fas fa-file-invoice-dollar ml-2 text-red-600"></i> سجل حصصي الشخصية
             </h1>
 
             <div id="totalExpensesCard" class="p-5 mb-8 rounded-xl text-center" style="background: linear-gradient(145deg, #FEE2E2 0%, #FCA5A5 100%); border: 1px solid #F87171;">
-                <p class="text-lg font-semibold text-red-800 mb-1">   اجمالي مصروفاتي الشخصية⛔</p>
+                <p class="text-lg font-semibold text-red-800 mb-1">    اجمالي مصروفاتي الشخصية⛔</p>
                 <p class="text-4xl font-extrabold text-red-700" dir="ltr">
                     <span id="totalPersonalExpenses">0.00</span> 
                     <span class="text-xl font-medium">SDG</span>
                 </p>
             </div>
             <div id="personalExpensesContainer" class="space-y-4">
-                </div>
+            </div>
 
             <div id="noPersonalExpenses" class="hidden text-center text-gray-500 mt-10">
                 <i class="fas fa-box-open text-6xl mb-4"></i>
@@ -267,7 +308,12 @@
 
             // 🔥 تعطيل اختصار النسخ (Ctrl+C / Cmd+C) 🔥
             document.addEventListener('keydown', function(e) {
-                if ((e.key === 'c' || e.key === 'C') && (e.ctrlKey || e.metaKey)) {
+                const targetTag = e.target.tagName;
+                // السماح بالاختصارات داخل حقول الإدخال
+                if (targetTag === 'INPUT' || targetTag === 'TEXTAREA' || e.target.getAttribute('contenteditable') === 'true') {
+                    return; 
+                }
+                if ((e.key === 'c' || e.key === 'C' || e.key === 'u' || e.key === 'U' || e.key === 'a' || e.key === 'A') && (e.ctrlKey || e.metaKey)) {
                     e.preventDefault(); 
                 }
             });
@@ -277,10 +323,19 @@
             if (logoutSidebarBtn) {
                 logoutSidebarBtn.onclick = (e) => {
                     e.preventDefault();
-                    window.location.href = 'auth.html';
+                    window.location.href = 'auth.html'; // يجب ربط هذه الدالة بمنطق Firebase Sign Out
                 };
             }
         });
+        
+        // ** ملاحظة: لا حاجة لوضع دوال إخفاء/إظهار المودال هنا، يمكن استيرادها من script.js
+        window.hideNotificationModal = function() {
+             document.getElementById('notificationModal').classList.remove('show');
+        }
+        window.showNotifications = function() {
+             document.getElementById('notificationModal').classList.add('show');
+        }
+
     </script>
     <script src="script.js" type="module"></script>
 </body>
