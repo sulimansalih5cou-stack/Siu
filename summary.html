@@ -1,453 +1,370 @@
+وهذا كود الملخص والتسوية 
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ملخص وتسوية الأرصدة - Smart Dorm Expenses</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ملخص وتسوية الأرصدة - Smart Dorm Expenses</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-    <style>
-        /* CSS: الأنماط الأساسية */
-        body {
-            background-color: #F3F4F6;
-            font-family: 'Cairo', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            padding-top: 64px; 
-            overflow-x: hidden; 
-            -webkit-user-select: none; 
-            -moz-user-select: none;    
-            -ms-user-select: none;     
-            user-select: none;         
-        }
+    <style>
+        /* CSS: الأنماط الأساسية */
+        body {
+            background-color: #F3F4F6;
+            font-family: 'Cairo', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding-top: 64px; 
+            overflow-x: hidden; 
+            -webkit-user-select: none; 
+            -moz-user-select: none;    
+            -ms-user-select: none;     
+            user-select: none;         
+        }
 
-        /* شريط التنقل (Navbar) - مطابقة لـ Index */
-        .navbar {
-            position: fixed; top: 0; left: 0; right: 0;
-            z-index: 900; background-color: white;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); 
-            height: 64px; 
-            padding: 0 16px; 
-        }
+        /* شريط التنقل (Navbar) - مطابقة لـ Index */
+        .navbar {
+            position: fixed; top: 0; left: 0; right: 0;
+            z-index: 900; background-color: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); 
+            height: 64px; 
+            padding: 0 16px; 
+        }
 
-        /* --- أنماط القائمة الجانبية (Sidebar) --- */
-        .sidebar {
-            position: fixed; top: 0; right: 0; height: 100%; width: 250px;
-            background: white; z-index: 1000; box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
-            transform: translateX(100%); transition: transform 0.3s ease-out;
-            padding-top: 64px;
-        }
-        .sidebar.open { transform: translateX(0); }
-        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 999; }
-        .sidebar.open + .sidebar-overlay { display: block; }
-        .sidebar-link {
-            display: block; padding: 15px 20px; font-weight: 600; color: #4B5563;
-            transition: background-color 0.3s, color 0.3s; border-right: 4px solid transparent; 
-        }
-        .sidebar-link:hover { background-color: #F3F4F6; color: #3B82F6; }
-        .sidebar-link.active-summary { 
-            color: #1D4ED8; 
-            background-color: #EBF5FF; 
-            border-right-color: #1D4ED8;
-        }
-        .sidebar-profile-text {
-            white-space: nowrap; 
-            overflow: hidden;    
-            text-overflow: ellipsis;
-            max-width: 100%;
-        }
+        /* --- أنماط القائمة الجانبية (Sidebar) --- */
+        .sidebar {
+            position: fixed; top: 0; right: 0; height: 100%; width: 250px;
+            background: white; z-index: 1000; box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+            transform: translateX(100%); transition: transform 0.3s ease-out;
+            padding-top: 64px;
+        }
+        .sidebar.open { transform: translateX(0); }
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 999; }
+        .sidebar.open + .sidebar-overlay { display: block; }
+        .sidebar-link {
+            display: block; padding: 15px 20px; font-weight: 600; color: #4B5563;
+            transition: background-color 0.3s, color 0.3s; border-right: 4px solid transparent; 
+        }
+        .sidebar-link:hover { background-color: #F3F4F6; color: #3B82F6; }
+        .sidebar-link.active-summary { 
+            color: #1D4ED8; 
+            background-color: #EBF5FF; 
+            border-right-color: #1D4ED8;
+        }
+        .sidebar-profile-text {
+            white-space: nowrap; 
+            overflow: hidden;    
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
 
-        /* --- أنماط المحتوى الرئيسي --- */
-        .content-wrapper {
-            flex-grow: 1; display: flex; align-items: flex-start;
-            justify-content: center; padding: 20px;
-        }
-        .container {
-            background: white; border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); 
-            padding: 40px;
-            max-width: 800px; 
-            width: 100%; margin-top: 20px;
-            position: relative; /* مهم لشاشة التحميل */
-        }
+        /* --- أنماط المحتوى الرئيسي --- */
+        .content-wrapper {
+            flex-grow: 1; display: flex; align-items: flex-start;
+            justify-content: center; padding: 20px;
+        }
+        .container {
+            background: white; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); 
+            padding: 40px;
+            max-width: 800px; 
+            width: 100%; margin-top: 20px;
+        }
 
-        /* ------------------------------------------------ */
-        /* ✨ أنماط شاشة التحميل الجديدة ✨ */
-        /* ------------------------------------------------ */
-        .loading-overlay {
-            position: absolute; 
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.95);
-            display: flex; 
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 50; 
-            transition: opacity 0.3s;
-            border-radius: 20px;
-        }
-        .loading-overlay.hidden {
-            display: none;
-            opacity: 0;
-        }
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3B82F6; /* لون أزرق جذاب */
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        /* ------------------------------------------------ */
+        /* --- بطاقات الملخص العلوية (المصغرة) --- */
+        .summary-card {
+            padding: 15px 15px; 
+            border-radius: 15px; 
+            text-align: center;
+            color: white;
+            box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s;
+            height: 100%; 
+        }
+        .summary-card.debt { background: linear-gradient(135deg, #F87171 0%, #DC2626 100%); }
+        .summary-card.credit { background: linear-gradient(135deg, #34D399 0%, #059669 100%); cursor: pointer; }
+        .summary-card h3 { font-size: 2rem; font-weight: 800; direction: ltr; }
+        .summary-card p { font-size: 0.9rem; font-weight: 600; margin-bottom: 5px; opacity: 0.95;}
+        .summary-card .small-desc { font-size: 0.75rem; opacity: 0.8; margin-top: 5px; }
 
 
-        /* --- بطاقات الملخص العلوية (المصغرة) --- */
-        .summary-card {
-            padding: 15px 15px; 
-            border-radius: 15px; 
-            text-align: center;
-            color: white;
-            box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.2);
-            transition: transform 0.2s;
-            height: 100%; 
-        }
-        .summary-card.debt { background: linear-gradient(135deg, #F87171 0%, #DC2626 100%); }
-        .summary-card.credit { background: linear-gradient(135deg, #34D399 0%, #059669 100%); cursor: pointer; }
-        .summary-card h3 { font-size: 2rem; font-weight: 800; direction: ltr; }
-        .summary-card p { font-size: 0.9rem; font-weight: 600; margin-bottom: 5px; opacity: 0.95;}
-        .summary-card .small-desc { font-size: 0.75rem; opacity: 0.8; margin-top: 5px; }
+        /* --- تصميم بطاقة الرصيد الفردية (للدفع فقط) --- */
+        /* ملاحظة: سيتم إضافة data-user-id و data-amount عبر JavaScript */
+        .balance-card {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 20px; border-radius: 12px; margin-bottom: 12px;
+            background: #FFFFFF; border: 1px solid #E5E7EB; border-right: 4px solid #3B82F6; 
+        }
+        .balance-info { display: flex; flex-direction: column; text-align: right; }
+        .balance-name { font-weight: 700; color: #1F2937; font-size: 1.1rem; }
+        .balance-amount { font-size: 1.3rem; font-weight: 700; direction: ltr; color: #DC2626; }
+        .action-button {
+            padding: 8px 18px; background: #3B82F6; color: white;
+            border-radius: 8px; font-size: 0.9rem; font-weight: 600;
+        }
 
+        /* --- أنماط مودال التسوية والمطالبة --- */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; }
+        .modal.show { display: flex; }
+        .modal-content { 
+            background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 450px; 
+            text-align: right;
+        }
+        .form-group label { display: block; font-weight: 600; color: #374151; margin-bottom: 8px; }
+        .form-group input {
+            padding: 15px; border: 3px solid #E5E7EB; border-radius: 12px; background: #F9FAFB; font-size: 18px; font-weight: 600; direction: ltr; text-align: right;
+        }
 
-        /* --- تصميم بطاقة الرصيد الفردية (للدفع فقط) --- */
-        .balance-card {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 20px; border-radius: 12px; margin-bottom: 12px;
-            background: #FFFFFF; border: 1px solid #E5E7EB; border-right: 4px solid #3B82F6; 
-        }
-        .balance-info { display: flex; flex-direction: column; text-align: right; }
-        .balance-name { font-weight: 700; color: #1F2937; font-size: 1.1rem; }
-        .balance-amount { font-size: 1.3rem; font-weight: 700; direction: ltr; color: #DC2626; }
-        .action-button {
-            padding: 8px 18px; background: #3B82F6; color: white;
-            border-radius: 8px; font-size: 0.9rem; font-weight: 600;
-        }
+        /* زر التأكيد الأساسي المُعدَّل */
+        .btn-submit {
+            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+            color: white; 
+            padding: 12px 25px; 
+            border-radius: 10px; 
+            font-size: 16px; 
+            font-weight: 700;
+            width: 100%; 
+            display: inline-flex; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 10px;
+            transition: background 0.3s;
+        }
+        .btn-submit:hover {
+            background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%);
+        }
 
-        /* --- أنماط مودال التسوية والمطالبة --- */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; }
-        .modal.show { display: flex; }
-        .modal-content { 
-            background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 450px; 
-            text-align: right;
-        }
-        .form-group label { display: block; font-weight: 600; color: #374151; margin-bottom: 8px; }
-        .form-group input {
-            padding: 15px; border: 3px solid #E5E7EB; border-radius: 12px; background: #F9FAFB; font-size: 18px; font-weight: 600; direction: ltr; text-align: right;
-        }
+        /* نمط الأزرار الثانوية (إلغاء/إغلاق) المُعدَّل */
+        .btn-secondary-action {
+             background: #E5E7EB; 
+             color: #4B5563; 
+             border: 1px solid #D1D5DB;
+             padding: 12px 25px;
+             border-radius: 10px;
+             font-size: 16px; 
+             font-weight: 700;
+             width: 100%;
+             display: inline-flex;
+             justify-content: center;
+             align-items: center; 
+             gap: 10px;
+             transition: background 0.3s, color 0.3s;
+        }
+        .btn-secondary-action:hover {
+            background: #D1D5DB; 
+            color: #1F2937;
+        }
 
-        /* زر التأكيد الأساسي المُعدَّل */
-        .btn-submit {
-            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
-            color: white; 
-            padding: 12px 25px; 
-            border-radius: 10px; 
-            font-size: 16px; 
-            font-weight: 700;
-            width: 100%; 
-            display: inline-flex; 
-            justify-content: center; 
-            align-items: center; 
-            gap: 10px;
-            transition: background 0.3s;
-        }
-        .btn-submit:hover:not(:disabled) { /* تعديل: عدم تغيير اللون عند التعطيل */
-            background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%);
-        }
-        /* نمط التعطيل */
-        .btn-submit:disabled {
-            background: #9CA3AF; /* لون رمادي للإشارة إلى التعطيل */
-            cursor: not-allowed;
-        }
-
-        /* نمط الأزرار الثانوية (إلغاء/إغلاق) المُعدَّل */
-        .btn-secondary-action {
-             background: #E5E7EB; 
-             color: #4B5563; 
-             border: 1px solid #D1D5DB;
-             padding: 12px 25px;
-             border-radius: 10px;
-             font-size: 16px; 
-             font-weight: 700;
-             width: 100%;
-             display: inline-flex;
-             justify-content: center;
-             align-items: center; 
-             gap: 10px;
-             transition: background 0.3s, color 0.3s;
-        }
-        .btn-secondary-action:hover {
-            background: #D1D5DB; 
-            color: #1F2937;
-        }
-
-        /* تعديل أنماط المطالبة */
-        .nudge-button-individual {
-            background-color: #FBBF24; color: #92400E; padding: 6px 14px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; border: 1px solid #F59E0B;
-        }
-        .claim-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 10px 0; border-bottom: 1px dashed #E5E7EB;
-        }
-    </style>
+        /* تعديل أنماط المطالبة */
+        .nudge-button-individual {
+            background-color: #FBBF24; color: #92400E; padding: 6px 14px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; border: 1px solid #F59E0B;
+        }
+        .claim-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 0; border-bottom: 1px dashed #E5E7EB;
+        }
+    </style>
 </head>
 <body>
 
-    <nav class="navbar">
-        <div class="max-w-6xl mx-auto px-4 h-full">
-            <div class="flex justify-between items-center h-full">
+    <nav class="navbar">
+        <div class="max-w-6xl mx-auto px-4 h-full">
+            <div class="flex justify-between items-center h-full">
 
-                <button id="menuButton" class="text-2xl text-gray-600 hover:text-blue-500 p-2 focus:outline-none">
-                    <i class="fas fa-bars"></i>
-                </button>
+                <button id="menuButton" class="text-2xl text-gray-600 hover:text-blue-500 p-2 focus:outline-none">
+                    <i class="fas fa-bars"></i>
+                </button>
 
-                <div class="text-2xl font-extrabold text-blue-600 absolute right-1/2 transform translate-x-1/2 hidden sm:block">
-                    <i class="fas fa-handshake"></i> Smart Dorm
-                </div>
+                <div class="text-2xl font-extrabold text-blue-600 absolute right-1/2 transform translate-x-1/2 hidden sm:block">
+                    <i class="fas fa-handshake"></i> Smart Dorm
+                </div>
 
-                <div class="flex items-center">
-                    <button id="notificationButton" class="relative text-gray-500 hover:text-red-500 p-2 focus:outline-none" onclick="showNotifications()">
-                        <i class="fas fa-bell text-2xl"></i>
-                        <span id="notificationBadge" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full hidden">
-                            0 
-                        </span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </nav>
+                <div class="flex items-center">
+                    <button id="notificationButton" class="relative text-gray-500 hover:text-red-500 p-2 focus:outline-none" onclick="showNotifications()">
+                        <i class="fas fa-bell text-2xl"></i>
+                        <span id="notificationBadge" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full hidden">
+                            0 
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
 
-    <div id="sidebar" class="sidebar">
-        <div class="p-4 border-b">
-            <h3 class="text-lg font-bold text-gray-800 sidebar-profile-text" id="sidebarUserName">جاري التحميل...</h3>
-            <p class="text-sm text-gray-500 sidebar-profile-text" id="sidebarUserEmail">...</p>
-        </div>
-        <a href="index.html" class="sidebar-link"><i class="fas fa-plus-circle ml-2"></i> إضافة مصروف</a>
-        <a href="my_expenses.html" class="sidebar-link"><i class="fas fa-file-invoice-dollar ml-2"></i> مصروفاتي</a>
-        <a href="history.html" class="sidebar-link"><i class="fas fa-history ml-2"></i> السجل</a>
-        <a href="summary.html" class="sidebar-link active-summary"><i class="fas fa-handshake ml-2"></i> تسوية الأرصدة</a>
-        <a href="auth.html" id="logoutSidebarButton" class="sidebar-link text-red-600 hover:text-red-800 mt-4">
-            <i class="fas fa-sign-out-alt ml-2"></i> خروج
-        </a>
-    </div>
-    <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+    <div id="sidebar" class="sidebar">
+        <div class="p-4 border-b">
+            <h3 class="text-lg font-bold text-gray-800 sidebar-profile-text" id="sidebarUserName">جاري التحميل...</h3>
+            <p class="text-sm text-gray-500 sidebar-profile-text" id="sidebarUserEmail">...</p>
+        </div>
+        <a href="index.html" class="sidebar-link"><i class="fas fa-plus-circle ml-2"></i> إضافة مصروف</a>
+        <a href="my_expenses.html" class="sidebar-link"><i class="fas fa-file-invoice-dollar ml-2"></i> مصروفاتي</a>
+        <a href="history.html" class="sidebar-link"><i class="fas fa-history ml-2"></i> السجل</a>
+        <a href="summary.html" class="sidebar-link active-summary"><i class="fas fa-handshake ml-2"></i> تسوية الأرصدة</a>
+        <a href="auth.html" id="logoutSidebarButton" class="sidebar-link text-red-600 hover:text-red-800 mt-4">
+            <i class="fas fa-sign-out-alt ml-2"></i> خروج
+        </a>
+    </div>
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
 
-    <div class="content-wrapper">
-        <div class="container">
-            
-            <div id="loadingOverlay" class="loading-overlay">
-                <div class="spinner"></div>
-                <p class="mt-4 text-gray-700 font-semibold">جاري تحميل ملخص الأرصدة...</p>
-            </div>
-            <h1 class="text-2xl font-extrabold text-gray-800 text-center mb-8 border-b pb-4">
-                <i class="fas fa-balance-scale ml-2 text-blue-600"></i> ملخص الأرصدة وإدارة التسوية
-            </h1>
+    <div class="content-wrapper">
+        <div class="container">
+            <h1 class="text-2xl font-extrabold text-gray-800 text-center mb-8 border-b pb-4">
+                <i class="fas fa-balance-scale ml-2 text-blue-600"></i> ملخص الأرصدة وإدارة التسوية
+            </h1>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
 
-                <div class="summary-card debt">
-                    <p>إجمالي ديونك المستحقة</p>
-                    <h3 id="totalDebt">0.00 <span class="text-base font-normal">SDG</span></h3>
-                    <p class="small-desc">المبالغ التي يجب عليك دفعها.</p>
-                </div>
+                <div class="summary-card debt">
+                    <p>إجمالي ديونك المستحقة</p>
+                    <h3 id="totalDebt">0.00 <span class="text-base font-normal">SDG</span></h3>
+                    <p class="small-desc">المبالغ التي يجب عليك دفعها.</p>
+                </div>
 
-                <div class="summary-card credit" onclick="showClaimModal()">
-                    <p>إجمالي مستحقاتك من الآخرين</p>
-                    <h3 id="totalCredit">0.00 <span class="text-base font-normal">SDG</span></h3>
-                    <p class="small-desc">اضغط لعرض التفاصيل والمطالبة بها.</p>
-                </div>
-            </div>
+                <div class="summary-card credit" onclick="showClaimModal()">
+                    <p>إجمالي مستحقاتك من الآخرين</p>
+                    <h3 id="totalCredit">0.00 <span class="text-base font-normal">SDG</span></h3>
+                    <p class="small-desc">اضغط لعرض التفاصيل والمطالبة بها.</p>
+                </div>
+            </div>
 
 
-            <h2 class="text-xl font-bold text-gray-700 mb-4"><i class="fas fa-money-bill-wave ml-1 text-red-500"></i> الديون التي تحتاج إلى تسوية منك</h2>
+            <h2 class="text-xl font-bold text-gray-700 mb-4"><i class="fas fa-money-bill-wave ml-1 text-red-500"></i> الديون التي تحتاج إلى تسوية منك</h2>
 
-            <div id="debtContainer" class="space-y-3">
-            </div>
+            <div id="debtContainer" class="space-y-3">
+                </div>
 
-             <div id="noDebts" class="hidden text-center text-gray-500 mt-10 p-6 border-2 border-dashed border-green-300 rounded-lg">
-                <i class="fas fa-check-circle text-6xl mb-4 text-green-500"></i>
-                <p class="text-lg font-bold">كل ديونك مسواة!</p>
-                <p class="text-sm">لا يوجد لديك أي ديون مستحقة للآخرين حاليًا.</p>
-            </div>
+             <div id="noDebts" class="hidden text-center text-gray-500 mt-10 p-6 border-2 border-dashed border-green-300 rounded-lg">
+                <i class="fas fa-check-circle text-6xl mb-4 text-green-500"></i>
+                <p class="text-lg font-bold">كل ديونك مسواة!</p>
+                <p class="text-sm">لا يوجد لديك أي ديون مستحقة للآخرين حاليًا.</p>
+            </div>
 
-        </div>
-    </div>
+        </div>
+    </div>
 
-    <div id="claimModal" class="modal">
-        <div class="modal-content">
-            <h2 class="text-2xl font-bold mb-4 border-b pb-2 text-green-700"><i class="fas fa-money-check-dollar ml-1"></i> مستحقاتك من الآخرين</h2>
-            <p class="text-sm text-gray-600 mb-4">يمكنك "نكز" (تذكير) كل شخص على حدة لتسديد المبلغ.</p>
+    <div id="claimModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-2xl font-bold mb-4 border-b pb-2 text-green-700"><i class="fas fa-money-check-dollar ml-1"></i> مستحقاتك من الآخرين</h2>
+            <p class="text-sm text-gray-600 mb-4">يمكنك "نكز" (تذكير) كل شخص على حدة لتسديد المبلغ.</p>
 
-            <div id="claimList" class="space-y-3 max-h-64 overflow-y-auto mb-6 p-2 border rounded-lg">
-                 <p class="text-center text-gray-400 py-4">جاري تحميل المستحقات...</p>
-            </div>
-            
-            <button id="sendClaimButton" onclick="sendClaimNotification()" class="btn-submit w-full bg-green-600 hover:bg-green-700">
-                 <i class="fas fa-bullhorn ml-2"></i> إرسال مطالبة عامة "ادفعوا لي"
-            </button>
-            <button type="button" onclick="hideClaimModal()" class="btn-secondary-action mt-2">إغلاق</button>
-        </div>
-    </div>
+            <div id="claimList" class="space-y-3 max-h-64 overflow-y-auto mb-6 p-2 border rounded-lg">
+                 <p class="text-center text-gray-400 py-4">جاري تحميل المستحقات...</p>
+            </div>
 
-
-    <div id="settleModal" class="modal">
-        <div class="modal-content">
-            <h2 class="text-2xl font-bold mb-4 border-b pb-2 text-blue-700"><i class="fas fa-money-bill-transfer ml-1"></i> دفع التسوية</h2>
-
-            <div id="settleDetails" class="text-right text-base mb-6 space-y-2 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                <p id="settleRelation" class="font-semibold text-gray-800 text-lg">تسوية الدين المستحق لـ [اسم المستلم]</p>
-                <p class="text-sm text-gray-600">المبلغ الأقصى المطلوب دفعه هو: <span class="font-bold text-blue-800" id="maxSettleAmountDisplay">0.00</span> SDG.</p>
-            </div>
-
-            <form id="settleForm">
-                <div class="form-group mb-5">
-                    <label for="operationNumber">رقم العملية البنكية (آخر 4 أرقام)</label>
-                    <input type="tel" id="operationNumber" placeholder="xxxx" 
-                            maxlength="4" pattern="\d{4}" title="يجب أن يكون 4 أرقام فقط" required>
-                </div>
-
-                <div class="form-group mb-6">
-                    <label for="settleAmount">المبلغ الذي تدفعه الآن (SDG)</label>
-                    <input type="number" id="settleAmount" placeholder="0.00" min="1" step="any" required>
-                </div>
-
-                <div id="remainingBalance" class="text-center p-3 my-4 rounded-lg font-bold hidden transition-all">
-                    <span>الرصيد المتبقي عليك:</span>
-                    <span id="remainingValue">0.00 SDG</span>
-                </div>
-
-                <button type="submit" id="submitSettleButton" class="btn-submit" disabled>
-                    <i class="fas fa-check-circle"></i> تأكيد الدفع والتسوية
-                </button>
-                <button type="button" onclick="hideSettleModal()" class="btn-secondary-action mt-2">
-                    <i class="fas fa-times"></i> إلغاء
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <div id="notificationModal" class="modal">
-        <div class="modal-content max-w-md text-right">
-            <h2 class="text-xl font-bold mb-4 border-b pb-2"><i class="fas fa-bell ml-1"></i> الإشعارات</h2>
-            <div id="notificationsList" class="space-y-3 text-sm max-h-96 overflow-y-auto">
-                </div>
-            <button onclick="hideNotificationModal()" class="btn-secondary-action w-full mt-6">إغلاق</button>
-        </div>
-    </div>
-
-    <script>
-        // --- وظائف المودال (للتفاعل مع الـ HTML قبل تحميل Firebase) ---
-        // تم تجميع الدوال في دالة واحدة لتقليل التكرار.
-
-        window.toggleSidebar = function() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('open');
-            document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : 'auto';
-        }
-        window.closeSidebar = function() {
-            document.getElementById('sidebar').classList.remove('open');
-            document.body.style.overflow = 'auto';
-        }
-        window.showNotifications = function() {
-             document.getElementById('notificationModal').classList.add('show');
-        };
-        window.hideNotificationModal = function() {
-            document.getElementById('notificationModal').classList.remove('show');
-        }
-        window.showClaimModal = function() {
-            document.getElementById('claimModal').classList.add('show');
-        }
-        window.hideClaimModal = function() {
-            document.getElementById('claimModal').classList.remove('show');
-        }
-        window.hideSettleModal = function() { // تم إضافة هذه الدالة المؤقتة
-             document.getElementById('settleModal').classList.remove('show');
-        }
+            <button onclick="sendClaimNotification()" class="btn-submit w-full bg-green-600 hover:bg-green-700">
+                 <i class="fas fa-bullhorn ml-2"></i> إرسال مطالبة عامة "ادفعوا لي"
+            </button>
+            <button type="button" onclick="hideClaimModal()" class="btn-secondary-action mt-2">إغلاق</button>
+        </div>
+    </div>
 
 
-        // ** وظيفة تحديث الرصيد المتبقي (مؤقتة - يتم التحكم بها بشكل رئيسي في script.js) **
-        document.getElementById('settleAmount').addEventListener('input', function() {
-            // يتم استدعاء المنطق الفعلي داخل script.js، لكن هذا يضمن عمل الـ CSS/التأثيرات الأولية
-            const amountInput = this;
-            const submitBtn = document.getElementById('submitSettleButton');
-            const amountPaid = parseFloat(amountInput.value) || 0;
-            const maxAmount = parseFloat(amountInput.getAttribute('max')) || 0;
-            const remaining = maxAmount - amountPaid;
-            const remainingDisplay = document.getElementById('remainingBalance');
-            const remainingValue = document.getElementById('remainingValue');
+    <div id="settleModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-2xl font-bold mb-4 border-b pb-2 text-blue-700"><i class="fas fa-money-bill-transfer ml-1"></i> دفع التسوية</h2>
 
-            // تفعيل/تعطيل زر الإرسال بناءً على القيمة المدخلة
-            if (amountPaid > 0 && amountPaid <= maxAmount) {
-                submitBtn.disabled = false;
-            } else {
-                submitBtn.disabled = true;
-            }
+            <div id="settleDetails" class="text-right text-base mb-6 space-y-2 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                <p id="settleRelation" class="font-semibold text-gray-800 text-lg">تسوية الدين المستحق لـ [اسم المستلم]</p>
+                <p class="text-sm text-gray-600">المبلغ الأقصى المطلوب دفعه هو: <span class="font-bold text-blue-800" id="maxSettleAmountDisplay">0.00</span> SDG.</p>
+            </div>
 
-            // عرض الرصيد المتبقي
-            if (amountPaid > 0 && remaining >= 0) {
-                remainingValue.textContent = remaining.toLocaleString(undefined, { minimumFractionDigits: 2 }) + ' SDG';
-                remainingDisplay.classList.remove('hidden');
+            <form id="settleForm">
+                <div class="form-group mb-5">
+                    <label for="operationNumber">رقم العملية البنكية (آخر 4 أرقام)</label>
+                    <input type="tel" id="operationNumber" placeholder="xxxx" 
+                           maxlength="4" pattern="\d{4}" title="يجب أن يكون 4 أرقام فقط" required>
+                </div>
 
-                // تأثيرات الألوان
-                if (remaining > 0) {
-                    remainingDisplay.style.backgroundColor = '#FEF3C7'; // أصفر فاتح (تبقى جزء)
-                    remainingDisplay.style.color = '#B45309';
-                    remainingValue.style.color = '#9A3412';
-                } else {
-                    remainingDisplay.style.backgroundColor = '#D1FAE5'; // أخضر فاتح (تم التسوية)
-                    remainingDisplay.style.color = '#059669';
-                    remainingValue.style.color = '#047857';
-                }
-            } else {
-                remainingDisplay.classList.add('hidden');
-            }
-        });
+                <div class="form-group mb-6">
+                    <label for="settleAmount">المبلغ الذي تدفعه الآن (SDG)</label>
+                    <input type="number" id="settleAmount" placeholder="0.00" min="1" step="any" required>
+                </div>
 
-        // منع النسخ والأحداث
-        document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('menuButton').addEventListener('click', window.toggleSidebar);
-            
-            // 🔥 تعطيل اختصار النسخ/التحديد/الكل/اللصق (Ctrl+C/U/A/V) 🔥
-            document.addEventListener('keydown', function(e) {
-                const targetTag = e.target.tagName;
-                // السماح بالاختصارات داخل حقول الإدخال
-                if (targetTag === 'INPUT' || targetTag === 'TEXTAREA' || e.target.getAttribute('contenteditable') === 'true') {
-                    return; 
-                }
-                // منع التحديد/النسخ/الكل/اللصق في الصفحة العامة
-                if ((e.key === 'c' || e.key === 'C' || e.key === 'u' || e.key === 'U' || e.key === 'a' || e.key === 'A' || e.key === 'v' || e.key === 'V') && (e.ctrlKey || e.metaKey)) {
-                    e.preventDefault(); 
-                }
-            });
-            // لضمان عمل زر الخروج
-            const logoutSidebarBtn = document.getElementById('logoutSidebarButton');
-            if (logoutSidebarBtn) {
-                logoutSidebarBtn.onclick = (e) => {
-                    e.preventDefault();
-                    window.location.href = 'auth.html'; 
-                };
-            }
-        });
-    </script>
-    <script src="script.js" type="module"></script> 
+                <div id="remainingBalance" class="text-center p-3 my-4 rounded-lg font-bold hidden transition-all">
+                    <span>الرصيد المتبقي عليك:</span>
+                    <span id="remainingValue">0.00 SDG</span>
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-check-circle"></i> تأكيد الدفع والتسوية
+                </button>
+                <button type="button" onclick="hideSettleModal()" class="btn-secondary-action mt-2">
+                    <i class="fas fa-times"></i> إلغاء
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="notificationModal" class="modal">
+        <div class="modal-content max-w-md text-right">
+            <h2 class="text-xl font-bold mb-4 border-b pb-2"><i class="fas fa-bell ml-1"></i> الإشعارات</h2>
+            <div id="notificationsList" class="space-y-3 text-sm max-h-96 overflow-y-auto">
+                </div>
+            <button onclick="hideNotificationModal()" class="btn-secondary-action w-full mt-6">إغلاق</button>
+        </div>
+    </div>
+
+    <script>
+        // --- وظائف المودال (للتفاعل مع الـ HTML قبل تحميل Firebase) ---
+        // يتم تعريف هذه الدوال هنا لأنها تُستخدم مباشرة في الـ HTML
+
+        window.toggleSidebar = function() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('open');
+            document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : 'auto';
+        }
+        window.closeSidebar = function() {
+            document.getElementById('sidebar').classList.remove('open');
+            document.body.style.overflow = 'auto';
+        }
+        window.showNotifications = function() {
+             document.getElementById('notificationModal').classList.add('show');
+        };
+         window.hideNotificationModal = function() {
+            document.getElementById('notificationModal').classList.remove('show');
+        }
+        window.showClaimModal = function() {
+            document.getElementById('claimModal').classList.add('show');
+        }
+        window.hideClaimModal = function() {
+            document.getElementById('claimModal').classList.remove('show');
+        }
+
+        // --- وظائف الـ Modal الخاصة بالتسوية ---
+        // سيتم إعادة تعريف وظائف showSettleModal, nudgeUser, sendClaimNotification 
+        // وتعيين مُستمع حدث submit داخل 'script.js' لربطها بـ Firebase.
+
+        // دالة مؤقتة لتحديث الرصيد المتبقي (المنطق الرئيسي في script.js)
+        document.getElementById('settleAmount').addEventListener('input', function() {
+            // هذا المنطق يُعاد تنفيذه بشكل كامل في script.js ليعتمد على currentSettleMaxAmount
+            const amountPaid = parseFloat(this.value) || 0;
+            const maxAmount = parseFloat(this.getAttribute('max')) || 0;
+            const remaining = maxAmount - amountPaid;
+            const remainingDisplay = document.getElementById('remainingBalance');
+            const remainingValue = document.getElementById('remainingValue');
+
+            if (amountPaid > 0 && remaining >= 0) {
+                remainingValue.textContent = remaining.toLocaleString(undefined, { minimumFractionDigits: 2 }) + ' SDG';
+                remainingDisplay.classList.remove('hidden');
+
+                remainingDisplay.style.backgroundColor = remaining > 0 ? '#FEF3C7' : '#D1FAE5'; 
+                remainingDisplay.style.color = remaining > 0 ? '#B45309' : '#059669';
+                remainingValue.style.color = remaining > 0 ? '#9A3412' : '#047857';
+            } else {
+                remainingDisplay.classList.add('hidden');
+            }
+        });
+
+        // منع النسخ والأحداث
+        document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('menuButton').addEventListener('click', window.toggleSidebar);
+        });
+    </script>
+    <script src="script.js" type="module"></script> 
 </body>
 </html>
