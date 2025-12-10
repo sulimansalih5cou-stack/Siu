@@ -41,6 +41,7 @@ let itemsPerPage = 10;
 let currentPage = 1;
 let activeFilter = '30days';
 let filteredHistory = []; // قائمة السجلات المدمجة والمفلترة
+let isLoadingHistory = false; // 🔄 مؤشر لمنع التحميل المتكرر (مهم للـ Infinite Scrolling)
 // نهاية المتغيرات الجديدة
 
 // متغيرات مودال التسوية
@@ -125,7 +126,7 @@ function populateParticipants() {
     const container = document.getElementById('participantsCheckboxes');
     if (!container) return;
     container.innerHTML = '';
-    
+
     if (!currentUserID) return;
 
     allUsers.filter(u => u.uid !== currentUserID).forEach(user => {
@@ -168,7 +169,7 @@ window.previewExpense = function() {
     const amount = parseFloat(amountStr);
     const isMessenger = document.getElementById('isMessenger').checked;
     const checkboxes = document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]:checked');
-    
+
     // يجب أن تشمل الدافع
     let selectedParticipantsUids = Array.from(checkboxes).map(cb => cb.dataset.uid);
     selectedParticipantsUids.push(currentUserID);
@@ -192,7 +193,7 @@ window.previewExpense = function() {
         // المرسال لا يُعتبر مشاركاً في التقسيم
         finalParticipantsUids = selectedParticipantsUids.filter(uid => uid !== currentUserID);
         finalShare = calculateShare(amount, finalParticipantsUids.length);
-        
+
         if (finalParticipantsUids.length === 0) {
             alert("إذا كنت مرسالاً، يجب تحديد مشاركين آخرين غيرك.");
             return;
@@ -212,7 +213,7 @@ window.previewExpense = function() {
             ${isMessenger ? '🔥' : '💰'} حصتك الشخصية ستكون: ${isMessenger ? '0.00' : finalShare.toLocaleString('en-US', {minimumFractionDigits: 2})} SDG
         </p>
     `;
-    
+
     document.getElementById('previewText').innerHTML = previewHTML;
 
     // تخزين البيانات مؤقتاً قبل الحفظ
@@ -268,7 +269,7 @@ window.saveExpense = async function() {
 
     try {
         const updates = {};
-        
+
         // 1. تحديث رصيد الدافع
         let payerContribution;
         if (data.isMessenger) {
@@ -382,9 +383,9 @@ function displayPersonalExpenses() {
         } else {
             return;
         }
-        
+
         if(displayAmount < 0.1) return;
-        
+
         const amountDisplay = displayAmount.toLocaleString('en-US', {minimumFractionDigits: 1, maximumFractionDigits: 2});
 
         const cardHTML = `
@@ -440,7 +441,7 @@ function calculateNetBalances() {
         // 1.1. أنت الدافع (أنت دائن للآخرين) -> الرصيد موجب
         if (payerId === currentUserID) {
             const participantsToCheck = isMessenger ? expense.participants_ids.filter(id => id !== currentUserID) : expense.participants_ids.filter(id => id !== currentUserID);
-            
+
             participantsToCheck.forEach(participantId => {
                 if(netBalances[participantId] !== undefined) {
                     // زيادة المستحق لك من هذا الشخص
@@ -456,13 +457,13 @@ function calculateNetBalances() {
             }
         }
     });
-    
+
     // ----------------------------------------------------
     // ✨ التعديل الحاسم: تطبيق تأثير التسويات على الأرصدة الصافية
     // ----------------------------------------------------
     allSettlements.forEach(settlement => {
         const { payer_id, recipient_id, amount } = settlement;
-        
+
         // حالة 1: أنت الدافع (أنت من سدد الدين)
         // هذا يعني أن الدين الذي عليك تجاه recipient_id قد نقص
         if (payer_id === currentUserID && netBalances[recipient_id] !== undefined) {
@@ -470,7 +471,7 @@ function calculateNetBalances() {
             // إذا كان الرصيد الصافي سالباً (دين عليك)، فستزيد قيمته نحو الصفر.
             netBalances[recipient_id] = roundToTwo(netBalances[recipient_id] + amount);
         }
-        
+
         // حالة 2: أنت المستلم (شخص سدد لك دين عليه)
         // هذا يعني أن المستحقات التي لك على payer_id قد نقصت
         else if (recipient_id === currentUserID && netBalances[payer_id] !== undefined) {
@@ -494,7 +495,7 @@ function updateSummaryDisplay() {
     let totalCredit = 0;
     let hasDebtItems = false;
     let hasClaimItems = false;
-    
+
     debtContainer.innerHTML = '';
     claimList.innerHTML = '<p class="text-center text-gray-400 py-4">جاري تحميل المستحقات...</p>'; // مؤقت
 
@@ -543,7 +544,7 @@ function updateSummaryDisplay() {
             noDebtsEl.classList.add('hidden');
         }
     }
-    
+
     // تحديث قائمة المطالبات (لك على الآخرين)
     if (hasClaimItems) {
         claimList.innerHTML = ''; // إعادة إنشاء القائمة بعد إفراغها (لضمان الترتيب)
@@ -564,7 +565,7 @@ function updateSummaryDisplay() {
 
         const claimButton = document.querySelector('#claimModal .btn-submit');
         if (claimButton) claimButton.disabled = false;
-        
+
     } else {
         claimList.innerHTML = '<p class="text-center text-gray-500 py-4">لا توجد مستحقات مالية من الآخرين حالياً.</p>';
         const claimButton = document.querySelector('#claimModal .btn-submit');
@@ -573,7 +574,7 @@ function updateSummaryDisplay() {
 }
 
 // ============================================================
-// 🔥 منطق سجل العمليات (History Logic) - الجزء المضاف 🔥
+// 🔥 منطق سجل العمليات (History Logic) - الجزء المعدَّل 🔥
 // ============================================================
 
 /**
@@ -588,7 +589,7 @@ function combineAndSortHistory() {
         // نضمّن المصروفات التي أنت الدافع لها، أو التي أنت مشارك فيها (مدين)
         const isPayer = expense.payer_id === currentUserID;
         const isParticipant = expense.participants_ids.includes(currentUserID);
-        
+
         // إذا كان الدافع ومرسال والحصة 0، نتجاهل هذا المصروف من العرض المباشر في السجل
         if (isPayer && (expense.is_messenger || false) && expense.share < 0.1 && expense.total_amount < 0.1) return;
 
@@ -626,7 +627,7 @@ function filterHistory(filter) {
     const now = Date.now();
 
     filteredHistory = allHistory.filter(record => {
-        
+
         // فلاتر الوقت
         if (filter === '30days') {
             const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
@@ -656,10 +657,10 @@ function filterHistory(filter) {
 
             // تسوية: أنت الدافع (سددت دين)
             if (record.type === 'settlement' && record.payer_id === currentUserID) return true;
-            
+
             return false;
         }
-        
+
         // فلتر 'الكل'
         return true;
     });
@@ -667,20 +668,21 @@ function filterHistory(filter) {
 
 /**
  * الدالة الرئيسية لعرض سجل العمليات في history.html
- * تطبق آلية "عرض المزيد" (Lazy Loading)
+ * تم التعديل لحذف زر "عرض المزيد" وتهيئة التحميل التزايدي.
  */
-function displayHistory() {
+function displayHistory(isAppending = false) {
     const container = document.getElementById('expensesContainer');
-    const loadMoreBtn = document.getElementById('loadMoreButton');
 
-    if (!container) return;
+    if (!container || isLoadingHistory) return;
+
+    isLoadingHistory = true; // تعيين مؤشر التحميل إلى صحيح
 
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = currentPage * itemsPerPage;
     const recordsToShow = filteredHistory.slice(startIndex, endIndex);
 
-    if (currentPage === 1) {
-        container.innerHTML = ''; // إفراغ الحاوية عند التحميل أو تغيير الفلتر
+    if (currentPage === 1 && !isAppending) {
+        container.innerHTML = ''; // إفراغ الحاوية عند التحميل لأول مرة أو تغيير الفلتر
     }
 
     if (recordsToShow.length === 0 && currentPage === 1) {
@@ -690,7 +692,7 @@ function displayHistory() {
                 لا توجد سجلات معاملات مطابقة للفلتر الحالي.
             </p>
         `;
-        if (loadMoreBtn) loadMoreBtn.classList.add('hidden');
+        isLoadingHistory = false; // إنهاء التحميل
         return;
     }
 
@@ -789,16 +791,11 @@ function displayHistory() {
                 </div>
             `;
         }
-        
+
         container.innerHTML += cardHTML;
     });
 
-    // منطق عرض/إخفاء زر "عرض المزيد"
-    if (endIndex < filteredHistory.length) {
-        if (loadMoreBtn) loadMoreBtn.classList.remove('hidden');
-    } else {
-        if (loadMoreBtn) loadMoreBtn.classList.add('hidden');
-    }
+    isLoadingHistory = false; // إنهاء التحميل
 }
 
 /**
@@ -814,7 +811,7 @@ window.setFilter = function(filter, element) {
     // تحديث حالة الفلتر وإعادة التعيين
     activeFilter = filter;
     currentPage = 1;
-    
+
     const container = document.getElementById('expensesContainer');
     if (container) {
         container.innerHTML = `
@@ -831,13 +828,31 @@ window.setFilter = function(filter, element) {
 };
 
 /**
- * دالة لتحميل المزيد من السجلات عند النقر على الزر
+ * 🔄 دالة جديدة للتحقق من التمرير اللانهائي (Infinite Scrolling)
+ * تُضاف كمستمع لحدث التمرير على النافذة
  */
-window.loadMoreHistory = function() {
-    currentPage++;
-    displayHistory();
-};
+function checkScrollForMoreHistory() {
+    // التحقق أولاً إذا كنا في صفحة history.html
+    if (!window.location.href.includes('history.html')) {
+        return;
+    }
 
+    // إيقاف التحميل إذا كان هناك عملية تحميل جارية أو إذا وصلنا لنهاية السجلات
+    if (isLoadingHistory || currentPage * itemsPerPage >= filteredHistory.length) {
+        return;
+    }
+
+    // حساب المسافة المتبقية حتى نهاية الصفحة
+    const scrollPosition = window.innerHeight + window.scrollY;
+    const documentHeight = document.body.offsetHeight;
+    const scrollThreshold = 300; // عتبة التحميل: 300 بكسل قبل الوصول للنهاية
+
+    if (scrollPosition >= documentHeight - scrollThreshold) {
+        // إذا كنا قريبين من النهاية، قم بزيادة رقم الصفحة وتحميل المزيد
+        currentPage++;
+        displayHistory(true); // تمرير true للإشارة إلى عملية "إضافة" وليس "إعادة تحميل"
+    }
+}
 
 // ============================================================
 // 🔔 منطق الإشعارات (Notifications Logic)
@@ -875,9 +890,9 @@ function displayNotifications() {
     } else {
         badge.classList.add('hidden');
     }
-    
+
     listContainer.innerHTML = '';
-    
+
     if (userNotifications.length === 0) {
         listContainer.innerHTML = '<p class="text-center text-gray-500 py-4">لا توجد إشعارات حالياً.</p>';
         return;
@@ -893,7 +908,7 @@ function displayNotifications() {
         } else if (notification.type === 'debit') {
             icon = 'fa-minus-circle text-red-500';
         }
-        
+
         const { date, time } = formatBankDate(notification.timestamp);
 
         const notifHTML = `
@@ -975,7 +990,7 @@ function loadData() {
             if (window.location.href.includes('my_expenses.html')) {
                 displayPersonalExpenses();
             }
-            
+
         } else {
             allExpenses = [];
             if (window.location.href.includes('history.html')) {
@@ -1004,19 +1019,19 @@ function loadData() {
             displayHistory();
         }
     });
-    
+
     // جلب الإشعارات
     loadNotifications();
 }
 
 // ============================================================
-// 🔐 المصادقة والبداية (Entry Point)
+// 🔐 المصادقة والبداية (Entry Point) - الجزء المعدَّل 🔥
 // ============================================================
 
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUserID = user.uid;
-        
+
         // تحديث معلومات الشريط الجانبي والهيدر مباشرة
         const sidebarName = document.getElementById('sidebarUserName');
         const sidebarEmail = document.getElementById('sidebarUserEmail');
@@ -1029,11 +1044,19 @@ onAuthStateChanged(auth, (user) => {
         if (displayHeaderEmail) displayHeaderEmail.textContent = user.email || '';
 
         loadData();
-        
+
+        // 🔥 إضافة مستمع حدث التمرير للـ Infinite Scrolling هنا
+        if (window.location.href.includes('history.html')) {
+            window.addEventListener('scroll', checkScrollForMoreHistory);
+        }
+
         const logoutSidebarBtn = document.getElementById('logoutSidebarButton');
         if (logoutSidebarBtn) logoutSidebarBtn.onclick = () => auth.signOut().then(() => window.location.href = 'auth.html');
 
     } else {
+        // 🔥 إزالة مستمع حدث التمرير عند تسجيل الخروج
+        window.removeEventListener('scroll', checkScrollForMoreHistory);
+        
         if (!window.location.href.includes('auth.html')) {
             window.location.href = 'auth.html';
         }
@@ -1048,7 +1071,7 @@ onAuthStateChanged(auth, (user) => {
 // 🔥 دالة إرسال النكز (المطالبة)
 window.nudgeUser = async function(user, uid) {
     if(!db || !currentUserID) return;
-    
+
     const notificationTime = Date.now();
     const newNotifKey = push(ref(db, 'notifications')).key;
 
@@ -1119,12 +1142,12 @@ window.sendSettleTransaction = async function(recipientUID, amount, opNumber) {
 
     try {
         await update(ref(db), updates);
-        
+
         // تحديث الكائنات المحلية
         currentPayerUser.balance = newCurrentUserBalance;
         recipientUser.balance = newRecipientBalance;
         currentUserDB = currentPayerUser;
-        
+
         return true;
     } catch (e) {
         console.error("Error performing settlement:", e);
@@ -1139,7 +1162,7 @@ window.showSettleModal = function(user, amount, uid) {
     currentSettleUser = user;
     currentSettleMaxAmount = amount;
     currentSettleRecipientUID = uid;
-    
+
     let relationText = `تسوية الدين المستحق لـ ${user}`;
 
     // تأكد من وجود العناصر قبل الوصول إليها
@@ -1147,14 +1170,14 @@ window.showSettleModal = function(user, amount, uid) {
     const maxSettleAmountDisplayEl = document.getElementById('maxSettleAmountDisplay');
     const settleAmountInputEl = document.getElementById('settleAmount');
     const settleModalEl = document.getElementById('settleModal');
-    
+
     if (settleRelationEl) settleRelationEl.textContent = relationText;
     if (maxSettleAmountDisplayEl) maxSettleAmountDisplayEl.textContent = amount.toLocaleString(undefined, {minimumFractionDigits: 2});
     if (settleAmountInputEl) {
         settleAmountInputEl.setAttribute('max', amount);
         settleAmountInputEl.value = amount;
     }
-    
+
     if (settleModalEl) {
         settleModalEl.classList.add('show');
         if(settleAmountInputEl) settleAmountInputEl.dispatchEvent(new Event('input'));
@@ -1165,13 +1188,13 @@ window.hideSettleModal = function() {
     // ... (منطق إخفاء المودال) ...
     const settleModalEl = document.getElementById('settleModal');
     if(settleModalEl) settleModalEl.classList.remove('show');
-    
+
     const settleForm = document.getElementById('settleForm');
     if(settleForm) settleForm.reset();
-    
+
     const remainingEl = document.getElementById('remainingBalance');
     if(remainingEl) remainingEl.classList.add('hidden');
-    
+
     currentSettleUser = '';
     currentSettleMaxAmount = 0;
     currentSettleRecipientUID = '';
@@ -1182,11 +1205,11 @@ const settleFormEl = document.getElementById('settleForm');
 if(settleFormEl) {
     settleFormEl.addEventListener('submit', async function(e) {
         e.preventDefault();
-        
+
         const operationNumber = document.getElementById('operationNumber').value;
         const amount = parseFloat(document.getElementById('settleAmount').value);
         const opNumLastFour = operationNumber.slice(-4);
-        
+
         if (operationNumber.length < 4 || isNaN(parseInt(opNumLastFour))) {
             alert("يرجى إدخال رقم عملية مكون من 4 أرقام على الأقل.");
             return;
