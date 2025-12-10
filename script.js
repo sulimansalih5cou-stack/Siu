@@ -511,7 +511,7 @@ function updateSummaryDisplay() {
                 <div class="balance-card" data-user-id="${otherUID}" data-amount="${amount}" data-user-name="${otherUserName}">
                     <div class="balance-info">
                         <span class="balance-name">${otherUserName}</span>
-                        <span class="balance-status">يدين لك ${amount.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 2})} SDG</span>
+                        <span class="balance-status">يدين لك ${amount.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG</span>
                     </div>
                     <button class="action-button" onclick="showSettleModal('${otherUserName}', ${amount}, '${otherUID}')">تسوية المبلغ</button>
                 </div>
@@ -889,11 +889,11 @@ function displayNotifications(isAppending = false) {
         return;
     }
     
-    // 🔥 عرض مؤشر التحميل الخاص بالإشعارات
-    const notifLoadingIndicator = document.getElementById('notificationLoadingIndicator');
-    if (notifLoadingIndicator && isAppending) {
-        notifLoadingIndicator.classList.remove('hidden');
-    }
+    // 🔥 عرض مؤشر التحميل الخاص بالإشعارات (مؤشر وهمي هنا لعدم وجوده في HTML المقدم)
+    // const notifLoadingIndicator = document.getElementById('notificationLoadingIndicator');
+    // if (notifLoadingIndicator && isAppending) {
+    //     notifLoadingIndicator.classList.remove('hidden');
+    // }
 
 
     notificationsToShow.forEach(notification => {
@@ -920,7 +920,7 @@ function displayNotifications(isAppending = false) {
         listContainer.innerHTML += notifHTML;
     });
 
-    if (notifLoadingIndicator) notifLoadingIndicator.classList.add('hidden'); // إخفاء مؤشر التحميل
+    // if (notifLoadingIndicator) notifLoadingIndicator.classList.add('hidden'); // إخفاء مؤشر التحميل
     isLoadingNotifications = false;
 }
 
@@ -969,11 +969,12 @@ window.hideSuccessModal = () => document.getElementById('successModal').classLis
 
 window.showNotifications = () => {
     const modal = document.getElementById('notificationModal');
-    const modalContent = document.querySelector('#notificationModal .modal-content-inner');
+    // تم تعديل هذا السطر ليستخدم div الـ "list" مباشرة بدلاً من content-inner الذي لم يكن موجودًا في HTML المقدم
+    const listContainer = document.getElementById('notificationsList'); 
     
     // عند فتح المودال، نربط مستمع التمرير الخاص بالإشعارات
-    if (modalContent) {
-        modalContent.addEventListener('scroll', checkScrollForMoreNotifications);
+    if (listContainer) {
+        listContainer.addEventListener('scroll', checkScrollForMoreNotifications);
         // نعيد تحميل الصفحة الأولى لضمان عرض أحدث الإشعارات
         currentNotificationPage = 1;
         displayNotifications();
@@ -983,11 +984,12 @@ window.showNotifications = () => {
 
 window.hideNotificationModal = () => {
     const modal = document.getElementById('notificationModal');
-    const modalContent = document.querySelector('#notificationModal .modal-content-inner');
+    // تم تعديل هذا السطر ليستخدم div الـ "list" مباشرة
+    const listContainer = document.getElementById('notificationsList');
     
     // عند إغلاق المودال، نزيل مستمع التمرير
-    if (modalContent) {
-        modalContent.removeEventListener('scroll', checkScrollForMoreNotifications);
+    if (listContainer) {
+        listContainer.removeEventListener('scroll', checkScrollForMoreNotifications);
     }
     if (modal) modal.classList.remove('show');
 };
@@ -1198,30 +1200,64 @@ window.hideSettleModal = function() {
     currentSettleRecipientUID = '';
 }
 
-const settleFormEl = document.getElementById('settleForm');
-if(settleFormEl) {
-    settleFormEl.addEventListener('submit', async function(e) {
-        e.preventDefault();
+// ============================================================
+// 🔥 منطق شاشة البداية الإعلانية (Splash Screen Logic) - إضافة جديدة 🔥
+// ============================================================
 
-        const operationNumber = document.getElementById('operationNumber').value;
-        const amount = parseFloat(document.getElementById('settleAmount').value);
-        const opNumLastFour = operationNumber.slice(-4);
-
-        if (operationNumber.length < 4 || isNaN(parseInt(opNumLastFour))) {
-            alert("يرجى إدخال رقم عملية مكون من 4 أرقام على الأقل.");
-            return;
-        }
-
-        if (amount <= 0 || amount > currentSettleMaxAmount || !currentSettleRecipientUID) {
-            alert(`المبلغ المدفوع يجب أن يكون صحيحاً والطرف الآخر محدداً. المبلغ الأقصى: ${currentSettleMaxAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`);
-            return;
-        }
-
-        const success = await sendSettleTransaction(currentSettleRecipientUID, amount, opNumLastFour);
-
-        if (success) {
-            alert(`تم تأكيد دفع ${amount.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG لـ ${currentSettleUser}.`);
-            hideSettleModal();
-        }
-    });
+/**
+ * دالة لإخفاء شاشة البداية الإعلانية.
+ */
+window.hideSplashScreen = function() {
+    const splash = document.getElementById('splashScreen');
+    if (splash) {
+        // 1. إضافة فئة 'hidden' لتبدأ عملية الإخفاء التدريجي (opacity transition)
+        splash.classList.add('hidden'); 
+        
+        // 2. إزالة الشاشة تمامًا بعد انتهاء مدة الانتقال (0.5 ثانية كما في CSS)
+        setTimeout(() => {
+            splash.style.display = 'none';
+        }, 500);
+    }
 }
+
+// 🔥 تنفيذ الإخفاء عند تحميل محتوى الصفحة 🔥
+document.addEventListener('DOMContentLoaded', () => {
+    // ربط زر القائمة الجانبية (Sidebar)
+    const menuButton = document.getElementById('menuButton');
+    if (menuButton) {
+        menuButton.addEventListener('click', window.toggleSidebar);
+    }
+
+    // تشغيل دالة إخفاء الشاشة بعد 3000 ملي ثانية (3 ثواني)
+    setTimeout(window.hideSplashScreen, 3000); 
+    
+    // ربط حدث الإرسال لنموذج التسوية
+    const settleFormEl = document.getElementById('settleForm');
+    if(settleFormEl) {
+        settleFormEl.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const operationNumber = document.getElementById('operationNumber').value;
+            const amount = parseFloat(document.getElementById('settleAmount').value);
+            const opNumLastFour = operationNumber.slice(-4);
+
+            if (operationNumber.length < 4 || isNaN(parseInt(opNumLastFour))) {
+                alert("يرجى إدخال رقم عملية مكون من 4 أرقام على الأقل.");
+                return;
+            }
+
+            if (amount <= 0 || amount > currentSettleMaxAmount || !currentSettleRecipientUID) {
+                alert(`المبلغ المدفوع يجب أن يكون صحيحاً والطرف الآخر محدداً. المبلغ الأقصى: ${currentSettleMaxAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`);
+                return;
+            }
+
+            const success = await window.sendSettleTransaction(currentSettleRecipientUID, amount, opNumLastFour);
+
+            if (success) {
+                alert(`تم تأكيد دفع ${amount.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG لـ ${currentSettleUser}.`);
+                window.hideSettleModal();
+            }
+        });
+    }
+
+});
