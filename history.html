@@ -259,8 +259,10 @@ body {
     align-items: center;
     gap: 10px;
 }
-.max-h-96 {
+/* تم تعديل هذا النمط ليناسب المودال الداخلي للإشعارات */
+.max-h-96-scroll { 
     max-height: 24rem;
+    overflow-y: auto;
 }
 </style>
 </head>
@@ -322,15 +324,26 @@ body {
             جاري التحميل...
         </p>
     </div>
-    <button id="loadMoreButton" onclick="loadMoreHistory()" class="btn w-full mt-4 bg-red-600 hover:bg-red-700 hidden">
-        <i class="fas fa-redo-alt ml-2"></i> عرض المزيد من السجلات
-    </button>
-</div>
+    
+    <div id="historyLoadingIndicator" class="text-center p-4 hidden">
+        <i class="fas fa-spinner fa-spin text-red-600 mr-2"></i>
+        <span>جاري تحميل المزيد من السجلات...</span>
+    </div>
+    
+    </div>
 <div id="notificationModal" class="modal">
     <div class="modal-content max-w-md text-right">
         <h2 class="text-xl font-bold mb-4 border-b pb-2"><i class="fas fa-bell ml-1"></i> الإشعارات</h2>
-        <div id="notificationsList" class="space-y-3 text-sm max-h-96 overflow-y-auto">
+        <div class="modal-content-inner max-h-96-scroll">
+            <div id="notificationsList" class="space-y-3 text-sm">
+                </div>
+            
+            <div id="notificationLoadingIndicator" class="text-center p-2 hidden">
+                <i class="fas fa-spinner fa-spin text-blue-500 mr-2"></i>
+                <span>جاري تحميل الإشعارات...</span>
+            </div>
         </div>
+        
         <button onclick="hideNotificationModal()" class="btn w-full mt-6 bg-gray-500 text-white">إغلاق</button>
     </div>
 </div>
