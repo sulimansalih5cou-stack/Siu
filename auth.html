@@ -1,239 +1,249 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-    <title>المصادقة - Smart Dorm Expenses</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-    <script type="module">
-        // 1. إعدادات Firebase الخاصة بك
-        const firebaseConfig = {
-            apiKey: "AIzaSyA2GNsXj4DzWyCYLKuVT3i1XBKfjX3ccuM",
-            authDomain: "siu-students.firebaseapp.com",
-            databaseURL: "https://siu-students-default-rtdb.firebaseio.com",
-            projectId: "siu-students",
-            storageBucket: "siu-students.firebasestorage.app",
-            messagingSenderId: "76007314543",
-            appId: "1:76007314543:web:4850b668cec4b93bdc699a",
-            measurementId: "G-SB6884R2FX"
-        };
-
-        // 2. استيراد دوال Firebase الضرورية
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { 
-            getAuth, 
-            createUserWithEmailAndPassword, 
-            signInWithEmailAndPassword, 
-            sendEmailVerification,
-            updateProfile
-        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-        import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"; 
-
-        // 3. تهيئة Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getDatabase(app);
-
-        // 4. دمج الدوال داخل النطاق العالمي (Window)
-        window.auth = auth;
-        window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
-        window.signInWithEmailAndPassword = signInWithEmailAndPassword;
-        window.sendEmailVerification = sendEmailVerification;
-        window.updateProfile = updateProfile;
-        window.db = db;
-        window.ref = ref;
-        window.set = set;
-        window.get = get;     
-        window.child = child; 
-    </script>
-
-    <style>
-        body { background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-        .auth-card { background: white; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); padding: 40px; max-width: 400px; width: 90%; }
-        .input-group input { width: 100%; padding: 15px; border: 2px solid #E5E7EB; border-radius: 12px; transition: all 0.3s ease; }
-        .btn-auth { color: white; padding: 15px; border-radius: 12px; font-weight: 700; width: 100%; cursor: pointer; transition: all 0.3s ease; }
-        .btn-signup { background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); }
-        .btn-login { background: linear-gradient(135deg, #10B981 0%, #059669 100%); }
-        .error-message { color: #EF4444; background-color: #FEE2E2; padding: 10px; border-radius: 8px; margin-top: 15px; text-align: center; display: none; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>المصادقة - Smart Dorm Expenses</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<script type="module">
+    // 1. إعدادات Firebase الخاصة بك
+    const firebaseConfig = {
+        apiKey: "AIzaSyA2GNsXj4DzWyCYLKuVT3i1XBKfjX3ccuM",
+        authDomain: "siu-students.firebaseapp.com",
+        databaseURL: "https://siu-students-default-rtdb.firebaseio.com",
+        projectId: "siu-students",
+        storageBucket: "siu-students.firebasestorage.app",
+        messagingSenderId: "76007314543",
+        appId: "1:76007314543:web:4850b668cec4b93bdc699a",
+        measurementId: "G-SB6884R2FX"
+    };
+    // 2. استيراد دوال Firebase الضرورية
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, updateProfile } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+    import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+    // 3. تهيئة Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    // 4. دمج الدوال داخل النطاق العالمي (Window)
+    window.auth = auth;
+    window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+    window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+    window.sendEmailVerification = sendEmailVerification;
+    window.updateProfile = updateProfile;
+    window.db = db;
+    window.ref = ref;
+    window.set = set;
+    window.get = get;
+    window.child = child;
+</script>
+<style>
+    body {
+        background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+    }
+    .auth-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        padding: 40px;
+        max-width: 400px;
+        width: 90%;
+    }
+    .input-group input {
+        width: 100%;
+        padding: 15px;
+        border: 2px solid #E5E7EB;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+    .btn-auth {
+        color: white;
+        padding: 15px;
+        border-radius: 12px;
+        font-weight: 700;
+        width: 100%;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .btn-signup {
+        background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+    }
+    .btn-login {
+        background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    }
+    .error-message {
+        color: #EF4444;
+        background-color: #FEE2E2;
+        padding: 10px;
+        border-radius: 8px;
+        margin-top: 15px;
+        text-align: center;
+        display: none;
+    }
+</style>
 </head>
 <body>
-    <div class="auth-card">
-        <h1 id="authTitle" class="text-3xl font-bold text-center text-gray-800 mb-2">
-            <i class="fas fa-user-plus text-blue-500"></i> إنشاء حساب
-        </h1>
-        <p id="authSubtitle" class="text-center text-gray-500 mb-8">الرجاء إدخال بياناتك للمتابعة.</p>
-
-        <div id="errorMessage" class="error-message"></div>
-
-        <div id="nameGroup" class="input-group mb-6">
-            <label for="name" class="block font-medium text-gray-700 mb-2">الاسم كاملاً</label>
-            <input type="text" id="name" placeholder="مثال: خالد محمد" required>
-        </div>
-
-        <div class="input-group mb-6">
-            <label for="email" class="block font-medium text-gray-700 mb-2">البريد الإلكتروني</label>
-            <input type="email" id="email" placeholder="example@domain.com" required>
-        </div>
-
-        <div class="input-group mb-6">
-            <label for="password" class="block font-medium text-gray-700 mb-2">كلمة المرور</label>
-            <input type="password" id="password" placeholder="********" required>
-        </div>
-
-        <div id="confirmPasswordGroup" class="input-group mb-8">
-            <label for="confirmPassword" class="block font-medium text-gray-700 mb-2">تأكيد كلمة المرور</label>
-            <input type="password" id="confirmPassword" placeholder="********" required>
-        </div>
-
-        <button id="signupButton" onclick="handleSignup()" class="btn-auth btn-signup mb-4">
-            <i class="fas fa-user-plus"></i> إنشاء الحساب
-        </button>
-        <button id="loginButton" onclick="handleLogin()" class="btn-auth btn-login" style="display:none;">
-            <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
-        </button>
-
-        <p class="text-center text-gray-500 mt-4">
-            <span id="toggleText">هل لديك حساب بالفعل؟</span>
-            <a href="#" id="toggleLink" onclick="toggleForm()" class="text-blue-600 hover:text-blue-800 font-medium">سجّل الدخول</a>
-        </p>
+<div class="auth-card">
+    <h1 id="authTitle" class="text-3xl font-bold text-center text-gray-800 mb-2">
+        <i class="fas fa-user-plus text-blue-500"></i> إنشاء حساب
+    </h1>
+    <p id="authSubtitle" class="text-center text-gray-500 mb-8">الرجاء إدخال بياناتك للمتابعة.</p>
+    <div id="errorMessage" class="error-message"></div>
+    <div id="nameGroup" class="input-group mb-6">
+        <label for="name" class="block font-medium text-gray-700 mb-2">الاسم كاملاً</label>
+        <input type="text" id="name" placeholder="مثال: خالد محمد" required>
     </div>
+    <div class="input-group mb-6">
+        <label for="email" class="block font-medium text-gray-700 mb-2">البريد الإلكتروني</label>
+        <input type="email" id="email" placeholder="example@domain.com" required>
+    </div>
+    <div class="input-group mb-6">
+        <label for="password" class="block font-medium text-gray-700 mb-2">كلمة المرور</label>
+        <input type="password" id="password" placeholder="********" required>
+    </div>
+    <div id="confirmPasswordGroup" class="input-group mb-8">
+        <label for="confirmPassword" class="block font-medium text-gray-700 mb-2">تأكيد كلمة المرور</label>
+        <input type="password" id="confirmPassword" placeholder="********" required>
+    </div>
+    <button id="signupButton" onclick="handleSignup()" class="btn-auth btn-signup mb-4">
+        <i class="fas fa-user-plus"></i> إنشاء الحساب
+    </button>
+    <button id="loginButton" onclick="handleLogin()" class="btn-auth btn-login" style="display:none;">
+        <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
+    </button>
+    <p class="text-center text-gray-500 mt-4">
+        <span id="toggleText">هل لديك حساب بالفعل؟</span>
+        <a href="#" id="toggleLink" onclick="toggleForm()" class="text-blue-600 hover:text-blue-800 font-medium">سجّل الدخول</a>
+    </p>
+</div>
+<script>
+    let isSignup = true;
 
-    <script>
-        let isSignup = true;
+    function displayError(message) {
+        const errorMessage = document.getElementById('errorMessage');
+        errorMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+        errorMessage.style.display = 'block';
+    }
 
-        function displayError(message) {
-            const errorMessage = document.getElementById('errorMessage');
-            errorMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
-            errorMessage.style.display = 'block';
+    function clearError() {
+        document.getElementById('errorMessage').style.display = 'none';
+    }
+
+    function toggleForm() {
+        isSignup = !isSignup;
+        clearError();
+        document.getElementById('authTitle').innerHTML = isSignup ? '<i class="fas fa-user-plus text-blue-500"></i> إنشاء حساب' : '<i class="fas fa-sign-in-alt text-blue-500"></i> تسجيل الدخول';
+        document.getElementById('authSubtitle').textContent = isSignup ? 'الرجاء إدخال بياناتك لإنشاء حساب.' : 'الرجاء إدخال بريدك الإلكتروني وكلمة المرور لتسجيل الدخول.';
+        document.getElementById('signupButton').style.display = isSignup ? 'block' : 'none';
+        document.getElementById('loginButton').style.display = isSignup ? 'none' : 'block';
+        document.getElementById('confirmPasswordGroup').style.display = isSignup ? 'block' : 'none';
+        document.getElementById('nameGroup').style.display = isSignup ? 'block' : 'none';
+        document.getElementById('toggleText').textContent = isSignup ? 'هل لديك حساب بالفعل؟' : 'ليس لديك حساب؟';
+        document.getElementById('toggleLink').textContent = isSignup ? 'سجّل الدخول' : 'أنشئ حساباً';
+    }
+
+    async function handleSignup() {
+        clearError();
+        const name = document.getElementById('name').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const confirmPassword = document.getElementById('confirmPassword').value.trim();
+
+        if (password !== confirmPassword) {
+            displayError('كلمة المرور وتأكيد كلمة المرور غير متطابقان.');
+            return;
+        }
+        if (!name) {
+            displayError('الرجاء إدخال اسمك كاملاً.');
+            return;
         }
 
-        function clearError() {
-            document.getElementById('errorMessage').style.display = 'none';
-        }
+        // التحقق من تكرار الاسم في قاعدة البيانات (منطقياً صحيح لمعالجة قاعدة البيانات الفارغة)
+        try {
+            const dbRef = window.ref(window.db);
+            const snapshot = await window.get(window.child(dbRef, `users`));
 
-        function toggleForm() {
-            isSignup = !isSignup;
-            clearError();
+            if (snapshot.exists()) {
+                const users = snapshot.val();
+                const nameExists = Object.values(users).some(user => 
+                    user.displayName && user.displayName.toLowerCase() === name.toLowerCase()
+                );
 
-            document.getElementById('authTitle').innerHTML = isSignup ? '<i class="fas fa-user-plus text-blue-500"></i> إنشاء حساب' : '<i class="fas fa-sign-in-alt text-blue-500"></i> تسجيل الدخول';
-            document.getElementById('authSubtitle').textContent = isSignup ? 'الرجاء إدخال بياناتك لإنشاء حساب.' : 'الرجاء إدخال بريدك الإلكتروني وكلمة المرور لتسجيل الدخول.';
-
-            document.getElementById('signupButton').style.display = isSignup ? 'block' : 'none';
-            document.getElementById('loginButton').style.display = isSignup ? 'none' : 'block';
-            document.getElementById('confirmPasswordGroup').style.display = isSignup ? 'block' : 'none';
-            document.getElementById('nameGroup').style.display = isSignup ? 'block' : 'none';
-
-            document.getElementById('toggleText').textContent = isSignup ? 'هل لديك حساب بالفعل؟' : 'ليس لديك حساب؟';
-            document.getElementById('toggleLink').textContent = isSignup ? 'سجّل الدخول' : 'أنشئ حساباً';
-        }
-
-        async function handleSignup() {
-            clearError();
-            const name = document.getElementById('name').value.trim(); 
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value.trim();
-            const confirmPassword = document.getElementById('confirmPassword').value.trim();
-
-            if (password !== confirmPassword) {
-                displayError('كلمة المرور وتأكيد كلمة المرور غير متطابقان.');
-                return;
+                if (nameExists) {
+                    displayError('هذا الاسم مُسجّل بالفعل. يرجى اختيار اسم آخر.');
+                    return;
+                }
             }
-
-            if (!name) {
-                displayError('الرجاء إدخال اسمك كاملاً.');
-                return;
-            }
-
-            // التحقق من تكرار الاسم في قاعدة البيانات (منطقياً صحيح لمعالجة قاعدة البيانات الفارغة)
-            try {
-                const dbRef = window.ref(window.db);
-                const snapshot = await window.get(window.child(dbRef, `users`));
-
-                if (snapshot.exists()) {
-                    const users = snapshot.val();
-                    const nameExists = Object.values(users).some(user => 
-                        user.displayName && user.displayName.toLowerCase() === name.toLowerCase()
-                    );
-
-                    if (nameExists) {
-                        displayError('هذا الاسم مُسجّل بالفعل. يرجى اختيار اسم آخر.');
-                        return; 
-                    }
-                } 
-            } catch (error) {
-                console.warn("Could not check for name duplication, proceeding with signup. Error:", error);
-            }
-
-            // المتابعة بإنشاء الحساب في Firebase Auth
-            window.createUserWithEmailAndPassword(window.auth, email, password)
-                .then((userCredential) => {
-                    const user = userCredential.user;
-
-                    return window.updateProfile(user, { displayName: name })
-                        .then(() => {
-                            return window.sendEmailVerification(user);
-                        })
-                        .then(() => {
-                            // إضافة المستخدم الجديد إلى قاعدة البيانات بالأرصدة الافتراضية
-                            const userRef = window.ref(window.db, 'users/' + user.uid);
-                            return window.set(userRef, {
-                                displayName: name,
-                                balance: 0.00
-                            });
-                        });
-                })
-                .then(() => {
-                    alert('تهانينا! تم إنشاء حسابك. يرجى التحقق من بريدك الإلكتروني لتفعيل الحساب قبل محاولة تسجيل الدخول.');
-                    toggleForm();
-                })
-                .catch((error) => {
-                    let errorMessage = 'حدث خطأ غير معروف.';
-                    if (error.code === 'auth/email-already-in-use') {
-                        errorMessage = 'هذا البريد الإلكتروني مُستخدم بالفعل.';
-                    } else if (error.code === 'auth/weak-password') {
-                        errorMessage = 'كلمة المرور ضعيفة جداً (يجب أن تكون 6 أحرف على الأقل).';
-                    }
-                    displayError(errorMessage);
-                });
+        } catch (error) {
+            console.warn("Could not check for name duplication, proceeding with signup. Error:", error);
         }
 
-        function handleLogin() {
-            clearError();
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value.trim();
-
-            window.signInWithEmailAndPassword(window.auth, email, password)
-                .then((userCredential) => {
-                    const user = userCredential.user;
-
-                    user.reload().then(() => {
-                        if (user.emailVerified) {
-                            // 💡 عند نجاح تسجيل الدخول، يتم التوجيه للصفحة الرئيسية
-                            window.location.href = 'index.html'; 
-                        } else {
-                            window.auth.signOut();
-                            alert('بريدك الإلكتروني غير موثق. يرجى تفعيل الحساب قبل تسجيل الدخول.');
-                        }
+        // المتابعة بإنشاء الحساب في Firebase Auth
+        window.createUserWithEmailAndPassword(window.auth, email, password)
+            .then((userCredential) => {
+                const user = userCredential.user;
+                return window.updateProfile(user, { displayName: name })
+                    .then(() => {
+                        return window.sendEmailVerification(user);
+                    })
+                    .then(() => {
+                        // إضافة المستخدم الجديد إلى قاعدة البيانات بالأرصدة الافتراضية
+                        const userRef = window.ref(window.db, 'users/' + user.uid);
+                        return window.set(userRef, { displayName: name, balance: 0.00 });
                     });
-                })
-                .catch((error) => {
-                    let errorMessage = 'حدث خطأ غير معروف.';
-                    if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-                        errorMessage = 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
-                    }
-                    displayError(errorMessage);
-                });
-        }
+            })
+            .then(() => {
+                alert('تهانينا! تم إنشاء حسابك. يرجى التحقق من بريدك الإلكتروني لتفعيل الحساب قبل محاولة تسجيل الدخول.');
+                toggleForm();
+            })
+            .catch((error) => {
+                let errorMessage = 'حدث خطأ غير معروف.';
+                if (error.code === 'auth/email-already-in-use') {
+                    errorMessage = 'هذا البريد الإلكتروني مُستخدم بالفعل.';
+                } else if (error.code === 'auth/weak-password') {
+                    errorMessage = 'كلمة المرور ضعيفة جداً (يجب أن تكون 6 أحرف على الأقل).';
+                }
+                displayError(errorMessage);
+            });
+    }
 
-        document.addEventListener('DOMContentLoaded', () => { 
-            // 💡 عند تحميل الصفحة، يتم عرض نموذج التسجيل بشكل افتراضي
-            toggleForm(); 
-            // 💡 يتم استدعاء toggleForm مرة أخرى لعرض واجهة تسجيل الدخول إذا لم يكن المستخدم مسجلاً
-            toggleForm(); 
-        });
-    </script>
+    function handleLogin() {
+        clearError();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value.trim();
+
+        window.signInWithEmailAndPassword(window.auth, email, password)
+            .then((userCredential) => {
+                const user = userCredential.user;
+                user.reload().then(() => {
+                    if (user.emailVerified) {
+                        // 💡 عند نجاح تسجيل الدخول، يتم التوجيه للصفحة الرئيسية
+                        window.location.href = 'index.html';
+                    } else {
+                        window.auth.signOut();
+                        alert('بريدك الإلكتروني غير موثق. يرجى تفعيل الحساب قبل تسجيل الدخول.');
+                    }
+                });
+            })
+            .catch((error) => {
+                let errorMessage = 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
+                if (error.code !== 'auth/user-not-found' && error.code !== 'auth/wrong-password') {
+                    errorMessage = 'حدث خطأ غير معروف.';
+                }
+                displayError(errorMessage);
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // 💡 يتم استدعاء toggleForm مرتين لعرض واجهة تسجيل الدخول
+        toggleForm(); // لعرض التسجيل (الافتراضي)
+        toggleForm(); // لعرض الدخول (الوضع الذي يريده المستخدم عادةً بعد زيارة الصفحة)
+    });
+</script>
 </body>
 </html>
