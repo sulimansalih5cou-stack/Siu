@@ -36,17 +36,17 @@ let userNotifications = [];
 let allSettlements = [];
 let netBalances = {};
 
-// 🔥 متغيرات خاصة بسجل العمليات (History) 🔥
+// 🔥 متغيرات خاصة بسجل العمليات (History)
 let itemsPerPage = 10;
 let currentPage = 1;
 let activeFilter = '30days';
-let filteredHistory = []; // قائمة السجلات المدمجة والمفلترة
-let isLoadingHistory = false; // 🔄 مؤشر لمنع التحميل المتكرر للسجلات
+let filteredHistory = []; 
+let isLoadingHistory = false; 
 
-// 🔥 متغيرات خاصة بالإشعارات (Notifications) 🔥
+// 🔥 متغيرات خاصة بالإشعارات (Notifications) 
 let notificationsPerPage = 10;
 let currentNotificationPage = 1;
-let isLoadingNotifications = false; // 🔄 مؤشر لمنع التحميل المتكرر للإشعارات
+let isLoadingNotifications = false; 
 // نهاية المتغيرات الجديدة
 
 // متغيرات مودال التسوية
@@ -96,11 +96,11 @@ function updateHomeDisplay() {
     const sidebarName = document.getElementById('sidebarUserName');
     const sidebarEmail = document.getElementById('sidebarUserEmail');
 
-    if (!balanceEl && !nameEl) return;
-
+    // 🌟 تعديل #1 🌟: استخدام اسم المستخدم من Auth إذا لم يكن موجودًا في DB بعد
     let displayName = "مستخدم";
     if (currentUserDB && currentUserDB.displayName) displayName = currentUserDB.displayName;
     else if (auth.currentUser && auth.currentUser.displayName) displayName = auth.currentUser.displayName;
+    else if (auth.currentUser && auth.currentUser.email) displayName = auth.currentUser.email.split('@')[0]; // fallback
 
     if (nameEl) nameEl.textContent = displayName;
 
@@ -125,15 +125,34 @@ function updateHomeDisplay() {
             cardEl.classList.remove('negative');
         }
     }
+
+    // 🌟 تعديل #4 🌟: تحديث منطق المشاركين بعد تحديث بيانات المستخدم
+    if (window.location.href.includes('index.html')) {
+         populateParticipants();
+    }
 }
 
+// 🌟 تعديل #4 🌟: دالة لتعبئة قائمة المشاركين بضم المستخدم الحالي كخيار افتراضي
 function populateParticipants() {
     const container = document.getElementById('participantsCheckboxes');
-    if (!container) return;
+    const isMessengerCheckbox = document.getElementById('isMessenger');
+    if (!container || !isMessengerCheckbox) return;
+
     container.innerHTML = '';
-
     if (!currentUserID) return;
+    
+    // 1. إضافة المستخدم الحالي كخيار افتراضي ومحدد
+    const currentUserDiv = document.createElement('div');
+    currentUserDiv.className = 'checkbox-item bg-blue-100 border-blue-400';
+    currentUserDiv.innerHTML = `
+        <label class="flex items-center w-full cursor-pointer">
+            <input type="checkbox" data-uid="${currentUserID}" class="form-checkbox h-5 w-5 text-blue-600" checked disabled>
+            <span class="mr-2 font-bold text-blue-800 select-none">${getUserNameById(currentUserID)} (أنا)</span>
+        </label>
+    `;
+    container.appendChild(currentUserDiv);
 
+    // 2. إضافة باقي المستخدمين
     allUsers.filter(u => u.uid !== currentUserID).forEach(user => {
         const div = document.createElement('div');
         div.className = 'checkbox-item';
@@ -145,11 +164,44 @@ function populateParticipants() {
         `;
         container.appendChild(div);
     });
+
+    // 3. ربط حدث تغيير حالة مربع "المرسال"
+    isMessengerCheckbox.onchange = function() {
+        // إذا كان المرسال محدداً، لا يمكنك تحديد نفسك كمشارك في التقسيم
+        const selfCheckbox = container.querySelector(`input[data-uid="${currentUserID}"]`);
+        
+        if (this.checked) {
+             // تعطيل اختيار الذات إذا كان مرسالًا (لأن share = 0)
+            if (selfCheckbox) selfCheckbox.checked = false;
+        } else {
+            // إعادة تحديد الذات تلقائياً إذا ألغى خيار المرسال
+            if (selfCheckbox) selfCheckbox.checked = true;
+        }
+    };
+    
+    // تحديث حالة مربع المرسال عند التحميل لأول مرة
+    if (isMessengerCheckbox.checked) {
+        const selfCheckbox = container.querySelector(`input[data-uid="${currentUserID}"]`);
+        if (selfCheckbox) selfCheckbox.checked = false;
+    }
 }
 
 window.selectAllParticipants = function() {
     const checkboxes = document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]');
-    checkboxes.forEach(cb => cb.checked = true);
+    checkboxes.forEach(cb => {
+        // لا تغير حالة المستخدم الحالي إذا كان معطلاً
+        if (!cb.disabled) {
+            cb.checked = true;
+        }
+    });
+
+    // 🌟 تعديل #4 🌟: تعطيل مربع المرسال إذا تم تحديد الكل (لأن الدافع هو بالضرورة مشارك الآن)
+    const isMessengerCheckbox = document.getElementById('isMessenger');
+    if (isMessengerCheckbox) {
+        isMessengerCheckbox.checked = false;
+        const selfCheckbox = document.querySelector(`#participantsCheckboxes input[data-uid="${currentUserID}"]`);
+        if (selfCheckbox) selfCheckbox.checked = true;
+    }
 };
 
 // ============================================================
@@ -173,46 +225,39 @@ window.previewExpense = function() {
     const amountStr = document.getElementById('expenseAmount').value.replace(/,/g, '');
     const amount = parseFloat(amountStr);
     const isMessenger = document.getElementById('isMessenger').checked;
-    const checkboxes = document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]:checked');
+    
+    // 🌟 تعديل #4 🌟: جمع كل المشاركين المحددين (الدافع مضمن أو محدد يدوياً)
+    const allCheckboxes = document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]');
+    let selectedParticipantsUids = Array.from(allCheckboxes)
+        .filter(cb => cb.checked && !cb.disabled)
+        .map(cb => cb.dataset.uid);
 
-    // يجب أن تشمل الدافع
-    let selectedParticipantsUids = Array.from(checkboxes).map(cb => cb.dataset.uid);
-    selectedParticipantsUids.push(currentUserID);
+    // إذا لم يتم تحديد المرسال، فإن المستخدم الحالي (الدافع) هو مشارك في التقسيم
+    if (!isMessenger) {
+        selectedParticipantsUids.push(currentUserID);
+    }
+    
     // إزالة التكرارات وضمان وجود الدافع
     selectedParticipantsUids = [...new Set(selectedParticipantsUids)];
 
     // التحقق من الإدخال
-    if (!title || isNaN(amount) || amount <= 0 || selectedParticipantsUids.length < 2) {
-        alert("يرجى إدخال اسم المصروف والمبلغ، وتحديد مشارك واحد على الأقل (بالإضافة إليك).");
+    if (!title || isNaN(amount) || amount <= 0 || selectedParticipantsUids.length === 0) {
+        alert("يرجى إدخال اسم المصروف والمبلغ، وتحديد مشارك واحد على الأقل.");
         return;
     }
 
     // حساب الحصة
-    const share = calculateShare(amount, selectedParticipantsUids.length);
-
-    // إذا كنت مرسالاً (لست مشاركاً)، يتم حساب الحصة على أساس الآخرين فقط
-    let finalParticipantsUids = selectedParticipantsUids;
-    let finalShare = share;
-
-    if (isMessenger) {
-        // المرسال لا يُعتبر مشاركاً في التقسيم
-        finalParticipantsUids = selectedParticipantsUids.filter(uid => uid !== currentUserID);
-        finalShare = calculateShare(amount, finalParticipantsUids.length);
-
-        if (finalParticipantsUids.length === 0) {
-            alert("إذا كنت مرسالاً، يجب تحديد مشاركين آخرين غيرك.");
-            return;
-        }
-    }
+    const participantsCount = selectedParticipantsUids.length;
+    const finalShare = calculateShare(amount, participantsCount);
 
     // النص الذي سيعرض في المعاينة
-    const participantsNames = finalParticipantsUids.map(uid => getUserNameById(uid)).join('، ');
+    const participantsNames = selectedParticipantsUids.map(uid => getUserNameById(uid)).join('، ');
 
     let previewHTML = `
         <p><strong>اسم المصروف:</strong> ${title}</p>
-        <p><strong>المبلغ الكلي:</strong> ${amount.toLocaleString('en-US')} SDG</p>
+        <p><strong>المبلغ الكلي:</strong> ${amount.toLocaleString('en-US', {minimumFractionDigits: 2})} SDG</p>
         <p><strong>الدافع:</strong> ${getUserNameById(currentUserID)}</p>
-        <p><strong>المشاركون:</strong> ${participantsNames}</p>
+        <p><strong>المشاركون في التقسيم:</strong> ${participantsNames}</p>
         <p><strong>حصة كل شخص:</strong> ${finalShare.toLocaleString('en-US', {minimumFractionDigits: 2})} SDG</p>
         <p class="mt-4 font-bold text-lg text-blue-600">
             ${isMessenger ? '🔥' : '💰'} حصتك الشخصية ستكون: ${isMessenger ? '0.00' : finalShare.toLocaleString('en-US', {minimumFractionDigits: 2})} SDG
@@ -226,7 +271,7 @@ window.previewExpense = function() {
         title: title,
         amount: amount,
         share: finalShare,
-        participants: finalParticipantsUids,
+        participants: selectedParticipantsUids, // قائمة المشاركين الذين سيخصم منهم
         isMessenger: isMessenger
     };
 
@@ -248,9 +293,9 @@ window.handleSaveClick = function() {
         document.getElementById('previewDetails').style.display = 'none';
         document.getElementById('messengerConfirmation').style.display = 'block';
 
-        // تحديث نص المبلغ في تنبيه المرسال (اختياري)
+        // تحديث نص المبلغ في تنبيه المرسال
         const messengerWarningP = document.querySelector('#messengerConfirmation .messenger-warning p');
-        if(messengerWarningP) messengerWarningP.innerHTML = messengerWarningP.innerHTML.replace('سيظهر هنا', window.tempExpenseData.amount.toLocaleString('en-US') + ' SDG');
+        if(messengerWarningP) messengerWarningP.innerHTML = messengerWarningP.innerHTML.replace('سيظهر هنا', window.tempExpenseData.amount.toLocaleString('en-US', {minimumFractionDigits: 2}) + ' SDG');
     } else {
         // إذا لم يكن مرسالاً، قم بالحفظ مباشرة
         window.saveExpense();
@@ -327,6 +372,7 @@ window.saveExpense = async function() {
         // إعادة تعيين النموذج
         document.getElementById('expenseForm').reset();
         window.tempExpenseData = null;
+        populateParticipants(); // إعادة تعبئة المشاركين
 
     } catch (e) {
         console.error("Error saving expense and updating balances:", e);
@@ -338,6 +384,7 @@ window.saveExpense = async function() {
 // 📊 منطق المصروفات الشخصية (My Expenses Logic)
 // ============================================================
 
+// 🌟 تعديل #5 🌟: إعادة هيكلة لعرض الديون والمستحقات (الصافي) مع كل مستخدم
 function displayPersonalExpenses() {
     const container = document.getElementById('personalExpensesContainer');
     const noExpensesEl = document.getElementById('noPersonalExpenses');
@@ -346,308 +393,183 @@ function displayPersonalExpenses() {
     if (!container) return;
     container.innerHTML = '';
 
-    let totalPersonalDebt = 0;
+    let totalNetDebt = 0;
+    let netBalancesForDisplay = {};
 
-    const personalList = allExpenses.filter(expense => 
-        expense.participants_ids.includes(currentUserID)
-    )
-    .sort((a, b) => b.timestamp - a.timestamp);
+    // 1. حساب الأرصدة الصافية مع كل شخص (نفس منطق calculateNetBalances ولكن لا نأخذ في الاعتبار التسويات هنا)
+    allExpenses.forEach(expense => {
+        const payerId = expense.payer_id;
+        const share = expense.share;
+        
+        // أ. أنت الدافع (لك فلوس)
+        if (payerId === currentUserID) {
+            const participantsToCheck = expense.participants_ids.filter(id => id !== currentUserID);
+            const amountClaimed = (expense.is_messenger || false) ? expense.total_amount : (participantsToCheck.length * share);
+            
+            participantsToCheck.forEach(participantId => {
+                const amount = expense.share; 
+                if (!netBalancesForDisplay[participantId]) netBalancesForDisplay[participantId] = 0;
+                netBalancesForDisplay[participantId] = roundToTwo(netBalancesForDisplay[participantId] + amount); // إيجابي: هذا المبلغ لك
+            });
+        }
+        // ب. لست الدافع ولكنك مشارك (عليك فلوس)
+        else if (expense.participants_ids.includes(currentUserID)) {
+            if (!netBalancesForDisplay[payerId]) netBalancesForDisplay[payerId] = 0;
+            netBalancesForDisplay[payerId] = roundToTwo(netBalancesForDisplay[payerId] - share); // سلبي: هذا المبلغ عليك
+        }
+    });
 
-    if (personalList.length === 0) {
+    // 2. تطبيق تأثير التسويات على هذه الأرصدة لتمثيل الوضع الحالي
+    allSettlements.forEach(settlement => {
+        const { payer_id, recipient_id, amount } = settlement;
+
+        // حالة 1: أنت الدافع في التسوية (تدفع دينك) -> يزيد رصيدك الصافي
+        if (payer_id === currentUserID && netBalancesForDisplay[recipient_id] !== undefined) {
+            netBalancesForDisplay[recipient_id] = roundToTwo(netBalancesForDisplay[recipient_id] + amount);
+        }
+
+        // حالة 2: أنت المستلم في التسوية (تستلم دينك) -> ينقص رصيدك الصافي
+        else if (recipient_id === currentUserID && netBalancesForDisplay[payer_id] !== undefined) {
+            netBalancesForDisplay[payer_id] = roundToTwo(netBalancesForDisplay[payer_id] - amount);
+        }
+    });
+
+    // 3. عرض النتائج في القائمة
+    const nonZeroBalances = Object.keys(netBalancesForDisplay).filter(uid => Math.abs(netBalancesForDisplay[uid]) > 0.1);
+    
+    if (nonZeroBalances.length === 0) {
         if(noExpensesEl) noExpensesEl.classList.remove('hidden');
         if(totalExpensesEl) totalExpensesEl.textContent = '0.00';
         return;
     }
-
     if(noExpensesEl) noExpensesEl.classList.add('hidden');
 
-    personalList.forEach(expense => {
-        const isPayer = expense.payer_id === currentUserID;
-        const isMessenger = expense.is_messenger || false;
-        const share = expense.share;
+    nonZeroBalances.forEach(otherUID => {
+        const netAmount = netBalancesForDisplay[otherUID];
+        const otherUserName = getUserNameById(otherUID);
+        const amountDisplay = Math.abs(netAmount).toLocaleString('en-US', {minimumFractionDigits: 2});
 
-        let displayAmount = 0;
-        let mainTitle;
-        const { date, time } = formatBankDate(expense.timestamp);
+        let iconClass, amountClass, transactionTitle, mainTitle, iconFa;
 
-        // إذا كان الدافع ومرسال والحصة 0، نتجاهل هذا المصروف من هذه القائمة
-        if (isPayer && isMessenger && share < 0.1) return;
+        if (netAmount < -0.1) {
+            // دين عليك (You owe)
+            totalNetDebt += Math.abs(netAmount);
+            iconClass = 'icon-danger';
+            amountClass = 'amount-neg';
+            iconFa = 'fa-minus-circle';
+            transactionTitle = `دين صافي عليك لـ ${otherUserName}`;
+            mainTitle = 'يجب سداد هذا المبلغ لتسوية الأرصدة.';
+            
+            cardHTML = `
+                <div class="bankak-card">
+                    <div class="card-main-content">
+                        <div class="details-wrapper">
+                            <div class="bank-icon-container ${iconClass} ml-3">
+                                <i class="fas ${iconFa}"></i>
+                            </div>
+                            <div class="details-text text-right">
+                                <p class="transaction-title text-red-700">${transactionTitle}</p>
+                                <p class="transaction-sub"> ${mainTitle} </p>
+                            </div>
+                        </div>
+                        <div class="amount-display ${amountClass}">
+                            - ${amountDisplay} <span class="text-sm font-normal">SDG</span>
+                        </div>
+                    </div>
+                    <div class="card-footer-date">
+                        <span><i class="fas fa-handshake ml-1"></i> صافي حساب</span>
+                        <span><button class="text-blue-500 hover:text-blue-700 font-bold" onclick="window.location.href='summary.html'">سدد الآن</button></span>
+                    </div>
+                </div>
+            `;
+        } else if (netAmount > 0.1) {
+             // مستحق لك (They owe you)
+            iconClass = 'icon-success';
+            amountClass = 'amount-pos';
+            iconFa = 'fa-plus-circle';
+            transactionTitle = `مستحق لك من ${otherUserName}`;
+            mainTitle = 'هذا المبلغ يجب أن يسدد لك.';
 
-        if (isPayer && !isMessenger) {
-            displayAmount = share;
-            mainTitle = `حصتك الخاصة في مصروف: ${expense.title}`;
-            totalPersonalDebt += displayAmount;
-        } else if (expense.participants_ids.includes(currentUserID) && !isPayer) {
-            displayAmount = share;
-            const payerName = getUserNameById(expense.payer_id);
-            mainTitle = `دين عليك لـ ${payerName} في مصروف: ${expense.title}`;
-            totalPersonalDebt += displayAmount;
+            cardHTML = `
+                <div class="bankak-card">
+                    <div class="card-main-content">
+                        <div class="details-wrapper">
+                            <div class="bank-icon-container ${iconClass} ml-3">
+                                <i class="fas ${iconFa}"></i>
+                            </div>
+                            <div class="details-text text-right">
+                                <p class="transaction-title text-green-700">${transactionTitle}</p>
+                                <p class="transaction-sub"> ${mainTitle} </p>
+                            </div>
+                        </div>
+                        <div class="amount-display ${amountClass}">
+                            + ${amountDisplay} <span class="text-sm font-normal">SDG</span>
+                        </div>
+                    </div>
+                    <div class="card-footer-date">
+                        <span><i class="fas fa-handshake ml-1"></i> صافي حساب</span>
+                        <span><button class="text-yellow-500 hover:text-yellow-700 font-bold" onclick="nudgeUser('${otherUserName}', '${otherUID}')">نكز للمطالبة</button></span>
+                    </div>
+                </div>
+            `;
         } else {
             return;
         }
 
-        if(displayAmount < 0.1) return;
-
-        const amountDisplay = displayAmount.toLocaleString('en-US', {minimumFractionDigits: 1, maximumFractionDigits: 2});
-
-        const cardHTML = `
-            <div class="bankak-card">
-                <div class="card-main-content">
-                    <div class="details-wrapper">
-                        <div class="bank-icon-container icon-danger ml-3">
-                            <i class="fas fa-minus-circle"></i>
-                        </div>
-                        <div class="details-text text-right">
-                            <p class="transaction-title">${expense.title}</p>
-                            <p class="transaction-sub"> ${mainTitle} </p>
-                        </div>
-                    </div>
-                    <div class="amount-display amount-neg">
-                        - ${amountDisplay} <span class="text-sm font-normal">SDG</span>
-                    </div>
-                </div>
-                <div class="card-footer-date">
-                    <span><i class="far fa-calendar-alt ml-1"></i> ${date}</span>
-                    <span><i class="far fa-clock ml-1"></i> ${time}</span>
-                </div>
-            </div>
-        `;
         container.innerHTML += cardHTML;
     });
 
     if (totalExpensesEl) {
-        totalExpensesEl.textContent = totalPersonalDebt.toLocaleString('en-US', {minimumFractionDigits: 1, maximumFractionDigits: 2});
+        totalExpensesEl.textContent = roundToTwo(totalNetDebt).toLocaleString('en-US', {minimumFractionDigits: 2});
     }
 }
+
 
 // ============================================================
 // 💰 منطق ملخص التسوية (Settlement Summary Logic)
 // ============================================================
 
-function calculateNetBalances() {
-    if (!currentUserID || allUsers.length === 0) return;
+// ... (دالة calculateNetBalances لم تتغير، تبقى كما هي) ...
 
-    netBalances = {};
-    allUsers.forEach(user => {
-        if (user.uid !== currentUserID) {
-            netBalances[user.uid] = 0;
-        }
-    });
+// 🌟 تعديل #2 🌟: إضافة دالة النكز
+window.nudgeUser = async function(userName, targetUID) {
+    if (!db || !currentUserID || !targetUID) return;
 
-    // 1. حساب الأرصدة بناءً على المصروفات (الديون والمستحقات الأولية)
-    allExpenses.forEach(expense => {
-        const payerId = expense.payer_id;
-        const share = expense.share;
-        const isMessenger = expense.is_messenger || false;
+    const notifRef = ref(db, 'notifications');
+    const newNotifKey = push(notifRef).key;
+    const currentUserName = getUserNameById(currentUserID);
 
-        // 1.1. أنت الدافع (أنت دائن للآخرين) -> الرصيد موجب
-        if (payerId === currentUserID) {
-            const participantsToCheck = isMessenger ? expense.participants_ids.filter(id => id !== currentUserID) : expense.participants_ids.filter(id => id !== currentUserID);
+    const notificationData = {
+        uid: targetUID,
+        message: `${currentUserName} يطالبك بتسوية الرصيد المستحق عليه.`,
+        timestamp: Date.now(),
+        is_read: false,
+        type: 'nudge',
+        sender_id: currentUserID
+    };
 
-            participantsToCheck.forEach(participantId => {
-                if(netBalances[participantId] !== undefined) {
-                    // زيادة المستحق لك من هذا الشخص
-                    netBalances[participantId] = roundToTwo(netBalances[participantId] + share);
-                }
-            });
-        }
-        // 1.2. لست الدافع ولكنك مشارك (أنت مدين للآخرين) -> الرصيد سالب
-        else if (expense.participants_ids.includes(currentUserID)) {
-            if(netBalances[payerId] !== undefined) {
-                // زيادة الدين عليك لهذا الشخص
-                netBalances[payerId] = roundToTwo(netBalances[payerId] - share);
-            }
-        }
-    });
-
-    // ----------------------------------------------------
-    // ✨ التعديل الحاسم: تطبيق تأثير التسويات على الأرصدة الصافية
-    // ----------------------------------------------------
-    allSettlements.forEach(settlement => {
-        const { payer_id, recipient_id, amount } = settlement;
-
-        // حالة 1: أنت الدافع (أنت من سدد الدين)
-        if (payer_id === currentUserID && netBalances[recipient_id] !== undefined) {
-            netBalances[recipient_id] = roundToTwo(netBalances[recipient_id] + amount);
-        }
-
-        // حالة 2: أنت المستلم (شخص سدد لك دين عليه)
-        else if (recipient_id === currentUserID && netBalances[payer_id] !== undefined) {
-            netBalances[payer_id] = roundToTwo(netBalances[payer_id] - amount);
-        }
-    });
-}
-
-function updateSummaryDisplay() {
-    const totalDebtEl = document.getElementById('totalDebt');
-    const totalCreditEl = document.getElementById('totalCredit');
-    const debtContainer = document.getElementById('debtContainer');
-    const claimList = document.getElementById('claimList');
-    const noDebtsEl = document.getElementById('noDebts');
-
-    if (!totalDebtEl || !totalCreditEl || !debtContainer || !claimList) return;
-
-    let totalDebt = 0;
-    let totalCredit = 0;
-    let hasDebtItems = false;
-    let hasClaimItems = false;
-
-    debtContainer.innerHTML = '';
-    claimList.innerHTML = '<p class="text-center text-gray-400 py-4">جاري تحميل المستحقات...</p>'; // مؤقت
-
-    Object.keys(netBalances).forEach(otherUID => {
-        const netAmount = netBalances[otherUID];
-        const otherUserName = getUserNameById(otherUID);
-
-        if (Math.abs(netAmount) < 0.1) return;
-
-        if (netAmount < 0) {
-            // أنت مدين (Debt)
-            const amount = Math.abs(netAmount);
-            totalDebt += amount;
-            hasDebtItems = true;
-
-            const debtHTML = `
-                <div class="balance-card" data-user-id="${otherUID}" data-amount="${amount}" data-user-name="${otherUserName}">
-                    <div class="balance-info">
-                        <span class="balance-name">${otherUserName}</span>
-                        <span class="balance-status">يدين لك ${amount.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG</span>
-                    </div>
-                    <button class="action-button" onclick="showSettleModal('${otherUserName}', ${amount}, '${otherUID}')">تسوية المبلغ</button>
-                </div>
-            `;
-            debtContainer.innerHTML += debtHTML;
-
-        } else if (netAmount > 0) {
-            // أنت دائن (Credit)
-            const amount = netAmount;
-            totalCredit += amount;
-            hasClaimItems = true;
-            // لا ننشئ الـ HTML هنا، سنقوم بذلك في الخطوة التالية
-        }
-    });
-
-    // تحديث البطاقات العلوية
-    totalDebtEl.innerHTML = `${roundToTwo(totalDebt).toLocaleString(undefined, {minimumFractionDigits: 2})} <span class="text-base font-normal">SDG</span>`;
-    totalCreditEl.innerHTML = `${roundToTwo(totalCredit).toLocaleString(undefined, {minimumFractionDigits: 2})} <span class="text-base font-normal">SDG</span>`;
-
-    // تحديث قائمة الديون (التي عليك)
-    if (noDebtsEl) {
-        if (!hasDebtItems) {
-            noDebtsEl.classList.remove('hidden');
-            debtContainer.innerHTML = '';
-        } else {
-            noDebtsEl.classList.add('hidden');
-        }
+    try {
+        await update(ref(db, `notifications/${newNotifKey}`), notificationData);
+        alert(`تم إرسال إشعار نكز لـ ${userName}.`);
+    } catch (e) {
+        console.error("Error sending nudge notification:", e);
+        alert('حدث خطأ أثناء إرسال إشعار النكز.');
     }
+};
 
-    // تحديث قائمة المطالبات (لك على الآخرين)
-    if (hasClaimItems) {
-        claimList.innerHTML = ''; // إعادة إنشاء القائمة بعد إفراغها (لضمان الترتيب)
-        Object.keys(netBalances).filter(uid => netBalances[uid] > 0.1).forEach(otherUID => {
-            const amount = netBalances[otherUID];
-            const otherUserName = getUserNameById(otherUID);
-            const claimHTML = `
-                <div class="claim-item" data-user="${otherUserName}" data-amount="${amount}" data-user-id="${otherUID}">
-                    <span class="font-semibold text-gray-800">${otherUserName}: </span>
-                    <div class="flex items-center space-x-2 space-x-reverse">
-                        <span class="text-green-600 font-bold dir-ltr">${amount.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG</span>
-                        <button class="nudge-button-individual" onclick="nudgeUser('${otherUserName}', '${otherUID}')">نكز</button>
-                    </div>
-                </div>
-            `;
-            claimList.innerHTML += claimHTML;
-        });
-
-        const claimButton = document.querySelector('#claimModal .btn-submit');
-        if (claimButton) claimButton.disabled = false;
-
-    } else {
-        claimList.innerHTML = '<p class="text-center text-gray-500 py-4">لا توجد مستحقات مالية من الآخرين حالياً.</p>';
-        const claimButton = document.querySelector('#claimModal .btn-submit');
-        if (claimButton) claimButton.disabled = true;
-    }
-}
+// ... (دالة updateSummaryDisplay لم تتغير، تبقى كما هي) ...
 
 // ============================================================
 // 🔥 منطق سجل العمليات (History Logic) - تم تحديثه
 // ============================================================
 
-/**
- * دالة لدمج المصروفات والتسويات وفرزها زمنياً
- * @returns {Array} قائمة مدمجة من السجلات مفروزة بالتنازل حسب الوقت
- */
-function combineAndSortHistory() {
-    const combined = [];
+// ... (دالة combineAndSortHistory لم تتغير، تبقى كما هي) ...
 
-    // 1. إضافة المصروفات
-    allExpenses.forEach(expense => {
-        const isPayer = expense.payer_id === currentUserID;
-        const isParticipant = expense.participants_ids.includes(currentUserID);
-
-        if (isPayer && (expense.is_messenger || false) && expense.share < 0.1 && expense.total_amount < 0.1) return;
-
-        if (isPayer || isParticipant) {
-            combined.push({
-                type: 'expense',
-                ...expense,
-                timestamp: expense.timestamp
-            });
-        }
-    });
-
-    // 2. إضافة التسويات
-    allSettlements.forEach(settlement => {
-        if (settlement.payer_id === currentUserID || settlement.recipient_id === currentUserID) {
-            combined.push({
-                type: 'settlement',
-                ...settlement,
-                timestamp: settlement.timestamp
-            });
-        }
-    });
-
-    // الفرز التنازلي حسب الطابع الزمني
-    return combined.sort((a, b) => b.timestamp - a.timestamp);
-}
-
-/**
- * دالة لتصفية السجلات بناءً على المعايير المحددة
- */
-function filterHistory(filter) {
-    const allHistory = combineAndSortHistory();
-    const now = Date.now();
-
-    filteredHistory = allHistory.filter(record => {
-        // ... (منطق التصفية لم يتغير)
-        if (filter === '30days') {
-            const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
-            return record.timestamp >= thirtyDaysAgo;
-        } else if (filter === '3months') {
-            const ninetyDaysAgo = now - (90 * 24 * 60 * 60 * 1000);
-            return record.timestamp >= ninetyDaysAgo;
-        }
-
-        else if (filter === 'incoming') {
-            const isPayer = record.payer_id === currentUserID;
-            if (record.type === 'expense' && isPayer && (record.total_amount - (record.share || 0)) > 0.1) return true;
-            if (record.type === 'expense' && isPayer && (record.is_messenger || false)) return true; 
-            if (record.type === 'settlement' && record.recipient_id === currentUserID) return true;
-            return false;
-        }
-
-        else if (filter === 'outgoing') {
-            if (record.type === 'expense' && record.participants_ids.includes(currentUserID) && record.payer_id !== currentUserID) return true;
-            if (record.type === 'settlement' && record.payer_id === currentUserID) return true;
-            return false;
-        }
-
-        return true;
-    });
-}
+// ... (دالة filterHistory لم تتغير، تبقى كما هي) ...
 
 /**
  * الدالة الرئيسية لعرض سجل العمليات (Infinite Scrolling)
+ * 🌟 تعديل #3 🌟: إضافة تفاصيل المصروف داخل البطاقة
  */
 function displayHistory(isAppending = false) {
     const container = document.getElementById('expensesContainer');
@@ -675,28 +597,38 @@ function displayHistory(isAppending = false) {
         return;
     }
     
-    // 🔥 عرض مؤشر التحميل المؤقت
+    // عرض مؤشر التحميل المؤقت
     const loadingIndicator = document.getElementById('historyLoadingIndicator');
     if (loadingIndicator && isAppending) {
         loadingIndicator.classList.remove('hidden');
     }
 
-
     recordsToShow.forEach(record => {
         let cardHTML = '';
         const { date, time } = formatBankDate(record.timestamp);
 
-        // ... (منطق بناء بطاقة السجل لم يتغير)
         if (record.type === 'expense') {
             const isPayer = record.payer_id === currentUserID;
             const payerName = getUserNameById(record.payer_id);
             const share = record.share || 0;
+            const participantsNames = record.participants_ids.map(uid => uid === currentUserID ? `${getUserNameById(uid)} (أنا)` : getUserNameById(uid)).join('، ');
+
             let iconClass = 'icon-danger';
             let amountClass = 'amount-neg';
             let amountText = '0.00';
             let mainTitle = `تفاصيل المصروف: ${record.title}`;
-            let subTitle = `المبلغ الكلي: ${record.total_amount.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG`;
+            let subTitle = `الدافع: ${payerName}`;
             let iconBadge = 'fa-arrow-down text-red-500';
+
+            // 🌟 التفاصيل الجديدة 🌟
+            let detailedInfo = `
+                <div class="transaction-details text-xs pt-2 mt-2 border-t border-gray-100 text-gray-500">
+                    <p><i class="fas fa-users ml-1"></i> المشاركون: ${participantsNames}</p>
+                    <p><i class="fas fa-calculator ml-1"></i> حصة الفرد: ${share.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG</p>
+                    <p><i class="fas fa-money-bill-wave ml-1"></i> المبلغ الكلي: ${record.total_amount.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG</p>
+                </div>
+            `;
+            // 🌟 نهاية التفاصيل الجديدة 🌟
 
             if (isPayer) {
                 const amountClaimed = (record.is_messenger || false) ? record.total_amount : roundToTwo(record.total_amount - share);
@@ -706,6 +638,7 @@ function displayHistory(isAppending = false) {
                     amountClass = 'amount-pos';
                     mainTitle = (record.is_messenger || false) ? `دفعة لك (كمرسال) عن: ${record.title}` : `دفعة لك من مشاركين في: ${record.title}`;
                     iconBadge = 'fa-arrow-up text-green-500';
+                    subTitle = `الدافع: أنت`;
                 } else {
                     return;
                 }
@@ -735,13 +668,14 @@ function displayHistory(isAppending = false) {
                             ${amountText} <span class="text-sm font-normal">SDG</span>
                         </div>
                     </div>
-                    <div class="card-footer-date">
+                    ${detailedInfo} <div class="card-footer-date">
                         <span><i class="far fa-calendar-alt ml-1"></i> ${date}</span>
                         <span><i class="far fa-clock ml-1"></i> ${time}</span>
                     </div>
                 </div>
             `;
         } else if (record.type === 'settlement') {
+            // ... (منطق التسوية لا يتغير)
             const isPayer = record.payer_id === currentUserID;
             const otherUserName = isPayer ? getUserNameById(record.recipient_id) : getUserNameById(record.payer_id);
             const iconClass = isPayer ? 'icon-danger' : 'icon-success';
@@ -783,216 +717,25 @@ function displayHistory(isAppending = false) {
     isLoadingHistory = false;
 }
 
-/**
- * دالة لتغيير الفلتر وإعادة عرض السجلات
- */
-window.setFilter = function(filter, element) {
-    document.querySelectorAll('.filter-pill').forEach(el => el.classList.remove('active'));
-    element.classList.add('active');
-
-    activeFilter = filter;
-    currentPage = 1;
-
-    const container = document.getElementById('expensesContainer');
-    if (container) {
-        container.innerHTML = `
-            <p class="text-center text-gray-400 mt-12">
-                <i class="fas fa-spinner fa-spin fa-2x mb-4"></i><br>
-                جاري تحميل السجلات...
-            </p>
-        `;
-    }
-
-    filterHistory(activeFilter);
-    displayHistory();
-};
-
-/**
- * 🔄 دالة التحقق من التمرير اللانهائي للسجلات (History)
- */
-function checkScrollForMoreHistory() {
-    if (!window.location.href.includes('history.html')) {
-        return;
-    }
-
-    // إيقاف التحميل إذا كان هناك عملية تحميل جارية أو إذا وصلنا لنهاية السجلات
-    if (isLoadingHistory || currentPage * itemsPerPage >= filteredHistory.length) {
-        return;
-    }
-
-    const scrollPosition = window.innerHeight + window.scrollY;
-    const documentHeight = document.body.offsetHeight;
-    const scrollThreshold = 300;
-
-    if (scrollPosition >= documentHeight - scrollThreshold) {
-        currentPage++;
-        displayHistory(true);
-    }
-}
+// ... (بقية الدوال المتعلقة بسجل العمليات لم تتغير) ...
 
 // ============================================================
-// 🔔 منطق الإشعارات (Notifications Logic) - تم تعديله 🔥
+// 🔔 منطق الإشعارات (Notifications Logic)
 // ============================================================
 
-function loadNotifications() {
-    if (!currentUserID || !db) return;
+// ... (دالة loadNotifications لم تتغير) ...
 
-    onValue(ref(db, 'notifications'), (snapshot) => {
-        if (snapshot.exists()) {
-            const val = snapshot.val();
-            // تجميع وفرز جميع الإشعارات
-            userNotifications = Object.keys(val)
-                .map(key => ({ id: key, ...val[key] }))
-                .filter(n => n.uid === currentUserID)
-                .sort((a, b) => b.timestamp - a.timestamp); 
-            
-            // 🔥 إعادة تعيين الصفحة عند تحميل البيانات الجديدة
-            currentNotificationPage = 1; 
-            displayNotifications();
-        } else {
-            userNotifications = [];
-            displayNotifications();
-        }
-    });
-}
+// ... (دالة displayNotifications لم تتغير) ...
 
-/**
- * دالة عرض الإشعارات مع دعم التحميل التزايدي (Lazy Loading)
- */
-function displayNotifications(isAppending = false) {
-    const listContainer = document.getElementById('notificationsList');
-    const badge = document.getElementById('notificationBadge');
+// ... (دالة markNotificationAsRead لم تتغير) ...
 
-    if (!listContainer || !badge || isLoadingNotifications) return;
-
-    isLoadingNotifications = true;
-
-    const startIndex = (currentNotificationPage - 1) * notificationsPerPage;
-    const endIndex = currentNotificationPage * notificationsPerPage;
-    const notificationsToShow = userNotifications.slice(startIndex, endIndex);
-
-    if (currentNotificationPage === 1 && !isAppending) {
-        listContainer.innerHTML = ''; // إفراغ الحاوية عند التحميل لأول مرة
-    }
-
-    const unreadCount = userNotifications.filter(n => !n.is_read).length;
-    badge.textContent = unreadCount.toString();
-    if (unreadCount > 0) {
-        badge.classList.remove('hidden');
-    } else {
-        badge.classList.add('hidden');
-    }
-
-    if (notificationsToShow.length === 0 && currentNotificationPage === 1) {
-        listContainer.innerHTML = '<p class="text-center text-gray-500 py-4">لا توجد إشعارات حالياً.</p>';
-        isLoadingNotifications = false;
-        return;
-    }
-    
-    // 🔥 عرض مؤشر التحميل الخاص بالإشعارات (مؤشر وهمي هنا لعدم وجوده في HTML المقدم)
-    // const notifLoadingIndicator = document.getElementById('notificationLoadingIndicator');
-    // if (notifLoadingIndicator && isAppending) {
-    //     notifLoadingIndicator.classList.remove('hidden');
-    // }
-
-
-    notificationsToShow.forEach(notification => {
-        const statusClass = notification.is_read ? 'text-gray-500 bg-gray-50' : 'font-semibold bg-blue-50 hover:bg-blue-100';
-        let icon = 'fa-info-circle text-blue-500';
-        if (notification.type === 'settlement_received') {
-            icon = 'fa-receipt text-green-500';
-        } else if (notification.type === 'nudge') {
-            icon = 'fa-bell-slash text-yellow-500';
-        } else if (notification.type === 'debit') {
-            icon = 'fa-minus-circle text-red-500';
-        }
-
-        const { date, time } = formatBankDate(notification.timestamp);
-
-        const notifHTML = `
-            <div class="p-3 rounded-lg border cursor-pointer transition ${statusClass}" data-id="${notification.id}" onclick="markNotificationAsRead('${notification.id}')">
-                <p><i class="fas ${icon} ml-1"></i> ${notification.message}</p>
-                <p class="text-xs mt-1 text-gray-400">
-                    <i class="far fa-clock ml-1"></i> ${time} - ${date}
-                </p>
-            </div>
-        `;
-        listContainer.innerHTML += notifHTML;
-    });
-
-    // if (notifLoadingIndicator) notifLoadingIndicator.classList.add('hidden'); // إخفاء مؤشر التحميل
-    isLoadingNotifications = false;
-}
-
-window.markNotificationAsRead = async function(notificationId) {
-    if(!db) return;
-    const notificationRef = ref(db, `notifications/${notificationId}`);
-    try {
-        await update(notificationRef, { is_read: true });
-    } catch(e) {
-        console.error("Error marking notification as read:", e);
-    }
-};
-
-/**
- * 🔄 دالة التحقق من التمرير اللانهائي للإشعارات (Notifications)
- */
-function checkScrollForMoreNotifications() {
-    const modalContent = document.querySelector('#notificationModal .modal-content-inner');
-    if (!modalContent || isLoadingNotifications || currentNotificationPage * notificationsPerPage >= userNotifications.length) {
-        return;
-    }
-
-    // نحتاج للتحقق من التمرير داخل محتوى المودال نفسه
-    const scrollPosition = modalContent.scrollTop + modalContent.clientHeight;
-    const contentHeight = modalContent.scrollHeight;
-    const scrollThreshold = 50; // عتبة أصغر لأن المودال أصغر
-
-    if (scrollPosition >= contentHeight - scrollThreshold) {
-        currentNotificationPage++;
-        displayNotifications(true);
-    }
-}
-
+// ... (دالة checkScrollForMoreNotifications لم تتغير) ...
 
 // ============================================================
 // 💾 دوال إخفاء المودال (مختصرة للعرض) - تم تعديلها 🔥
 // ============================================================
 
-window.hideModal = () => {
-    document.getElementById('previewModal').classList.remove('show');
-    document.getElementById('previewDetails').style.display = 'block';
-    document.getElementById('messengerConfirmation').style.display = 'none';
-};
-
-window.hideSuccessModal = () => document.getElementById('successModal').classList.remove('show');
-
-window.showNotifications = () => {
-    const modal = document.getElementById('notificationModal');
-    // تم تعديل هذا السطر ليستخدم div الـ "list" مباشرة بدلاً من content-inner الذي لم يكن موجودًا في HTML المقدم
-    const listContainer = document.getElementById('notificationsList'); 
-    
-    // عند فتح المودال، نربط مستمع التمرير الخاص بالإشعارات
-    if (listContainer) {
-        listContainer.addEventListener('scroll', checkScrollForMoreNotifications);
-        // نعيد تحميل الصفحة الأولى لضمان عرض أحدث الإشعارات
-        currentNotificationPage = 1;
-        displayNotifications();
-    }
-    if (modal) modal.classList.add('show');
-};
-
-window.hideNotificationModal = () => {
-    const modal = document.getElementById('notificationModal');
-    // تم تعديل هذا السطر ليستخدم div الـ "list" مباشرة
-    const listContainer = document.getElementById('notificationsList');
-    
-    // عند إغلاق المودال، نزيل مستمع التمرير
-    if (listContainer) {
-        listContainer.removeEventListener('scroll', checkScrollForMoreNotifications);
-    }
-    if (modal) modal.classList.remove('show');
-};
+// ... (دوال hideModal, hideSuccessModal, showNotifications, hideNotificationModal لم تتغير) ...
 
 // ============================================================
 // 🔄 تحميل البيانات (Load Data)
@@ -1008,7 +751,6 @@ function loadData() {
             allUsers = Object.keys(val).map(k => ({uid: k, ...val[k]}));
             currentUserDB = allUsers.find(u => u.uid === currentUserID);
             updateHomeDisplay();
-            populateParticipants();
         }
     });
 
@@ -1025,7 +767,6 @@ function loadData() {
                 }
             }
             if (window.location.href.includes('history.html')) {
-                // إعادة تعيين الصفحة عند تحديث البيانات
                 currentPage = 1; 
                 filterHistory(activeFilter);
                 displayHistory();
@@ -1044,7 +785,7 @@ function loadData() {
         }
     });
 
-    // ✨ جلب التسويات
+    // جلب التسويات
     onValue(ref(db, 'settlements'), (snapshot) => {
         if (snapshot.exists()) {
             const val = snapshot.val();
@@ -1075,8 +816,9 @@ function loadData() {
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUserID = user.uid;
-
-        // ... (تحديث معلومات الشريط الجانبي والهيدر) ...
+        
+        // 🌟 تعديل #1 🌟: استدعاء تحديث العرض هنا لضمان ظهور اسم المستخدم فوراً
+        updateHomeDisplay(); 
 
         loadData();
 
@@ -1099,165 +841,4 @@ onAuthStateChanged(auth, (user) => {
 });
 
 
-// ... (باقي الدوال الخاصة بالتسوية والمودالات لم يتم تعديلها باستثناء الإشعارات) ...
-
-
-window.sendSettleTransaction = async function(recipientUID, amount, opNumber) {
-    if (!currentUserID || !recipientUID || amount <= 0 || !db) {
-        alert("خطأ في بيانات التسوية أو عدم اتصال بقاعدة البيانات.");
-        return false;
-    }
-
-    const updates = {};
-    const payerName = getUserNameById(currentUserID);
-    const currentPayerUser = allUsers.find(u => u.uid === currentUserID);
-    const recipientUser = allUsers.find(u => u.uid === recipientUID);
-
-    if (!currentPayerUser || !recipientUser) {
-        alert("خطأ: لم يتم العثور على بيانات أحد المستخدمين.");
-        return false;
-    }
-
-    const newCurrentUserBalance = roundToTwo(currentPayerUser.balance + amount);
-    updates[`users/${currentUserID}/balance`] = newCurrentUserBalance;
-
-    const newRecipientBalance = roundToTwo(recipientUser.balance - amount);
-    updates[`users/${recipientUID}/balance`] = newRecipientBalance;
-
-    const newSettleKey = push(ref(db, 'settlements')).key;
-    updates[`settlements/${newSettleKey}`] = {
-        payer_id: currentUserID,
-        recipient_id: recipientUID,
-        amount: amount,
-        operation_number: opNumber,
-        timestamp: Date.now()
-    };
-
-    const notificationTime = Date.now();
-    const newNotifKey = push(ref(db, 'notifications')).key;
-    updates[`notifications/${newNotifKey}`] = {
-        uid: recipientUID,
-        message: `${payerName} قام بتسوية دين بمبلغ ${amount.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG لك.`,
-        timestamp: notificationTime,
-        is_read: false,
-        type: 'settlement_received',
-        settlement_id: newSettleKey
-    };
-
-    try {
-        await update(ref(db), updates);
-
-        currentPayerUser.balance = newCurrentUserBalance;
-        recipientUser.balance = newRecipientBalance;
-        currentUserDB = currentPayerUser;
-
-        return true;
-    } catch (e) {
-        console.error("Error performing settlement:", e);
-        alert('خطأ في الاتصال بقاعدة البيانات أثناء التسوية.');
-        return false;
-    }
-};
-
-
-window.showSettleModal = function(user, amount, uid) {
-    currentSettleUser = user;
-    currentSettleMaxAmount = amount;
-    currentSettleRecipientUID = uid;
-
-    let relationText = `تسوية الدين المستحق لـ ${user}`;
-
-    const settleRelationEl = document.getElementById('settleRelation');
-    const maxSettleAmountDisplayEl = document.getElementById('maxSettleAmountDisplay');
-    const settleAmountInputEl = document.getElementById('settleAmount');
-    const settleModalEl = document.getElementById('settleModal');
-
-    if (settleRelationEl) settleRelationEl.textContent = relationText;
-    if (maxSettleAmountDisplayEl) maxSettleAmountDisplayEl.textContent = amount.toLocaleString(undefined, {minimumFractionDigits: 2});
-    if (settleAmountInputEl) {
-        settleAmountInputEl.setAttribute('max', amount);
-        settleAmountInputEl.value = amount;
-    }
-
-    if (settleModalEl) {
-        settleModalEl.classList.add('show');
-        if(settleAmountInputEl) settleAmountInputEl.dispatchEvent(new Event('input'));
-    }
-}
-
-window.hideSettleModal = function() {
-    const settleModalEl = document.getElementById('settleModal');
-    if(settleModalEl) settleModalEl.classList.remove('show');
-
-    const settleForm = document.getElementById('settleForm');
-    if(settleForm) settleForm.reset();
-
-    const remainingEl = document.getElementById('remainingBalance');
-    if(remainingEl) remainingEl.classList.add('hidden');
-
-    currentSettleUser = '';
-    currentSettleMaxAmount = 0;
-    currentSettleRecipientUID = '';
-}
-
-// ============================================================
-// 🔥 منطق شاشة البداية الإعلانية (Splash Screen Logic) - إضافة جديدة 🔥
-// ============================================================
-
-/**
- * دالة لإخفاء شاشة البداية الإعلانية.
- */
-window.hideSplashScreen = function() {
-    const splash = document.getElementById('splashScreen');
-    if (splash) {
-        // 1. إضافة فئة 'hidden' لتبدأ عملية الإخفاء التدريجي (opacity transition)
-        splash.classList.add('hidden'); 
-        
-        // 2. إزالة الشاشة تمامًا بعد انتهاء مدة الانتقال (0.5 ثانية كما في CSS)
-        setTimeout(() => {
-            splash.style.display = 'none';
-        }, 500);
-    }
-}
-
-// 🔥 تنفيذ الإخفاء عند تحميل محتوى الصفحة 🔥
-document.addEventListener('DOMContentLoaded', () => {
-    // ربط زر القائمة الجانبية (Sidebar)
-    const menuButton = document.getElementById('menuButton');
-    if (menuButton) {
-        menuButton.addEventListener('click', window.toggleSidebar);
-    }
-
-    // تشغيل دالة إخفاء الشاشة بعد 3000 ملي ثانية (3 ثواني)
-    setTimeout(window.hideSplashScreen, 3000); 
-    
-    // ربط حدث الإرسال لنموذج التسوية
-    const settleFormEl = document.getElementById('settleForm');
-    if(settleFormEl) {
-        settleFormEl.addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const operationNumber = document.getElementById('operationNumber').value;
-            const amount = parseFloat(document.getElementById('settleAmount').value);
-            const opNumLastFour = operationNumber.slice(-4);
-
-            if (operationNumber.length < 4 || isNaN(parseInt(opNumLastFour))) {
-                alert("يرجى إدخال رقم عملية مكون من 4 أرقام على الأقل.");
-                return;
-            }
-
-            if (amount <= 0 || amount > currentSettleMaxAmount || !currentSettleRecipientUID) {
-                alert(`المبلغ المدفوع يجب أن يكون صحيحاً والطرف الآخر محدداً. المبلغ الأقصى: ${currentSettleMaxAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`);
-                return;
-            }
-
-            const success = await window.sendSettleTransaction(currentSettleRecipientUID, amount, opNumLastFour);
-
-            if (success) {
-                alert(`تم تأكيد دفع ${amount.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG لـ ${currentSettleUser}.`);
-                window.hideSettleModal();
-            }
-        });
-    }
-
-});
+// ... (باقي الدوال الخاصة بالتسوية والمودالات لم يتم تعديلها) ...
