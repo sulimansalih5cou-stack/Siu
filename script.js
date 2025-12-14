@@ -1,6 +1,5 @@
 // 🔥 تهيئة واستيراد Firebase SDK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-// 🔥 تم استيراد runTransaction
 import { getDatabase, ref, onValue, push, update, runTransaction } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
@@ -66,7 +65,27 @@ function roundToTwo(num) {
     return Math.round(num * 100) / 100;
 }
 
-// 🔥 تم حذف دالة formatNumber القديمة التي كانت تعمل على oninput
+/**
+ * 🛠️ دالة تنسيق المبلغ أثناء الإدخال (تستخدم الفواصل الثلاثية)
+ * @param {HTMLInputElement} input - حقل الإدخال
+ */
+window.formatAmountInput = function(input) {
+    // 1. إزالة جميع الفواصل الحالية وأي حروف غير رقمية باستثناء النقطة العشرية
+    let value = input.value.replace(/,/g, '').replace(/[^0-9.]/g, '');
+
+    // 2. فصل الجزء العشري إذا وجد
+    const parts = value.split('.');
+    let integerPart = parts[0];
+    const decimalPart = parts.length > 1 ? '.' + parts[1] : '';
+
+    // 3. تطبيق تنسيق الفواصل الثلاثية على الجزء الصحيح
+    // regex لتطبيق الفواصل كل 3 أرقام
+    integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+    // 4. إعادة القيمة المنسقة إلى حقل الإدخال
+    input.value = integerPart + decimalPart;
+};
+
 
 function formatBankDate(timestamp) {
     if (!timestamp) return { date: '--', time: '--' };
@@ -164,8 +183,10 @@ function calculateShare(amount, participantsCount) {
 // 🔥 الدالة الرئيسية للمعاينة
 window.previewExpense = function() {
     const title = document.getElementById('expenseTitle').value.trim();
-    // 🔥 قراءة القيمة من حقل type="number" مباشرة
-    const amount = parseFloat(document.getElementById('expenseAmount').value);
+    // 🔥 التعديل هنا: نقرأ كـ "نص"، ثم نزيل الفواصل ونحول إلى رقم
+    const amountInput = document.getElementById('expenseAmount').value.replace(/,/g, '');
+    const amount = parseFloat(amountInput); 
+    
     const isMessenger = document.getElementById('isMessenger').checked;
     const checkboxes = document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]:checked');
 
