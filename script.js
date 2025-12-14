@@ -100,32 +100,37 @@ function formatBankDate(timestamp) {
 
 // ============================================================
 // 🏠 منطق الصفحة الرئيسية (Home Logic)
+// 🔥 تم التعديل هنا لضمان تحديث الشريط الجانبي والهيدر بشكل موثوق
 // ============================================================
 
 function updateHomeDisplay() {
     const balanceEl = document.getElementById('currentBalance');
     const nameEl = document.getElementById('userNamePlaceholder');
     const cardEl = document.getElementById('currentBalanceCard');
+    
+    // 🔥🔥 عناصر الشريط الجانبي والهيدر
     const sidebarName = document.getElementById('sidebarUserName');
     const sidebarEmail = document.getElementById('sidebarUserEmail');
-
-    // 🔥 ضمان وجود العناصر قبل محاولة التحديث
-    if (!sidebarName && !sidebarEmail && !balanceEl && !nameEl) return;
+    const displayHeaderName = document.getElementById('displayHeaderName');
+    const displayHeaderEmail = document.getElementById('displayHeaderEmail');
 
     let displayName = "مستخدم";
+    let userEmail = auth.currentUser ? auth.currentUser.email || '' : '';
+    
+    // تحديد اسم العرض الأمثل
     if (currentUserDB && currentUserDB.displayName) displayName = currentUserDB.displayName;
     else if (auth.currentUser && auth.currentUser.displayName) displayName = auth.currentUser.displayName;
 
+    // 🟢 تحديث جميع عناصر الاسم
     if (nameEl) nameEl.textContent = displayName;
-
-    const displayHeaderName = document.getElementById('displayHeaderName');
-    const displayHeaderEmail = document.getElementById('displayHeaderEmail');
     if (displayHeaderName) displayHeaderName.textContent = displayName;
-    if (displayHeaderEmail && auth.currentUser) displayHeaderEmail.textContent = auth.currentUser.email || '';
-
     if (sidebarName) sidebarName.textContent = displayName;
-    if (sidebarEmail && auth.currentUser) sidebarEmail.textContent = auth.currentUser.email || '';
 
+    // 🟢 تحديث جميع عناصر البريد الإلكتروني
+    if (displayHeaderEmail) displayHeaderEmail.textContent = userEmail;
+    if (sidebarEmail) sidebarEmail.textContent = userEmail;
+
+    // تحديث الرصيد (الخاص بالصفحة الرئيسية فقط)
     const balance = (currentUserDB && currentUserDB.balance !== undefined) ? currentUserDB.balance : 0;
     if (balanceEl) {
         // 🔥 تنسيق الرصيد للعرض فقط
@@ -140,6 +145,7 @@ function updateHomeDisplay() {
         }
     }
 }
+
 
 function populateParticipants() {
     const container = document.getElementById('participantsCheckboxes');
@@ -898,12 +904,13 @@ function loadNotifications() {
             // 🔥 إعادة تعيين الصفحة عند تحميل البيانات الجديدة
             currentNotificationPage = 1; 
             
-            // فقط قم بـ displayNotifications() إذا كنا في وضع الإظهار النشط
-            // لتجنب تحديث واجهة المستخدم بشكل مستمر في الخلفية
-            if (document.getElementById('notificationModal') && document.getElementById('notificationModal').classList.contains('show')) {
+            const notificationModal = document.getElementById('notificationModal');
+
+            // 🟢 شرط العرض: إذا كان المودال موجوداً ومفتوحاً
+            if (notificationModal && notificationModal.classList.contains('show')) {
                  displayNotifications();
-            } else if (!document.getElementById('notificationModal') || window.location.href.includes('index.html')) {
-                 // تحديث الشارة (Badge) حتى لو لم تكن النافذة المنبثقة مفتوحة
+            } else {
+                 // 🟢 تحديث الشارة في كل الأحوال
                  updateNotificationBadge();
             }
             
@@ -1030,24 +1037,28 @@ window.hideModal = () => {
 
 window.hideSuccessModal = () => document.getElementById('successModal').classList.remove('show');
 
+// 🔥 تم التعديل هنا لضمان فتح المودال وتحميل البيانات في أي صفحة
 window.showNotifications = () => {
     const modal = document.getElementById('notificationModal');
     const listContainer = document.getElementById('notificationsList'); 
     
-    // عند فتح المودال، نربط مستمع التمرير الخاص بالإشعارات
-    if (listContainer) {
-        // نستخدم العنصر 'modal-content-inner' بدلاً من قائمة الإشعارات إذا كان موجوداً
-        const modalInner = document.querySelector('#notificationModal .modal-content-inner');
-        const scrollElement = modalInner || listContainer;
+    if (!modal || !listContainer) return; // الخروج إذا لم تكن العناصر موجودة في الصفحة
 
-        scrollElement.removeEventListener('scroll', checkScrollForMoreNotifications);
-        scrollElement.addEventListener('scroll', checkScrollForMoreNotifications);
+    // 1. إظهار المودال
+    modal.classList.add('show');
+    
+    // 2. ضمان أننا نبدأ من الصفحة الأولى ونحمل البيانات
+    currentNotificationPage = 1;
+    displayNotifications(); // 🟢 تحميل الصفحة الأولى من الإشعارات
 
-        // نعيد تحميل الصفحة الأولى لضمان عرض أحدث الإشعارات
-        currentNotificationPage = 1;
-        displayNotifications();
-    }
-    if (modal) modal.classList.add('show');
+    // 3. نربط مستمع التمرير الخاص بالإشعارات
+    const modalInner = document.querySelector('#notificationModal .modal-content-inner');
+    const scrollElement = modalInner || listContainer;
+
+    // نزيل المستمع القديم لمنع تكراره
+    scrollElement.removeEventListener('scroll', checkScrollForMoreNotifications);
+    // نضيف المستمع الجديد
+    scrollElement.addEventListener('scroll', checkScrollForMoreNotifications);
 };
 
 window.hideNotificationModal = () => {
@@ -1066,6 +1077,7 @@ window.hideNotificationModal = () => {
 
 // ============================================================
 // 🔄 تحميل البيانات (Load Data)
+// 🔥 تم التعديل هنا لضمان تحديث الشريط الجانبي فور جلب بيانات المستخدم
 // ============================================================
 
 function loadData() {
@@ -1077,7 +1089,8 @@ function loadData() {
             const val = snapshot.val();
             allUsers = Object.keys(val).map(k => ({uid: k, ...val[k]}));
             currentUserDB = allUsers.find(u => u.uid === currentUserID);
-            updateHomeDisplay(); // 🟢 يتم تحديث العرض عند جلب بيانات المستخدم
+            // 🟢 تحديث العرض عند جلب بيانات المستخدم
+            updateHomeDisplay(); 
             populateParticipants();
         }
     });
@@ -1089,7 +1102,8 @@ function loadData() {
             allExpenses = Object.keys(val).map(key => ({ firebaseId: key, ...val[key] })).sort((a, b) => b.timestamp - a.timestamp);
 
             if (window.location.href.includes('summary.html')) {
-                if (allSettlements.length > 0) {
+                // نضمن وجود التسويات قبل الحساب
+                if (allSettlements.length > 0 || allExpenses.length > 0) {
                     calculateNetBalances();
                     updateSummaryDisplay();
                 }
