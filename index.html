@@ -331,7 +331,7 @@ body {
             </div>
             <div class="form-group">
                 <label for="expenseAmount">المبلغ الكلي (SDG)</label>
-                <input type="tel" id="expenseAmount" placeholder="مثال: 5,000" oninput="formatNumber(this)" required style="direction: ltr; text-align: right;">
+                <input type="number" id="expenseAmount" placeholder="مثال: 5000" required style="direction: ltr; text-align: right;">
             </div>
             <div class="form-group mt-6">
                 <label>المشاركون (من سيقتسمون المبلغ)</label>
@@ -393,8 +393,6 @@ body {
         document.getElementById('sidebar').classList.remove('open');
         document.body.style.overflow = 'auto';
     }
-    // ملاحظة: تم إزالة الكود الخاص بشاشة البداية من ملف script.js (إذا كان موجودًا)
-    // الآن، سيتم تحميل الصفحة مباشرة دون أي تأخير.
 </script>
 <script src="script.js" type="module"></script>
 </body>
