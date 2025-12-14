@@ -109,7 +109,8 @@ function updateHomeDisplay() {
     const sidebarName = document.getElementById('sidebarUserName');
     const sidebarEmail = document.getElementById('sidebarUserEmail');
 
-    if (!balanceEl && !nameEl) return;
+    // 🔥 ضمان وجود العناصر قبل محاولة التحديث
+    if (!sidebarName && !sidebarEmail && !balanceEl && !nameEl) return;
 
     let displayName = "مستخدم";
     if (currentUserDB && currentUserDB.displayName) displayName = currentUserDB.displayName;
@@ -896,22 +897,49 @@ function loadNotifications() {
             
             // 🔥 إعادة تعيين الصفحة عند تحميل البيانات الجديدة
             currentNotificationPage = 1; 
-            displayNotifications();
+            
+            // فقط قم بـ displayNotifications() إذا كنا في وضع الإظهار النشط
+            // لتجنب تحديث واجهة المستخدم بشكل مستمر في الخلفية
+            if (document.getElementById('notificationModal') && document.getElementById('notificationModal').classList.contains('show')) {
+                 displayNotifications();
+            } else if (!document.getElementById('notificationModal') || window.location.href.includes('index.html')) {
+                 // تحديث الشارة (Badge) حتى لو لم تكن النافذة المنبثقة مفتوحة
+                 updateNotificationBadge();
+            }
+            
         } else {
             userNotifications = [];
+            updateNotificationBadge();
             displayNotifications();
         }
     });
 }
 
 /**
+ * 🔔 دالة تحديث شارة الإشعارات
+ */
+function updateNotificationBadge() {
+    const badge = document.getElementById('notificationBadge');
+    if (!badge) return;
+    
+    const unreadCount = userNotifications.filter(n => !n.is_read).length;
+    badge.textContent = unreadCount.toString();
+    
+    if (unreadCount > 0) {
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+}
+
+
+/**
  * دالة عرض الإشعارات مع دعم التحميل التزايدي (Lazy Loading)
  */
 function displayNotifications(isAppending = false) {
     const listContainer = document.getElementById('notificationsList');
-    const badge = document.getElementById('notificationBadge');
-
-    if (!listContainer || !badge || isLoadingNotifications) return;
+    
+    if (!listContainer || isLoadingNotifications) return;
 
     isLoadingNotifications = true;
 
@@ -923,13 +951,8 @@ function displayNotifications(isAppending = false) {
         listContainer.innerHTML = ''; // إفراغ الحاوية عند التحميل لأول مرة
     }
 
-    const unreadCount = userNotifications.filter(n => !n.is_read).length;
-    badge.textContent = unreadCount.toString();
-    if (unreadCount > 0) {
-        badge.classList.remove('hidden');
-    } else {
-        badge.classList.add('hidden');
-    }
+    // تحديث الشارة قبل عرض القائمة
+    updateNotificationBadge();
 
     if (notificationsToShow.length === 0 && currentNotificationPage === 1) {
         listContainer.innerHTML = '<p class="text-center text-gray-500 py-4">لا توجد إشعارات حالياً.</p>';
@@ -1013,7 +1036,13 @@ window.showNotifications = () => {
     
     // عند فتح المودال، نربط مستمع التمرير الخاص بالإشعارات
     if (listContainer) {
-        listContainer.addEventListener('scroll', checkScrollForMoreNotifications);
+        // نستخدم العنصر 'modal-content-inner' بدلاً من قائمة الإشعارات إذا كان موجوداً
+        const modalInner = document.querySelector('#notificationModal .modal-content-inner');
+        const scrollElement = modalInner || listContainer;
+
+        scrollElement.removeEventListener('scroll', checkScrollForMoreNotifications);
+        scrollElement.addEventListener('scroll', checkScrollForMoreNotifications);
+
         // نعيد تحميل الصفحة الأولى لضمان عرض أحدث الإشعارات
         currentNotificationPage = 1;
         displayNotifications();
@@ -1027,7 +1056,9 @@ window.hideNotificationModal = () => {
     
     // عند إغلاق المودال، نزيل مستمع التمرير
     if (listContainer) {
-        listContainer.removeEventListener('scroll', checkScrollForMoreNotifications);
+        const modalInner = document.querySelector('#notificationModal .modal-content-inner');
+        const scrollElement = modalInner || listContainer;
+        scrollElement.removeEventListener('scroll', checkScrollForMoreNotifications);
     }
     if (modal) modal.classList.remove('show');
 };
@@ -1046,7 +1077,7 @@ function loadData() {
             const val = snapshot.val();
             allUsers = Object.keys(val).map(k => ({uid: k, ...val[k]}));
             currentUserDB = allUsers.find(u => u.uid === currentUserID);
-            updateHomeDisplay();
+            updateHomeDisplay(); // 🟢 يتم تحديث العرض عند جلب بيانات المستخدم
             populateParticipants();
         }
     });
@@ -1116,6 +1147,9 @@ onAuthStateChanged(auth, (user) => {
         currentUserID = user.uid;
 
         loadData();
+        
+        // 🔥 ضمان تحديث واجهة المستخدم فور تسجيل الدخول/التحقق
+        updateHomeDisplay(); 
 
         // 🔥 إضافة مستمع حدث التمرير للسجلات هنا (فقط في صفحة history.html)
         if (window.location.href.includes('history.html')) {
@@ -1266,9 +1300,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (menuButton) {
         menuButton.addEventListener('click', window.toggleSidebar);
     }
+    
+    // 🔥🔥 هذا السطر لضمان أن الاسم والبريد يتم تحديثهما فوراً في الشريط الجانبي والهيدر 
+    // إذا كانت بيانات المستخدم متوفرة بالفعل.
+    window.updateHomeDisplay(); 
 
-    // تشغيل دالة إخفاء الشاشة بعد 3000 ملي ثانية (3 ثواني)
-    setTimeout(window.hideSplashScreen, 3000); 
+    // تشغيل دالة إخفاء الشاشة بعد 3000 ملي ثانية (3 ثواني) - فقط إذا كانت الشاشة موجودة
+    if (document.getElementById('splashScreen')) {
+        setTimeout(window.hideSplashScreen, 3000); 
+    }
     
     // ربط حدث الإرسال لنموذج التسوية
     const settleFormEl = document.getElementById('settleForm');
