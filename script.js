@@ -1,7 +1,7 @@
 // 🔥 تهيئة واستيراد Firebase SDK
-// يجب التأكد من صحة إصدارات المكتبات وروابطها
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-import { getDatabase, ref, onValue, push, update } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+// 🔥 تم استيراد runTransaction
+import { getDatabase, ref, onValue, push, update, runTransaction } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
 // 🛑 إعدادات Firebase - يجب تغيير هذه القيم إلى إعدادات مشروعك
@@ -41,13 +41,12 @@ let itemsPerPage = 10;
 let currentPage = 1;
 let activeFilter = '30days';
 let filteredHistory = []; // قائمة السجلات المدمجة والمفلترة
-let isLoadingHistory = false; // 🔄 مؤشر لمنع التحميل المتكرر للسجلات
+let isLoadingHistory = false; 
 
 // 🔥 متغيرات خاصة بالإشعارات (Notifications) 🔥
 let notificationsPerPage = 10;
 let currentNotificationPage = 1;
-let isLoadingNotifications = false; // 🔄 مؤشر لمنع التحميل المتكرر للإشعارات
-// نهاية المتغيرات الجديدة
+let isLoadingNotifications = false; 
 
 // متغيرات مودال التسوية
 let currentSettleUser = '';
@@ -67,12 +66,7 @@ function roundToTwo(num) {
     return Math.round(num * 100) / 100;
 }
 
-window.formatNumber = function(input) {
-    let value = input.value.replace(/,/g, '');
-    if (!isNaN(value) && value !== '') {
-        input.value = parseFloat(value).toLocaleString('en-US');
-    }
-};
+// 🔥 تم حذف دالة formatNumber القديمة التي كانت تعمل على oninput
 
 function formatBankDate(timestamp) {
     if (!timestamp) return { date: '--', time: '--' };
@@ -104,7 +98,6 @@ function updateHomeDisplay() {
 
     if (nameEl) nameEl.textContent = displayName;
 
-    // تحديث بيانات الهيدر في history.html
     const displayHeaderName = document.getElementById('displayHeaderName');
     const displayHeaderEmail = document.getElementById('displayHeaderEmail');
     if (displayHeaderName) displayHeaderName.textContent = displayName;
@@ -115,6 +108,7 @@ function updateHomeDisplay() {
 
     const balance = (currentUserDB && currentUserDB.balance !== undefined) ? currentUserDB.balance : 0;
     if (balanceEl) {
+        // 🔥 تنسيق الرصيد للعرض فقط
         balanceEl.textContent = balance.toLocaleString('en-US', {minimumFractionDigits: 1, maximumFractionDigits: 2});
     }
 
@@ -170,8 +164,8 @@ function calculateShare(amount, participantsCount) {
 // 🔥 الدالة الرئيسية للمعاينة
 window.previewExpense = function() {
     const title = document.getElementById('expenseTitle').value.trim();
-    const amountStr = document.getElementById('expenseAmount').value.replace(/,/g, '');
-    const amount = parseFloat(amountStr);
+    // 🔥 قراءة القيمة من حقل type="number" مباشرة
+    const amount = parseFloat(document.getElementById('expenseAmount').value);
     const isMessenger = document.getElementById('isMessenger').checked;
     const checkboxes = document.querySelectorAll('#participantsCheckboxes input[type="checkbox"]:checked');
 
@@ -210,7 +204,7 @@ window.previewExpense = function() {
 
     let previewHTML = `
         <p><strong>اسم المصروف:</strong> ${title}</p>
-        <p><strong>المبلغ الكلي:</strong> ${amount.toLocaleString('en-US')} SDG</p>
+        <p><strong>المبلغ الكلي:</strong> ${amount.toLocaleString('en-US', {minimumFractionDigits: 2})} SDG</p>
         <p><strong>الدافع:</strong> ${getUserNameById(currentUserID)}</p>
         <p><strong>المشاركون:</strong> ${participantsNames}</p>
         <p><strong>حصة كل شخص:</strong> ${finalShare.toLocaleString('en-US', {minimumFractionDigits: 2})} SDG</p>
@@ -249,33 +243,36 @@ window.handleSaveClick = function() {
         document.getElementById('messengerConfirmation').style.display = 'block';
 
         // تحديث نص المبلغ في تنبيه المرسال (اختياري)
+        const amountDisplay = window.tempExpenseData.amount.toLocaleString('en-US', {minimumFractionDigits: 2}) + ' SDG';
         const messengerWarningP = document.querySelector('#messengerConfirmation .messenger-warning p');
-        if(messengerWarningP) messengerWarningP.innerHTML = messengerWarningP.innerHTML.replace('سيظهر هنا', window.tempExpenseData.amount.toLocaleString('en-US') + ' SDG');
+        if(messengerWarningP) messengerWarningP.innerHTML = messengerWarningP.innerHTML.replace('سيظهر هنا', amountDisplay);
+
     } else {
         // إذا لم يكن مرسالاً، قم بالحفظ مباشرة
         window.saveExpense();
     }
 };
 
-// 🔥 الدالة النهائية لحفظ المصروف وتحديث الأرصدة - تم تعديلها لمنع الضغط المزدوج
+/**
+ * 🔥 الدالة النهائية لحفظ المصروف وتحديث الأرصدة (تستخدم المعاملات)
+ */
 window.saveExpense = async function() {
     const data = window.tempExpenseData;
     
     // 🛑 البحث عن الأزرار
-    const confirmSaveButton = document.getElementById('confirmSaveButton'); // زر الحفظ العادي
-    const confirmMessengerButton = document.getElementById('confirmMessengerButton'); // زر المرسال
+    const confirmSaveButton = document.getElementById('confirmSaveButton'); 
+    const confirmMessengerButton = document.getElementById('confirmMessengerButton'); 
 
-    // 1. التحقق من البيانات
     if (!data || !currentUserID || !db) return;
 
-    // 2. 🛡️ تعطيل الأزرار لمنع الضغط المزدوج (Double Submission)
+    // 2. 🛡️ تعطيل الأزرار لمنع الضغط المزدوج
     if (confirmSaveButton) {
         confirmSaveButton.disabled = true;
-        confirmSaveButton.textContent = 'جاري الحفظ...'; // تغيير النص لإظهار حالة التحميل (اختياري)
+        confirmSaveButton.textContent = 'جاري الحفظ...'; 
     }
     if (confirmMessengerButton) {
         confirmMessengerButton.disabled = true;
-        confirmMessengerButton.textContent = 'جاري التسجيل...'; // تغيير النص (اختياري)
+        confirmMessengerButton.textContent = 'جاري التسجيل...'; 
     }
 
     const expenseRecord = {
@@ -287,54 +284,61 @@ window.saveExpense = async function() {
         is_messenger: data.isMessenger,
         timestamp: Date.now()
     };
+    
+    // 1. حساب قيمة التحويل للدافع (المستحق له)
+    let payerContribution;
+    if (data.isMessenger) {
+        payerContribution = data.amount;
+    } else {
+        payerContribution = roundToTwo(data.amount - data.share);
+    }
+    
+    const participantsToDebit = data.participants.filter(uid => uid !== currentUserID);
+    
+    const updates = {};
+    const newExpenseRef = push(ref(db, 'expenses'));
 
     try {
-        const updates = {};
-
-        // 1. تحديث رصيد الدافع
-        let payerContribution;
-        if (data.isMessenger) {
-            // الدافع ليس مشاركاً، يدفع المبلغ كاملاً نيابة عن الآخرين.
-            payerContribution = data.amount;
-        } else {
-            // الدافع مشارك، يدفع نيابة عن الآخرين = المبلغ الكلي - حصته
-            payerContribution = roundToTwo(data.amount - data.share);
-        }
-
-        // تحديث رصيد الدافع في قاعدة البيانات (يزيد بمقدار المبلغ المستحق له من الآخرين)
-        const oldBalance = currentUserDB.balance || 0;
-        const newBalance = roundToTwo(oldBalance + payerContribution);
-        updates[`users/${currentUserID}/balance`] = newBalance;
-        currentUserDB.balance = newBalance; // تحديث الكائن المحلي
-
-        // 2. تحديث أرصدة المشاركين (غير الدافع)
-        const participantsToDebit = data.participants.filter(uid => uid !== currentUserID);
-        participantsToDebit.forEach(uid => {
-            const user = allUsers.find(u => u.uid === uid);
-            if (user) {
-                // رصيد المشارك ينقص (يدخل في السالب) بمقدار حصته
-                const newParticipantBalance = roundToTwo(user.balance - data.share);
-                updates[`users/${uid}/balance`] = newParticipantBalance;
-                user.balance = newParticipantBalance; // تحديث الكائن المحلي
-
-                // إضافة إشعار للمشارك بالدين الجديد
-                const newNotifKey = push(ref(db, 'notifications')).key;
-                updates[`notifications/${newNotifKey}`] = {
-                    uid: uid,
-                    message: `دين جديد: ${data.title}. مطلوب منك ${data.share.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG لـ ${getUserNameById(currentUserID)}.`,
-                    timestamp: Date.now(),
-                    is_read: false,
-                    type: 'debit',
-                };
-            }
+        // -------------------------------------------------------------------
+        // 🛑 تطبيق المعاملة على رصيد الدافع (لضمان أقصى دقة)
+        // -------------------------------------------------------------------
+        await runTransaction(ref(db, `users/${currentUserID}/balance`), (currentBalance) => {
+            if (currentBalance === null) return 0 + payerContribution; // حالة الرصيد غير موجود
+            return roundToTwo(currentBalance + payerContribution);
         });
 
-        // 3. إضافة المصروف نفسه
-        const newExpenseKey = push(ref(db, 'expenses')).key;
-        updates[`expenses/${newExpenseKey}`] = expenseRecord;
+        // -------------------------------------------------------------------
+        // 🛑 تطبيق المعاملات على أرصدة المشاركين (المدينين)
+        // -------------------------------------------------------------------
+        for (const uid of participantsToDebit) {
+            await runTransaction(ref(db, `users/${uid}/balance`), (currentBalance) => {
+                if (currentBalance === null) return 0 - data.share;
+                return roundToTwo(currentBalance - data.share);
+            });
 
-        // تنفيذ جميع التحديثات مرة واحدة (Atomic update)
+            // إضافة إشعار للمشارك بالدين الجديد
+            const newNotifKey = push(ref(db, 'notifications')).key;
+            updates[`notifications/${newNotifKey}`] = {
+                uid: uid,
+                message: `دين جديد: ${data.title}. مطلوب منك ${data.share.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG لـ ${getUserNameById(currentUserID)}.`,
+                timestamp: Date.now(),
+                is_read: false,
+                type: 'debit',
+            };
+        }
+
+        // -------------------------------------------------------------------
+        // 3. إضافة المصروف نفسه
+        // -------------------------------------------------------------------
+        updates[`expenses/${newExpenseRef.key}`] = expenseRecord;
+        
+        // تنفيذ التحديثات غير الحساسة (الإشعارات والمصروف)
         await update(ref(db), updates);
+
+        // تحديث البيانات المحلية للمستخدم الدافع
+        if (currentUserDB) {
+            currentUserDB.balance = roundToTwo(currentUserDB.balance + payerContribution);
+        }
 
         // إخفاء مودال المعاينة وعرض مودال النجاح
         window.hideModal();
@@ -351,7 +355,7 @@ window.saveExpense = async function() {
         // 5. 🟢 إعادة تمكين الأزرار وتحديث نصها (سواء نجح الحفظ أو فشل)
         if (confirmSaveButton) {
             confirmSaveButton.disabled = false;
-            confirmSaveButton.textContent = 'حفظ المصروف'; // إعادة النص الأصلي
+            confirmSaveButton.textContent = 'حفظ'; // إعادة النص الأصلي
         }
         if (confirmMessengerButton) {
             confirmMessengerButton.disabled = false;
@@ -487,7 +491,7 @@ function calculateNetBalances() {
     });
 
     // ----------------------------------------------------
-    // ✨ التعديل الحاسم: تطبيق تأثير التسويات على الأرصدة الصافية
+    // تطبيق تأثير التسويات على الأرصدة الصافية
     // ----------------------------------------------------
     allSettlements.forEach(settlement => {
         const { payer_id, recipient_id, amount } = settlement;
@@ -519,7 +523,7 @@ function updateSummaryDisplay() {
     let hasClaimItems = false;
 
     debtContainer.innerHTML = '';
-    claimList.innerHTML = '<p class="text-center text-gray-400 py-4">جاري تحميل المستحقات...</p>'; // مؤقت
+    claimList.innerHTML = '<p class="text-center text-gray-400 py-4">جاري تحميل المستحقات...</p>'; 
 
     Object.keys(netBalances).forEach(otherUID => {
         const netAmount = netBalances[otherUID];
@@ -549,7 +553,6 @@ function updateSummaryDisplay() {
             const amount = netAmount;
             totalCredit += amount;
             hasClaimItems = true;
-            // لا ننشئ الـ HTML هنا، سنقوم بذلك في الخطوة التالية
         }
     });
 
@@ -596,7 +599,7 @@ function updateSummaryDisplay() {
 }
 
 // ============================================================
-// 🔥 منطق سجل العمليات (History Logic) - تم تحديثه
+// 🔥 منطق سجل العمليات (History Logic) 
 // ============================================================
 
 /**
@@ -645,7 +648,6 @@ function filterHistory(filter) {
     const now = Date.now();
 
     filteredHistory = allHistory.filter(record => {
-        // ... (منطق التصفية لم يتغير)
         if (filter === '30days') {
             const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
             return record.timestamp >= thirtyDaysAgo;
@@ -712,7 +714,6 @@ function displayHistory(isAppending = false) {
         let cardHTML = '';
         const { date, time } = formatBankDate(record.timestamp);
 
-        // ... (منطق بناء بطاقة السجل لم يتغير)
         if (record.type === 'expense') {
             const isPayer = record.payer_id === currentUserID;
             const payerName = getUserNameById(record.payer_id);
@@ -857,7 +858,7 @@ function checkScrollForMoreHistory() {
 }
 
 // ============================================================
-// 🔔 منطق الإشعارات (Notifications Logic) - تم تعديله 🔥
+// 🔔 منطق الإشعارات (Notifications Logic) 
 // ============================================================
 
 function loadNotifications() {
@@ -914,13 +915,6 @@ function displayNotifications(isAppending = false) {
         isLoadingNotifications = false;
         return;
     }
-    
-    // 🔥 عرض مؤشر التحميل الخاص بالإشعارات (مؤشر وهمي هنا لعدم وجوده في HTML المقدم)
-    // const notifLoadingIndicator = document.getElementById('notificationLoadingIndicator');
-    // if (notifLoadingIndicator && isAppending) {
-    //     notifLoadingIndicator.classList.remove('hidden');
-    // }
-
 
     notificationsToShow.forEach(notification => {
         const statusClass = notification.is_read ? 'text-gray-500 bg-gray-50' : 'font-semibold bg-blue-50 hover:bg-blue-100';
@@ -946,7 +940,6 @@ function displayNotifications(isAppending = false) {
         listContainer.innerHTML += notifHTML;
     });
 
-    // if (notifLoadingIndicator) notifLoadingIndicator.classList.add('hidden'); // إخفاء مؤشر التحميل
     isLoadingNotifications = false;
 }
 
@@ -972,7 +965,7 @@ function checkScrollForMoreNotifications() {
     // نحتاج للتحقق من التمرير داخل محتوى المودال نفسه
     const scrollPosition = modalContent.scrollTop + modalContent.clientHeight;
     const contentHeight = modalContent.scrollHeight;
-    const scrollThreshold = 50; // عتبة أصغر لأن المودال أصغر
+    const scrollThreshold = 50; 
 
     if (scrollPosition >= contentHeight - scrollThreshold) {
         currentNotificationPage++;
@@ -982,7 +975,7 @@ function checkScrollForMoreNotifications() {
 
 
 // ============================================================
-// 💾 دوال إخفاء المودال (مختصرة للعرض) - تم تعديلها 🔥
+// 💾 دوال إخفاء المودال
 // ============================================================
 
 window.hideModal = () => {
@@ -995,7 +988,6 @@ window.hideSuccessModal = () => document.getElementById('successModal').classLis
 
 window.showNotifications = () => {
     const modal = document.getElementById('notificationModal');
-    // تم تعديل هذا السطر ليستخدم div الـ "list" مباشرة بدلاً من content-inner الذي لم يكن موجودًا في HTML المقدم
     const listContainer = document.getElementById('notificationsList'); 
     
     // عند فتح المودال، نربط مستمع التمرير الخاص بالإشعارات
@@ -1010,7 +1002,6 @@ window.showNotifications = () => {
 
 window.hideNotificationModal = () => {
     const modal = document.getElementById('notificationModal');
-    // تم تعديل هذا السطر ليستخدم div الـ "list" مباشرة
     const listContainer = document.getElementById('notificationsList');
     
     // عند إغلاق المودال، نزيل مستمع التمرير
@@ -1019,6 +1010,7 @@ window.hideNotificationModal = () => {
     }
     if (modal) modal.classList.remove('show');
 };
+
 
 // ============================================================
 // 🔄 تحميل البيانات (Load Data)
@@ -1095,14 +1087,12 @@ function loadData() {
 }
 
 // ============================================================
-// 🔐 المصادقة والبداية (Entry Point) - تم تعديله 🔥
+// 🔐 المصادقة والبداية (Entry Point) 
 // ============================================================
 
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUserID = user.uid;
-
-        // ... (تحديث معلومات الشريط الجانبي والهيدر) ...
 
         loadData();
 
@@ -1125,8 +1115,9 @@ onAuthStateChanged(auth, (user) => {
 });
 
 
-// ... (باقي الدوال الخاصة بالتسوية والمودالات لم يتم تعديلها باستثناء الإشعارات) ...
-
+// ============================================================
+// 💰 منطق التسوية (Settle Logic) 🔥 تم تطبيق المعاملات هنا
+// ============================================================
 
 window.sendSettleTransaction = async function(recipientUID, amount, opNumber) {
     if (!currentUserID || !recipientUID || amount <= 0 || !db) {
@@ -1134,53 +1125,54 @@ window.sendSettleTransaction = async function(recipientUID, amount, opNumber) {
         return false;
     }
 
-    const updates = {};
     const payerName = getUserNameById(currentUserID);
-    const currentPayerUser = allUsers.find(u => u.uid === currentUserID);
-    const recipientUser = allUsers.find(u => u.uid === recipientUID);
-
-    if (!currentPayerUser || !recipientUser) {
-        alert("خطأ: لم يتم العثور على بيانات أحد المستخدمين.");
-        return false;
-    }
-
-    const newCurrentUserBalance = roundToTwo(currentPayerUser.balance + amount);
-    updates[`users/${currentUserID}/balance`] = newCurrentUserBalance;
-
-    const newRecipientBalance = roundToTwo(recipientUser.balance - amount);
-    updates[`users/${recipientUID}/balance`] = newRecipientBalance;
-
-    const newSettleKey = push(ref(db, 'settlements')).key;
-    updates[`settlements/${newSettleKey}`] = {
-        payer_id: currentUserID,
-        recipient_id: recipientUID,
-        amount: amount,
-        operation_number: opNumber,
-        timestamp: Date.now()
-    };
-
-    const notificationTime = Date.now();
-    const newNotifKey = push(ref(db, 'notifications')).key;
-    updates[`notifications/${newNotifKey}`] = {
-        uid: recipientUID,
-        message: `${payerName} قام بتسوية دين بمبلغ ${amount.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG لك.`,
-        timestamp: notificationTime,
-        is_read: false,
-        type: 'settlement_received',
-        settlement_id: newSettleKey
-    };
+    const updates = {};
+    const newSettleRef = push(ref(db, 'settlements'));
 
     try {
-        await update(ref(db), updates);
+        // -------------------------------------------------------------------
+        // 🛑 المعاملة 1: تحديث رصيد الدافع (الذي يدفع)
+        // الدافع رصيده يزيد بقيمة التسوية (لتغطية الدين الذي سدده للآخر)
+        // -------------------------------------------------------------------
+        await runTransaction(ref(db, `users/${currentUserID}/balance`), (currentBalance) => {
+            if (currentBalance === null) return 0 + amount;
+            return roundToTwo(currentBalance + amount);
+        });
 
-        currentPayerUser.balance = newCurrentUserBalance;
-        recipientUser.balance = newRecipientBalance;
-        currentUserDB = currentPayerUser;
+        // -------------------------------------------------------------------
+        // 🛑 المعاملة 2: تحديث رصيد المستلم (الذي تم سداد دينه)
+        // المستلم رصيده ينقص بقيمة التسوية (لأن الدين الذي كان عليه قد سُدد)
+        // -------------------------------------------------------------------
+        await runTransaction(ref(db, `users/${recipientUID}/balance`), (currentBalance) => {
+            if (currentBalance === null) return 0 - amount;
+            return roundToTwo(currentBalance - amount);
+        });
+
+        // 3. إضافة سجل التسوية والإشعار
+        updates[`settlements/${newSettleRef.key}`] = {
+            payer_id: currentUserID,
+            recipient_id: recipientUID,
+            amount: amount,
+            operation_number: opNumber,
+            timestamp: Date.now()
+        };
+
+        const newNotifKey = push(ref(db, 'notifications')).key;
+        updates[`notifications/${newNotifKey}`] = {
+            uid: recipientUID,
+            message: `${payerName} قام بتسوية دين بمبلغ ${amount.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG لك.`,
+            timestamp: Date.now(),
+            is_read: false,
+            type: 'settlement_received',
+            settlement_id: newSettleRef.key
+        };
+
+        await update(ref(db), updates);
 
         return true;
     } catch (e) {
         console.error("Error performing settlement:", e);
-        alert('خطأ في الاتصال بقاعدة البيانات أثناء التسوية.');
+        alert('خطأ في الاتصال بقاعدة البيانات أثناء التسوية. (Transaction Failed)');
         return false;
     }
 };
@@ -1227,7 +1219,7 @@ window.hideSettleModal = function() {
 }
 
 // ============================================================
-// 🔥 منطق شاشة البداية الإعلانية (Splash Screen Logic) - إضافة جديدة 🔥
+// 🔥 منطق شاشة البداية الإعلانية (Splash Screen Logic)
 // ============================================================
 
 /**
