@@ -331,7 +331,7 @@ body {
             </div>
             <div class="form-group">
                 <label for="expenseAmount">المبلغ الكلي (SDG)</label>
-                <input type="number" id="expenseAmount" placeholder="مثال: 5000" required style="direction: ltr; text-align: right;">
+                <input type="text" id="expenseAmount" placeholder="مثال: 5,000" oninput="formatAmountInput(this)" required style="direction: ltr; text-align: right;">
             </div>
             <div class="form-group mt-6">
                 <label>المشاركون (من سيقتسمون المبلغ)</label>
