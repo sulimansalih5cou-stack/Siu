@@ -104,6 +104,18 @@ body {
     margin-top: 20px;
     position: relative;
 }
+/* 🔥 نمط الملاحظة الجديدة 🔥 */
+.alert-warning-soft {
+    background-color: #FFFBEB; /* أصفر باهت جداً */
+    border: 1px solid #F59E0B;
+    color: #92400E; /* بني داكن للنص */
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+    text-align: right;
+    font-weight: 500;
+    line-height: 1.6;
+}
 /* ... بقية أنماط المصروفات الشخصية (كما هي) ... */
 .bankak-card {
     display: flex;
@@ -269,6 +281,12 @@ body {
                 <span id="totalPersonalExpenses">0.00</span>
                 <span class="text-xl font-medium">SDG</span>
             </p>
+        </div>
+
+        <div class="alert-warning-soft">
+            <i class="fas fa-money-bill-wave text-green-600 ml-1"></i> **توضيح:** هذه الصفحة تُظهر **حركة المصروفات الأولية** (ما دفعته وما أصبح ديناً عليك). 
+            <br>
+            لمعرفة **رصيدك الحقيقي والصافي** بعد كل عمليات الدفع والتسوية، انظر صفحة **تسوية الأرصدة**.
         </div>
         <div id="personalExpensesContainer" class="space-y-4">
         </div>
