@@ -1,4 +1,3 @@
-
 // 🔥 تهيئة واستيراد Firebase SDK
 // يجب التأكد من صحة إصدارات المكتبات وروابطها
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
@@ -258,10 +257,26 @@ window.handleSaveClick = function() {
     }
 };
 
-// 🔥 الدالة النهائية لحفظ المصروف وتحديث الأرصدة
+// 🔥 الدالة النهائية لحفظ المصروف وتحديث الأرصدة - تم تعديلها لمنع الضغط المزدوج
 window.saveExpense = async function() {
     const data = window.tempExpenseData;
+    
+    // 🛑 البحث عن الأزرار
+    const confirmSaveButton = document.getElementById('confirmSaveButton'); // زر الحفظ العادي
+    const confirmMessengerButton = document.getElementById('confirmMessengerButton'); // زر المرسال
+
+    // 1. التحقق من البيانات
     if (!data || !currentUserID || !db) return;
+
+    // 2. 🛡️ تعطيل الأزرار لمنع الضغط المزدوج (Double Submission)
+    if (confirmSaveButton) {
+        confirmSaveButton.disabled = true;
+        confirmSaveButton.textContent = 'جاري الحفظ...'; // تغيير النص لإظهار حالة التحميل (اختياري)
+    }
+    if (confirmMessengerButton) {
+        confirmMessengerButton.disabled = true;
+        confirmMessengerButton.textContent = 'جاري التسجيل...'; // تغيير النص (اختياري)
+    }
 
     const expenseRecord = {
         title: data.title,
@@ -332,6 +347,16 @@ window.saveExpense = async function() {
     } catch (e) {
         console.error("Error saving expense and updating balances:", e);
         alert("حدث خطأ أثناء حفظ المصروف. الرجاء المحاولة مرة أخرى.");
+    } finally {
+        // 5. 🟢 إعادة تمكين الأزرار وتحديث نصها (سواء نجح الحفظ أو فشل)
+        if (confirmSaveButton) {
+            confirmSaveButton.disabled = false;
+            confirmSaveButton.textContent = 'حفظ المصروف'; // إعادة النص الأصلي
+        }
+        if (confirmMessengerButton) {
+            confirmMessengerButton.disabled = false;
+            confirmMessengerButton.textContent = 'موافق (تسجيل كمرسال)'; // إعادة النص الأصلي
+        }
     }
 };
 
@@ -1262,4 +1287,3 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 });
-
