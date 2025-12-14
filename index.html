@@ -14,58 +14,9 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    padding-top: 64px; /* تم تعديلها لتناسب ارتفاع شريط التنقل الجديد */
+    /* الحفاظ على المسافة من الأعلى بسبب شريط التنقل الثابت */
+    padding-top: 64px; 
 }
-
-/* 🔥 أنماط شاشة البداية/المودال الإعلاني الجديدة 🔥 */
-.splash-screen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%); /* خلفية زرقاء جميلة */
-    color: white;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000; /* تأكد من أنه فوق كل شيء */
-    opacity: 1;
-    transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
-    visibility: visible;
-    text-align: center;
-}
-
-.splash-screen.hidden {
-    opacity: 0;
-    visibility: hidden;
-}
-
-.splash-title {
-    font-size: 4rem; /* خط كبير لـ "مع مصروف" */
-    font-weight: 900;
-    margin-bottom: 20px;
-    letter-spacing: 2px;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-}
-
-.splash-slogan {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin-bottom: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 10px 20px;
-    border-radius: 10px;
-}
-
-.splash-feature {
-    font-size: 1.25rem;
-    font-style: italic;
-    opacity: 0.8;
-    margin-top: 10px;
-}
-/* نهاية أنماط شاشة البداية */
 
 /* شريط التنقل */
 .navbar {
@@ -79,7 +30,7 @@ body {
     height: 64px; /* تحديد ارتفاع ثابت */
     padding: 0 16px;
 }
-/* --- 🔥 أنماط القائمة الجانبية (Sidebar) 🔥 --- */
+/* --- أنماط القائمة الجانبية (Sidebar) --- */
 .sidebar {
     position: fixed;
     top: 0;
@@ -123,7 +74,7 @@ body {
     background-color: #EBF5FF;
     border-right-color: #1D4ED8;
 }
-/* 🔥 النمط الجديد لقص النص الزائد 🔥 */
+/* النمط الجديد لقص النص الزائد */
 .sidebar-profile-text {
     white-space: nowrap;
     overflow: hidden;
@@ -158,7 +109,7 @@ body {
     gap: 10px;
     z-index: 10;
 }
-/* --- 🔥 بطاقة الرصيد --- */
+/* --- بطاقة الرصيد --- */
 .balance-card {
     /* الحالة الافتراضية (موجب - أخضر) */
     background: linear-gradient(135deg, #10B981 0%, #059669 100%);
@@ -312,22 +263,6 @@ body {
 </head>
 <body>
 
-<div id="splashScreen" class="splash-screen">
-    <div class="p-8 max-w-lg bg-white bg-opacity-10 rounded-xl shadow-2xl backdrop-filter backdrop-blur-sm">
-        <div class="flex items-center justify-center mb-6">
-            <i class="fas fa-money-check-alt text-6xl text-yellow-300 ml-3"></i>
-            <span class="splash-title">مع مصروف</span>
-        </div>
-
-        <p class="splash-slogan">سجل عملياتك، احفظ حقك</p>
-
-        <hr class="my-6 border-white border-opacity-30">
-
-        <p class="splash-feature">
-            <i class="fas fa-check-circle text-yellow-300 ml-2"></i> سهولة في الاستخدام
-        </p>
-    </div>
-</div>
 <nav class="navbar">
     <div class="max-w-6xl mx-auto px-4 h-full">
         <div class="flex justify-between items-center h-full">
@@ -458,7 +393,8 @@ body {
         document.getElementById('sidebar').classList.remove('open');
         document.body.style.overflow = 'auto';
     }
-    // تم نقل منطق DOMContentLoaded و setTimeout إلى script.js
+    // ملاحظة: تم إزالة الكود الخاص بشاشة البداية من ملف script.js (إذا كان موجودًا)
+    // الآن، سيتم تحميل الصفحة مباشرة دون أي تأخير.
 </script>
 <script src="script.js" type="module"></script>
 </body>
