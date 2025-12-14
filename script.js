@@ -1,3 +1,4 @@
+
 // 🔥 تهيئة واستيراد Firebase SDK
 // يجب التأكد من صحة إصدارات المكتبات وروابطها
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
@@ -239,15 +240,9 @@ window.previewExpense = function() {
     document.getElementById('warning').style.display = 'none';
 };
 
-// 🔥 الدالة الرئيسية للتعامل مع زر الحفظ في المودال (التعديل يبدأ هنا)
-window.handleSaveClick = function(button) {
+// 🔥 دالة التعامل مع زر الحفظ
+window.handleSaveClick = function() {
     if (!window.tempExpenseData) return;
-    
-    // **🔥 التعديل: تعطيل الزر الأولي لمنع الضغط المزدوج أثناء المعالجة**
-    if (button) {
-        button.disabled = true;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i> جاري التحميل...';
-    }
 
     if (window.tempExpenseData.isMessenger) {
         // إذا كان مرسالاً، اعرض التنبيه الخاص بالمرسال
@@ -257,34 +252,16 @@ window.handleSaveClick = function(button) {
         // تحديث نص المبلغ في تنبيه المرسال (اختياري)
         const messengerWarningP = document.querySelector('#messengerConfirmation .messenger-warning p');
         if(messengerWarningP) messengerWarningP.innerHTML = messengerWarningP.innerHTML.replace('سيظهر هنا', window.tempExpenseData.amount.toLocaleString('en-US') + ' SDG');
-        
-        // **🔥 التعديل: إعادة تفعيل الزر الأولي**
-        // بما أننا ننتقل إلى شاشة تأكيد ثانية، نعيد تفعيل الزر الأولي
-        if (button) {
-            button.disabled = false;
-            button.innerHTML = 'حفظ المصروف';
-        }
-
     } else {
         // إذا لم يكن مرسالاً، قم بالحفظ مباشرة
-        // نمرر الزر إلى دالة الحفظ لتعطيله وإخفائه بعد النجاح
-        window.saveExpense(button);
+        window.saveExpense();
     }
 };
 
-// 🔥 الدالة النهائية لحفظ المصروف وتحديث الأرصدة (التعديل هنا)
-window.saveExpense = async function(button) {
+// 🔥 الدالة النهائية لحفظ المصروف وتحديث الأرصدة
+window.saveExpense = async function() {
     const data = window.tempExpenseData;
     if (!data || !currentUserID || !db) return;
-
-    // **🔥 التعديل: منطق تعطيل/تحميل الزر (سواء كان زر الحفظ العادي أو زر تأكيد المرسال)**
-    let isMessengerButton = false;
-    if (button) {
-        // افتراض أن زر تأكيد المرسال له ID محدد
-        isMessengerButton = button.id === 'confirmMessengerSaveButton'; 
-        button.disabled = true;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i> جاري الحفظ...';
-    }
 
     const expenseRecord = {
         title: data.title,
@@ -339,7 +316,7 @@ window.saveExpense = async function(button) {
 
         // 3. إضافة المصروف نفسه
         const newExpenseKey = push(ref(db, 'expenses')).key;
-        updates[`expenses/${newExpenseKey}`} = expenseRecord;
+        updates[`expenses/${newExpenseKey}`] = expenseRecord;
 
         // تنفيذ جميع التحديثات مرة واحدة (Atomic update)
         await update(ref(db), updates);
@@ -351,23 +328,10 @@ window.saveExpense = async function(button) {
         // إعادة تعيين النموذج
         document.getElementById('expenseForm').reset();
         window.tempExpenseData = null;
-        
-        // **🔥 التعديل: إخفاء الزر بعد نجاح عملية الحفظ لمنع الضغط المزدوج النهائي**
-        if (button) {
-             button.style.display = 'none'; 
-        }
 
     } catch (e) {
         console.error("Error saving expense and updating balances:", e);
         alert("حدث خطأ أثناء حفظ المصروف. الرجاء المحاولة مرة أخرى.");
-        
-        // **🔥 التعديل: إعادة تفعيل الزر في حال حدوث خطأ**
-        if (button) {
-            button.disabled = false;
-            // يتم تحديد النص بناءً على نوع الزر
-            const originalText = isMessengerButton ? 'موافق (تسجيل كمرسال)' : 'حفظ المصروف';
-            button.innerHTML = originalText;
-        }
     }
 };
 
@@ -1000,23 +964,6 @@ window.hideModal = () => {
     document.getElementById('previewModal').classList.remove('show');
     document.getElementById('previewDetails').style.display = 'block';
     document.getElementById('messengerConfirmation').style.display = 'none';
-    
-    // **🔥 التعديل: عند إغلاق المودال، نعيد إظهار زر الحفظ الأصلي**
-    const saveButton = document.getElementById('saveExpenseButton');
-    if(saveButton) {
-        saveButton.style.display = 'block'; 
-        saveButton.disabled = false;
-        saveButton.innerHTML = 'حفظ المصروف';
-    }
-    
-    // **🔥 التعديل: عند إغلاق المودال، نعيد إظهار زر المرسال**
-    const messengerButton = document.getElementById('confirmMessengerSaveButton');
-    if(messengerButton) {
-        messengerButton.style.display = 'block'; 
-        messengerButton.disabled = false;
-        messengerButton.innerHTML = 'موافق (تسجيل كمرسال)';
-    }
-
 };
 
 window.hideSuccessModal = () => document.getElementById('successModal').classList.remove('show');
@@ -1315,3 +1262,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 });
+
+
+ 
+  لاخفاء الزر النهائي ل تسجيل المصروف  بعد اول ضغطة 
+وهناك طريقتان اما تسجيل المصروف بدون الضغط علئ زر مرسال وثم التسجيل عبر زر( حفظ هذا الزر اجعله يختفي بعد اول ضغطة حتئ نمنع الزر الضغط المزدوج
+ )
+والطريقة الثانية عند تسجيل نرسال والزر يكون 
+"موافق(تسجيل كمرسال)"وهذا الزر ايضا امنع الضغطالمزدوج عبر ازالة الزر بعد اول ضغط علئ الزر 
+
+ارجو ان تكون فهمتني وارجو منك قبل البدء في التعديلات ان تقوم بترتيب كلامي
