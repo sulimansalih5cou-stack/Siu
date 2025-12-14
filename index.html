@@ -318,9 +318,9 @@ body {
             <i class="fas fa-money-check-alt text-6xl text-yellow-300 ml-3"></i>
             <span class="splash-title">مع مصروف</span>
         </div>
-        
+
         <p class="splash-slogan">سجل عملياتك، احفظ حقك</p>
-        
+
         <hr class="my-6 border-white border-opacity-30">
 
         <p class="splash-feature">
@@ -415,7 +415,7 @@ body {
             <h2 class="text-xl font-bold mb-4">تأكيد المصروف</h2>
             <div id="previewText" class="text-right text-gray-700 mb-6 text-sm leading-loose"></div>
             <div class="flex justify-center gap-4">
-                <button id="mainSaveButton" onclick="handleSaveClick()" class="btn w-auto">حفظ</button>
+                <button id="saveExpenseButton" onclick="window.handleSaveClick(this)" class="btn w-auto">حفظ</button>
                 <button onclick="hideModal()" class="btn w-auto bg-gray-500 text-white">إلغاء</button>
             </div>
         </div>
@@ -428,7 +428,7 @@ body {
                 <p class="mt-2 font-bold"> هل أنت متأكد من المتابعة بتسجيل المصروف كـ مُرسال؟ </p>
             </div>
             <div class="flex justify-center gap-4">
-                <button onclick="saveExpense()" class="btn w-auto bg-red-600 hover:bg-red-700">موافق (تسجيل كمرسال)</button>
+                <button id="confirmMessengerSaveButton" onclick="window.saveExpense(this)" class="btn w-auto bg-red-600 hover:bg-red-700">موافق (تسجيل كمرسال)</button>
                 <button onclick="hideModal()" class="btn w-auto bg-gray-500 text-white">إلغاء</button>
             </div>
         </div>
