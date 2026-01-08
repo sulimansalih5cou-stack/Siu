@@ -403,10 +403,11 @@ function displayPersonalExpenses() {
 // ============================================================
 // 💰 منطق ملخص التسوية (Settlement Summary Logic) ✅ تم الإصلاح
 // ============================================================
-
 function calculateNetBalances() {
+    // التأكد من وجود بيانات للعمل عليها
     if (!currentUserID || allUsers.length === 0) return;
 
+    // 1️⃣ تصفير مصفوفة النتائج لضمان عدم تراكم أرقام سابقة
     netBalances = {};
     allUsers.forEach(user => {
         if (user.uid !== currentUserID) {
@@ -414,40 +415,51 @@ function calculateNetBalances() {
         }
     });
 
-    // 1. حساب الديون من المصروفات
+    // 2️⃣ معالجة المصروفات (Expenses)
     allExpenses.forEach(expense => {
         const payerId = expense.payer_id;
-        const share = Number(expense.share); // 🔥 ضمان التحويل لرقم
-        
+        // استخدام Number() للقسر العددي وضمان عدم التعامل معها كنص
+        const share = Number(expense.share) || 0; 
+
         if (payerId === currentUserID) {
-            // أنت دفعت للآخرين (لهم ديون عندك)
-            const participantsToCheck = expense.participants_ids.filter(id => id !== currentUserID);
-            participantsToCheck.forEach(participantId => {
-                if(netBalances[participantId] !== undefined) {
-                    netBalances[participantId] = roundToTwo(netBalances[participantId] + share);
-                }
-            });
-        } else if (expense.participants_ids.includes(currentUserID)) {
-            // شخص دفع لك (عليك دين)
-            if(netBalances[payerId] !== undefined) {
-                netBalances[payerId] = roundToTwo(netBalances[payerId] - share);
+            // الحالة أ: أنا الدافع (أطلب من الآخرين حصصهم)
+            if (expense.participants_ids && Array.isArray(expense.participants_ids)) {
+                expense.participants_ids.forEach(participantId => {
+                    if (participantId !== currentUserID && netBalances[participantId] !== undefined) {
+                        // استخدام Math.round لتجنب أخطاء الكسور العشرية (مثل 0.000000001)
+                        let currentVal = Number(netBalances[participantId]);
+                        netBalances[participantId] = Math.round((currentVal + share) * 100) / 100;
+                    }
+                });
+            }
+        } else if (expense.participants_ids && expense.participants_ids.includes(currentUserID)) {
+            // الحالة ب: أنا مشارك (مدين للشخص الذي دفع)
+            if (netBalances[payerId] !== undefined) {
+                let currentVal = Number(netBalances[payerId]);
+                netBalances[payerId] = Math.round((currentVal - share) * 100) / 100;
             }
         }
     });
 
-    // 2. ✅ تطبيق التسويات المسجلة على الأرصدة (هنا كان الخلل سابقاً)
+    // 3️⃣ معالجة عمليات التسوية والسداد (Settlements)
     allSettlements.forEach(settlement => {
-        const { payer_id, recipient_id } = settlement;
-        const amount = Number(settlement.amount); // 🔥 ضمان التحويل لرقم
+        const amount = Number(settlement.amount) || 0;
+        const payerId = settlement.payer_id;
+        const recipientId = settlement.recipient_id;
 
-        if (payer_id === currentUserID && netBalances[recipient_id] !== undefined) {
-            // أنت سددت ديناً (رصيد الشخص السالب سيزيد باتجاه الصفر)
-            netBalances[recipient_id] = roundToTwo(netBalances[recipient_id] + amount);
-        } else if (recipient_id === currentUserID && netBalances[payer_id] !== undefined) {
-            // شخص سدد لك (رصيد الشخص الموجب سينقص باتجاه الصفر)
-            netBalances[payer_id] = roundToTwo(netBalances[payer_id] - amount);
+        // الحالة ج: إذا كنت أنا من سدد الدين (رصيدي السالب تجاههم يجب أن يزيد ليقترب من الصفر)
+        if (payerId === currentUserID && netBalances[recipientId] !== undefined) {
+            let currentVal = Number(netBalances[recipientId]);
+            netBalances[recipientId] = Math.round((currentVal + amount) * 100) / 100;
+        }
+        // الحالة د: إذا استلمت أنا سداداً (رصيدهم الموجب تجاهي يجب أن ينقص)
+        else if (recipientId === currentUserID && netBalances[payerId] !== undefined) {
+            let currentVal = Number(netBalances[payerId]);
+            netBalances[payerId] = Math.round((currentVal - amount) * 100) / 100;
         }
     });
+
+    console.log("✅ تمت عملية الحساب الرقمي بدقة:", netBalances);
 }
 
 function updateSummaryDisplay() {
