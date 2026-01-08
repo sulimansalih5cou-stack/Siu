@@ -404,64 +404,43 @@ function displayPersonalExpenses() {
 // 💰 منطق ملخص التسوية (Settlement Summary Logic) ✅ تم الإصلاح
 // ============================================================
 function calculateNetBalances() {
-    // التأكد من وجود بيانات للعمل عليها
     if (!currentUserID || allUsers.length === 0) return;
 
-    // 1️⃣ تصفير مصفوفة النتائج لضمان عدم تراكم أرقام سابقة
+    // تصفير الأرصدة قبل الحساب
     netBalances = {};
     allUsers.forEach(user => {
-        if (user.uid !== currentUserID) {
-            netBalances[user.uid] = 0;
-        }
+        if (user.uid !== currentUserID) netBalances[user.uid] = 0;
     });
 
-    // 2️⃣ معالجة المصروفات (Expenses)
+    // حساب المصروفات
     allExpenses.forEach(expense => {
-        const payerId = expense.payer_id;
-        // استخدام Number() للقسر العددي وضمان عدم التعامل معها كنص
-        const share = Number(expense.share) || 0; 
-
-        if (payerId === currentUserID) {
-            // الحالة أ: أنا الدافع (أطلب من الآخرين حصصهم)
-            if (expense.participants_ids && Array.isArray(expense.participants_ids)) {
-                expense.participants_ids.forEach(participantId => {
-                    if (participantId !== currentUserID && netBalances[participantId] !== undefined) {
-                        // استخدام Math.round لتجنب أخطاء الكسور العشرية (مثل 0.000000001)
-                        let currentVal = Number(netBalances[participantId]);
-                        netBalances[participantId] = Math.round((currentVal + share) * 100) / 100;
-                    }
-                });
-            }
-        } else if (expense.participants_ids && expense.participants_ids.includes(currentUserID)) {
-            // الحالة ب: أنا مشارك (مدين للشخص الذي دفع)
-            if (netBalances[payerId] !== undefined) {
-                let currentVal = Number(netBalances[payerId]);
-                netBalances[payerId] = Math.round((currentVal - share) * 100) / 100;
-            }
+        const share = Number(expense.share) || 0;
+        if (expense.payer_id === currentUserID) {
+            // أنا دفعت: الآخرون مدينون لي (رصيدهم عندي يزيد بالموجب +)
+            expense.participants_ids.forEach(uid => {
+                if (uid !== currentUserID) {
+                    netBalances[uid] = Math.round((netBalances[uid] + share) * 100) / 100;
+                }
+            });
+        } else if (expense.participants_ids.includes(currentUserID)) {
+            // غيري دفع: أنا مدين له (رصيدي عنده ينقص بالسالب -)
+            const payerId = expense.payer_id;
+            netBalances[payerId] = Math.round((netBalances[payerId] - share) * 100) / 100;
         }
     });
 
-    // 3️⃣ معالجة عمليات التسوية والسداد (Settlements)
+    // حساب التسويات (السداد)
     allSettlements.forEach(settlement => {
         const amount = Number(settlement.amount) || 0;
-        const payerId = settlement.payer_id;
-        const recipientId = settlement.recipient_id;
-
-        // الحالة ج: إذا كنت أنا من سدد الدين (رصيدي السالب تجاههم يجب أن يزيد ليقترب من الصفر)
-        if (payerId === currentUserID && netBalances[recipientId] !== undefined) {
-            let currentVal = Number(netBalances[recipientId]);
-            netBalances[recipientId] = Math.round((currentVal + amount) * 100) / 100;
-        }
-        // الحالة د: إذا استلمت أنا سداداً (رصيدهم الموجب تجاهي يجب أن ينقص)
-        else if (recipientId === currentUserID && netBalances[payerId] !== undefined) {
-            let currentVal = Number(netBalances[payerId]);
-            netBalances[payerId] = Math.round((currentVal - amount) * 100) / 100;
+        if (settlement.payer_id === currentUserID) {
+            // أنا سددت: ديني ينقص (يقترب من الصفر بالموجب +)
+            netBalances[settlement.recipient_id] += amount;
+        } else if (settlement.recipient_id === currentUserID) {
+            // أنا استلمت: حقّي عندهم ينقص (بالسالب -)
+            netBalances[settlement.payer_id] -= amount;
         }
     });
-
-    console.log("✅ تمت عملية الحساب الرقمي بدقة:", netBalances);
 }
-
 function updateSummaryDisplay() {
     const totalDebtEl = document.getElementById('totalDebt');
     const totalCreditEl = document.getElementById('totalCredit');
@@ -476,26 +455,27 @@ function updateSummaryDisplay() {
     let hasDebtItems = false;
     let hasClaimItems = false;
 
+    // مسح القوائم قبل إعادة العرض
     debtContainer.innerHTML = '';
-    claimList.innerHTML = '<p class="text-center text-gray-400 py-4">جاري تحميل المستحقات...</p>'; 
+    claimList.innerHTML = ''; 
 
     Object.keys(netBalances).forEach(otherUID => {
         const netAmount = netBalances[otherUID];
         const otherUserName = getUserNameById(otherUID);
 
-        if (Math.abs(netAmount) < 0.1) return; // تجاهل الكسور الصغيرة جداً
+        if (Math.abs(netAmount) < 0.1) return; // تجاهل المبالغ الصغيرة جداً
 
         if (netAmount < 0) {
-            // عليك دين (Debt)
+            // عليك دين لهذا الشخص (القيمة سالبة)
             const amount = Math.abs(netAmount);
             totalDebt += amount;
             hasDebtItems = true;
 
             const debtHTML = `
-                <div class="balance-card" data-user-id="${otherUID}" data-amount="${amount}" data-user-name="${otherUserName}">
+                <div class="balance-card">
                     <div class="balance-info">
                         <span class="balance-name">${otherUserName}</span>
-                        <span class="balance-status">يدين لك ${amount.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG</span>
+                        <span class="balance-status text-red-600">يطلبك مبلغ: ${amount.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG</span>
                     </div>
                     <button class="action-button" onclick="showSettleModal('${otherUserName}', ${amount}, '${otherUID}')">تسوية المبلغ</button>
                 </div>
@@ -503,49 +483,40 @@ function updateSummaryDisplay() {
             debtContainer.innerHTML += debtHTML;
 
         } else if (netAmount > 0) {
-            // لك فلوس (Credit)
+            // لك مبالغ عند هذا الشخص (القيمة موجبة)
             const amount = netAmount;
             totalCredit += amount;
             hasClaimItems = true;
-        }
-    });
 
-    totalDebtEl.innerHTML = `${roundToTwo(totalDebt).toLocaleString(undefined, {minimumFractionDigits: 2})} <span class="text-base font-normal">SDG</span>`;
-    totalCreditEl.innerHTML = `${roundToTwo(totalCredit).toLocaleString(undefined, {minimumFractionDigits: 2})} <span class="text-base font-normal">SDG</span>`;
-
-    if (noDebtsEl) {
-        if (!hasDebtItems) {
-            noDebtsEl.classList.remove('hidden');
-            debtContainer.innerHTML = '';
-        } else {
-            noDebtsEl.classList.add('hidden');
-        }
-    }
-
-    if (hasClaimItems) {
-        claimList.innerHTML = ''; 
-        Object.keys(netBalances).filter(uid => netBalances[uid] > 0.1).forEach(otherUID => {
-            const amount = netBalances[otherUID];
-            const otherUserName = getUserNameById(otherUID);
             const claimHTML = `
-                <div class="claim-item" data-user="${otherUserName}" data-amount="${amount}" data-user-id="${otherUID}">
+                <div class="claim-item">
                     <span class="font-semibold text-gray-800">${otherUserName}: </span>
                     <div class="flex items-center space-x-2 space-x-reverse">
-                        <span class="text-green-600 font-bold dir-ltr">${amount.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG</span>
-                        <button class="nudge-button-individual" onclick="nudgeUser('${otherUserName}', '${otherUID}')">نكز</button>
+                        <span class="text-green-600 font-bold">${amount.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG</span>
+                        <button class="nudge-button-individual px-2 py-1 bg-blue-100 text-blue-600 rounded text-xs" onclick="nudgeUser('${otherUserName}', '${otherUID}')">نكز</button>
                     </div>
                 </div>
             `;
             claimList.innerHTML += claimHTML;
-        });
-        const claimButton = document.querySelector('#claimModal .btn-submit');
-        if (claimButton) claimButton.disabled = false;
-    } else {
-        claimList.innerHTML = '<p class="text-center text-gray-500 py-4">لا توجد مستحقات مالية من الآخرين حالياً.</p>';
-        const claimButton = document.querySelector('#claimModal .btn-submit');
-        if (claimButton) claimButton.disabled = true;
+        }
+    });
+
+    // تحديث الأرقام الكلية في المربعات العلوية
+    totalDebtEl.innerHTML = `${totalDebt.toLocaleString(undefined, {minimumFractionDigits: 2})} <span class="text-base font-normal">SDG</span>`;
+    totalCreditEl.innerHTML = `${totalCredit.toLocaleString(undefined, {minimumFractionDigits: 2})} <span class="text-base font-normal">SDG</span>`;
+
+    // إظهار أو إخفاء رسالة "لا توجد ديون"
+    if (noDebtsEl) {
+        if (!hasDebtItems) noDebtsEl.classList.remove('hidden');
+        else noDebtsEl.classList.add('hidden');
+    }
+
+    // إذا لم تكن هناك مستحقات
+    if (!hasClaimItems) {
+        claimList.innerHTML = '<p class="text-center text-gray-500 py-4">لا توجد مستحقات مالية حالياً.</p>';
     }
 }
+
 
 // ============================================================
 // 🔥 منطق سجل العمليات (History Logic) 
