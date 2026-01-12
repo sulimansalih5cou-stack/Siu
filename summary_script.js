@@ -25,6 +25,7 @@ let netBalances = {};
 let currentSettleRecipientUID = '';
 let currentSettleMaxAmount = 0;
 
+// --- مراقبة حالة تسجيل الدخول ---
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUserID = user.uid;
@@ -34,6 +35,7 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
+// --- تحميل البيانات من قاعدة البيانات ---
 function loadData() {
     onValue(ref(db), (snapshot) => {
         const data = snapshot.val() || {};
@@ -56,6 +58,7 @@ function loadData() {
     });
 }
 
+// --- حساب الأرصدة والديون ---
 function calculateBalances() {
     netBalances = {};
     allUsers.forEach(u => { if(u.uid !== currentUserID) netBalances[u.uid] = 0; });
@@ -77,6 +80,7 @@ function calculateBalances() {
     renderUI();
 }
 
+// --- تحديث واجهة المستخدم ---
 function renderUI() {
     const debtContainer = document.getElementById('debtContainer');
     const claimList = document.getElementById('claimList');
@@ -86,53 +90,67 @@ function renderUI() {
 
     Object.keys(netBalances).forEach(uid => {
         const bal = netBalances[uid];
-        const name = allUsers.find(u => u.uid === uid)?.displayName || "مستخدم";
+        const userObj = allUsers.find(u => u.uid === uid);
+        const name = userObj ? userObj.displayName : "مستخدم";
+        
         if (bal < -0.5) {
-            const amt = Math.abs(bal); tDebt += amt;
+            const amt = Math.abs(bal); 
+            tDebt += amt;
             debtContainer.innerHTML += `
                 <div class="balance-card">
-                    <div><p class="font-bold text-sm text-gray-800">${name}</p><p class="text-[10px] text-red-500">${amt.toLocaleString()} SDG</p></div>
+                    <div>
+                        <p class="font-bold text-sm text-gray-800">${name}</p>
+                        <p class="text-[10px] text-red-500">${amt.toLocaleString('en-US')} SDG</p>
+                    </div>
                     <button onclick="showSettleModal('${name}', ${amt}, '${uid}')" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold">تسوية</button>
                 </div>`;
         } else if (bal > 0.5) {
             tCredit += bal;
             claimList.innerHTML += `
                 <div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl mb-2">
-                    <div><p class="font-bold text-xs">${name}</p><p class="text-green-600 font-bold text-xs">${bal.toLocaleString()} SDG</p></div>
+                    <div>
+                        <p class="font-bold text-xs">${name}</p>
+                        <p class="text-green-600 font-bold text-xs">${bal.toLocaleString('en-US')} SDG</p>
+                    </div>
                     <button onclick="nudgeUser('${name}', '${uid}', ${bal})" class="nudge-btn">نكز</button>
                 </div>`;
         }
     });
-    document.getElementById('totalDebt').textContent = tDebt.toLocaleString();
-    document.getElementById('totalCredit').textContent = tCredit.toLocaleString();
+    document.getElementById('totalDebt').textContent = tDebt.toLocaleString('en-US');
+    document.getElementById('totalCredit').textContent = tCredit.toLocaleString('en-US');
     document.getElementById('noDebts').classList.toggle('hidden', tDebt > 0);
 }
 
 // --- ميزة النكز ---
 window.nudgeUser = async (name, uid, amount) => {
     try {
+        const myName = document.getElementById('sidebarUserName').textContent;
         const notifKey = push(ref(db, 'notifications')).key;
         await update(ref(db, `notifications/${notifKey}`), {
             uid: uid,
-            message: `🔔 نكز: يذكرك ${document.getElementById('sidebarUserName').textContent} بسداد مبلغ ${amount.toLocaleString()} SDG.`,
-            timestamp: Date.now(), is_read: false
+            message: `🔔 نكز: يذكرك ${myName} بسداد مبلغ ${amount.toLocaleString('en-US')} SDG.`,
+            timestamp: Date.now(), 
+            is_read: false
         });
         alert(`تم نكز ${name} بنجاح!`);
     } catch(e) { alert("فشل النكز"); }
 };
 
-// --- إشعارات (النظر يعني القراءة) ---
+// --- عرض الإشعارات ---
 window.showNotifications = async () => {
     document.getElementById('notificationModal').classList.add('show');
     const list = document.getElementById('notificationsList');
-    list.innerHTML = userNotifications.length === 0 ? '<p class="text-center py-10 opacity-50 text-xs">لا توجد إشعارات</p>' : 
-        userNotifications.map(n => `
-            <div class="p-3 rounded-xl border ${n.is_read ? 'bg-gray-50' : 'bg-blue-50 border-blue-200'}">
+    
+    if (userNotifications.length === 0) {
+        list.innerHTML = '<p class="text-center py-10 opacity-50 text-xs">لا توجد إشعارات</p>';
+    } else {
+        list.innerHTML = userNotifications.map(n => `
+            <div class="p-3 rounded-xl border ${n.is_read ? 'bg-gray-50' : 'bg-blue-50 border-blue-200'} mb-2">
                 <p class="text-xs font-bold text-gray-800">${n.message}</p>
                 <p class="text-[9px] text-gray-400 mt-1">${new Date(n.timestamp).toLocaleString('ar-EG')}</p>
             </div>`).join('');
-    
-    // تحديث الإشعارات لمقروءة فور الفتح
+    }
+
     const unread = userNotifications.filter(n => !n.is_read);
     if (unread.length > 0) {
         const updates = {};
@@ -141,54 +159,105 @@ window.showNotifications = async () => {
     }
 };
 
-// --- التسوية وتنسيق الفواصل ---
+// --- منطق التسوية المطور ---
+
+// 1. فتح المودال وتجهيز البيانات
 window.showSettleModal = (name, amt, uid) => {
-    currentSettleRecipientUID = uid; currentSettleMaxAmount = amt;
+    currentSettleRecipientUID = uid; 
+    currentSettleMaxAmount = amt;
+    
     document.getElementById('settleRelation').textContent = `تسوية لـ ${name}`;
-    document.getElementById('maxSettleAmountDisplay').textContent = amt.toLocaleString();
-    document.getElementById('settleAmount').value = amt.toLocaleString();
+    document.getElementById('maxSettleAmountDisplay').textContent = amt.toLocaleString('en-US');
+    
+    // نضع القيمة رقمية صافية في البداية
+    document.getElementById('settleAmount').value = amt;
+    updateRemainingBalance(amt);
+    
     document.getElementById('settleModal').classList.add('show');
 };
 
+// 2. دالة حساب الباقي اللحظية
+function updateRemainingBalance(val) {
+    const cleanVal = Number(String(val).replace(/,/g, '')) || 0;
+    const remaining = currentSettleMaxAmount - cleanVal;
+    
+    const remDiv = document.getElementById('remainingBalance');
+    const remValueSpan = document.getElementById('remainingValue');
+    
+    remDiv.classList.remove('hidden');
+    remValueSpan.textContent = remaining.toLocaleString('en-US');
+    
+    // تغيير اللون إذا تجاوز المبلغ المطلوب
+    remValueSpan.style.color = remaining < 0 ? "#ef4444" : "#6b7280";
+}
+
+// 3. مراقب الإدخال لمنع تداخل اللغات وتحديث الحساب
 document.getElementById('settleAmount').addEventListener('input', function(e) {
-    let val = e.target.value.replace(/,/g, '');
-    if (!isNaN(val) && val !== "") {
-        e.target.value = Number(val).toLocaleString();
-        const remaining = currentSettleMaxAmount - Number(val);
-        const remDiv = document.getElementById('remainingBalance');
-        remDiv.classList.remove('hidden');
-        document.getElementById('remainingValue').textContent = remaining.toLocaleString();
+    // السماح بالأرقام فقط
+    let rawValue = e.target.value.replace(/[^0-9]/g, ''); 
+    
+    if (rawValue !== "") {
+        updateRemainingBalance(rawValue);
+        // التنسيق أثناء الكتابة (اختياري، استخدمنا en-US لضمان عدم ظهور أرقام هندية)
+        e.target.value = Number(rawValue).toLocaleString('en-US');
+    } else {
+        updateRemainingBalance(0);
     }
 });
 
+// 4. إرسال التسوية والإشعار للطرف الآخر
 document.getElementById('settleForm').onsubmit = async (e) => {
     e.preventDefault();
     const amount = Number(document.getElementById('settleAmount').value.replace(/,/g, ''));
     const opNum = document.getElementById('operationNumber').value;
-    if (amount <= 0 || amount > currentSettleMaxAmount + 1) return alert("المبلغ غير صحيح");
+    const myName = document.getElementById('sidebarUserName').textContent;
+
+    if (isNaN(amount) || amount <= 0) return alert("المبلغ غير صحيح");
+    if (amount > currentSettleMaxAmount + 5) return alert("المبلغ يتجاوز الدين المطلوب");
 
     try {
         const updates = {};
         const sKey = push(ref(db, 'settlements')).key;
         const nKey = push(ref(db, 'notifications')).key;
-        updates[`settlements/${sKey}`] = { payer_id: currentUserID, recipient_id: currentSettleRecipientUID, amount, operation_number: opNum, timestamp: Date.now() };
-        updates[`notifications/${nKey}`] = { uid: currentSettleRecipientUID, message: `✅ تسوية مستلمة: ${amount.toLocaleString()} SDG من ${document.getElementById('sidebarUserName').textContent}`, timestamp: Date.now(), is_read: false };
+
+        // إضافة التسوية
+        updates[`settlements/${sKey}`] = { 
+            payer_id: currentUserID, 
+            recipient_id: currentSettleRecipientUID, 
+            amount: amount, 
+            operation_number: opNum, 
+            timestamp: Date.now() 
+        };
+
+        // إرسال إشعار للطرف الآخر
+        updates[`notifications/${nKey}`] = { 
+            uid: currentSettleRecipientUID, 
+            message: `✅ تسوية مستلمة: ${amount.toLocaleString('en-US')} SDG من ${myName}`, 
+            timestamp: Date.now(), 
+            is_read: false 
+        };
+
         await update(ref(db), updates);
-        alert("تمت التسوية بنجاح");
+        alert("تمت التسوية بنجاح!");
         hideSettleModal();
-    } catch(e) { alert("فشلت العملية"); }
+        e.target.reset();
+    } catch(e) { 
+        alert("فشلت العملية، يرجى المحاولة لاحقاً"); 
+    }
 };
 
-// وظائف مساعدة
+// --- وظائف مساعدة للإغلاق والفتح ---
 window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('open');
 window.hideSettleModal = () => document.getElementById('settleModal').classList.remove('show');
-window.hideClaimModal = () => document.getElementById('claimModal').classList.remove('show');
-window.showClaimModal = () => document.getElementById('claimModal').classList.add('show');
 window.hideNotificationModal = () => document.getElementById('notificationModal').classList.remove('show');
+window.showClaimModal = () => document.getElementById('claimModal').classList.add('show');
+window.hideClaimModal = () => document.getElementById('claimModal').classList.remove('show');
+
 function updateNotificationBadge() {
     const badge = document.getElementById('notificationBadge');
     const count = userNotifications.filter(n => !n.is_read).length;
     badge.textContent = count;
     badge.classList.toggle('hidden', count === 0);
 }
+
 document.getElementById('logoutBtn').onclick = () => signOut(auth);
