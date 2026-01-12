@@ -9,44 +9,28 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
 
     <style>
-        body {
-            background-color: #F3F4F6;
-            font-family: 'Cairo', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            padding-top: 64px; 
-            overflow-x: hidden; 
-            -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;         
-        }
+        body { background-color: #F3F4F6; font-family: 'Cairo', sans-serif; min-height: 100vh; padding-top: 64px; overflow-x: hidden; }
         .navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 900; background-color: white; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); height: 64px; padding: 0 16px; }
         .sidebar { position: fixed; top: 0; right: 0; height: 100%; width: 250px; background: white; z-index: 1000; box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1); transform: translateX(100%); transition: transform 0.3s ease-out; padding-top: 64px; }
         .sidebar.open { transform: translateX(0); }
         .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 999; }
         .sidebar.open + .sidebar-overlay { display: block; }
-        .sidebar-link { display: block; padding: 15px 20px; font-weight: 600; color: #4B5563; transition: background-color 0.3s, color 0.3s; border-right: 4px solid transparent; }
-        .sidebar-link:hover { background-color: #F3F4F6; color: #3B82F6; }
+        .sidebar-link { display: block; padding: 15px 20px; font-weight: 600; color: #4B5563; border-right: 4px solid transparent; }
         .sidebar-link.active-summary { color: #1D4ED8; background-color: #EBF5FF; border-right-color: #1D4ED8; }
-        .content-wrapper { flex-grow: 1; display: flex; align-items: flex-start; justify-content: center; padding: 20px; }
-        .container { background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); padding: 40px; max-width: 800px; width: 100%; margin-top: 20px; }
-        .summary-card { padding: 15px 15px; border-radius: 15px; text-align: center; color: white; box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.2); transition: transform 0.2s; height: 100%; }
+        .container { background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); padding: 30px; max-width: 800px; width: 100%; margin: 20px auto; }
+        .summary-card { padding: 20px; border-radius: 15px; text-align: center; color: white; transition: transform 0.2s; }
         .summary-card.debt { background: linear-gradient(135deg, #F87171 0%, #DC2626 100%); }
-        .summary-card.credit { background: linear-gradient(135deg, #34D399 0%, #059669 100%); cursor: pointer; }
-        .summary-card h3 { font-size: 2rem; font-weight: 800; direction: ltr; }
-        .balance-card { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-radius: 12px; margin-bottom: 12px; background: #FFFFFF; border: 1px solid #E5E7EB; border-right: 4px solid #3B82F6; }
-        .balance-info { display: flex; flex-direction: column; text-align: right; }
-        .balance-name { font-weight: 700; color: #1F2937; font-size: 1.1rem; }
-        .balance-amount { font-size: 1.3rem; font-weight: 700; direction: ltr; color: #DC2626; }
-        .action-button { padding: 8px 18px; background: #3B82F6; color: white; border-radius: 8px; font-size: 0.9rem; font-weight: 600; }
+        .summary-card.credit { background: linear-gradient(135deg, #34D399 0%, #059669 100%); }
+        .balance-card { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-radius: 12px; margin-bottom: 12px; background: #FFFFFF; border: 1px solid #E5E7EB; border-right: 4px solid #3B82F6; }
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; }
         .modal.show { display: flex; }
         .modal-content { background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 450px; text-align: right; }
-        .form-group label { display: block; font-weight: 600; color: #374151; margin-bottom: 8px; }
-        .form-group input { width: 100%; padding: 12px; border: 2px solid #E5E7EB; border-radius: 10px; font-weight: 600; }
-        .btn-submit { background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); color: white; padding: 12px; border-radius: 10px; width: 100%; font-weight: 700; display: flex; justify-content: center; align-items: center; gap: 8px; }
-        .btn-secondary-action { background: #E5E7EB; color: #4B5563; padding: 12px; border-radius: 10px; width: 100%; font-weight: 700; }
-        .nudge-button-individual { background-color: #FBBF24; color: #92400E; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; }
-        .claim-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed #E5E7EB; }
+        
+        /* تصميم قائمة الإشعارات */
+        #notificationPanel { display: none; position: fixed; top: 70px; left: 20px; width: 320px; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 1100; max-height: 400px; overflow-y: auto; }
+        #notificationPanel.show { display: block; }
+        .notif-item { padding: 12px; border-bottom: 1px solid #f0f0f0; font-size: 0.85rem; }
+        .notif-item:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
@@ -54,13 +38,23 @@
     <nav class="navbar">
         <div class="max-w-6xl mx-auto px-4 h-full flex justify-between items-center">
             <button id="menuButton" class="text-2xl text-gray-600 p-2"><i class="fas fa-bars"></i></button>
-            <div class="text-2xl font-extrabold text-blue-600 sm:block hidden">Smart Dorm</div>
-            <button onclick="showNotifications()" class="relative text-gray-500 p-2">
+            <div class="text-2xl font-extrabold text-blue-600">Smart Dorm</div>
+            <button onclick="toggleNotifications()" class="relative text-gray-500 p-2">
                 <i class="fas fa-bell text-2xl"></i>
-                <span id="notificationBadge" class="absolute top-0 right-0 px-2 py-1 text-xs font-bold text-white bg-red-600 rounded-full hidden">0</span>
+                <span id="notificationBadge" class="absolute top-0 right-0 px-2 py-0.5 text-xs font-bold text-white bg-red-600 rounded-full hidden">0</span>
             </button>
         </div>
     </nav>
+
+    <div id="notificationPanel">
+        <div class="p-4 border-b font-bold flex justify-between items-center">
+            <span>الإشعارات</span>
+            <button onclick="toggleNotifications()" class="text-xs text-gray-400">إغلاق</button>
+        </div>
+        <div id="notificationList">
+            <p class="text-center p-4 text-gray-400">لا توجد إشعارات حالياً</p>
+        </div>
+    </div>
 
     <div id="sidebar" class="sidebar">
         <div class="p-4 border-b">
@@ -75,57 +69,62 @@
     </div>
     <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
 
-    <div class="content-wrapper">
+    <div class="content-wrapper p-4">
         <div class="container">
-            <h1 class="text-2xl font-extrabold text-center mb-8 border-b pb-4">ملخص الأرصدة والتسوية</h1>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
+            <h1 class="text-2xl font-extrabold text-center mb-8 border-b pb-4">ملخص الأرصدة</h1>
+            <div class="grid grid-cols-2 gap-4 mb-10">
                 <div class="summary-card debt">
-                    <p>إجمالي ديونك</p>
-                    <h3 id="totalDebt">0.00</h3>
+                    <p class="text-sm">ديونك</p>
+                    <h3 id="totalDebt" class="text-xl font-bold">0</h3>
                 </div>
                 <div class="summary-card credit" onclick="showClaimModal()">
-                    <p>مستحقاتك عند الآخرين</p>
-                    <h3 id="totalCredit">0.00</h3>
+                    <p class="text-sm">مستحقاتك</p>
+                    <h3 id="totalCredit" class="text-xl font-bold">0</h3>
                 </div>
             </div>
 
-            <h2 class="text-xl font-bold mb-4">ديون بانتظار تسويتك</h2>
+            <h2 class="text-lg font-bold mb-4 italic text-gray-700">ديون بانتظار تسويتك</h2>
             <div id="debtContainer" class="space-y-3"></div>
-            <div id="noDebts" class="hidden text-center text-gray-500 p-6 border-2 border-dashed rounded-lg">
-                <i class="fas fa-check-circle text-4xl mb-2 text-green-500"></i>
-                <p>كل ديونك مسواة!</p>
+            <div id="noDebts" class="hidden text-center text-gray-400 p-10 border-2 border-dashed rounded-lg">
+                <p>رائع! لا توجد ديون عليك</p>
             </div>
-        </div>
-    </div>
-
-    <div id="claimModal" class="modal">
-        <div class="modal-content">
-            <h2 class="text-xl font-bold mb-4">مستحقاتك</h2>
-            <div id="claimList" class="space-y-2 mb-4"></div>
-            <button id="broadcastClaimBtn" class="btn-submit bg-green-600">إرسال مطالبة عامة</button>
-            <button onclick="hideClaimModal()" class="btn-secondary-action mt-2">إغلاق</button>
         </div>
     </div>
 
     <div id="settleModal" class="modal">
         <div class="modal-content">
-            <h2 class="text-xl font-bold mb-4">دفع التسوية</h2>
-            <div class="p-3 bg-blue-50 rounded mb-4">
-                <p id="settleRelation" class="font-bold"></p>
-                <p class="text-sm">الحد الأقصى: <span id="maxSettleAmountDisplay"></span> SDG</p>
+            <h2 class="text-xl font-bold mb-4 text-blue-600">تأكيد عملية التسوية</h2>
+            <div class="p-3 bg-blue-50 rounded-lg mb-4 text-sm">
+                <p id="settleRelation" class="font-bold mb-1"></p>
+                <div class="flex justify-between border-t pt-2 mt-2">
+                    <span>المبلغ الكلي:</span>
+                    <span id="maxSettleAmountDisplay" class="font-bold"></span>
+                </div>
+                <div class="flex justify-between text-green-600 font-bold mt-1">
+                    <span>المبلغ المتبقي:</span>
+                    <span><span id="remainingAmountDisplay">0</span> SDG</span>
+                </div>
             </div>
-            <form id="settleForm">
-                <div class="form-group mb-4">
-                    <label>رقم العملية (آخر 4 أرقام)</label>
-                    <input type="tel" id="operationNumber" maxlength="4" required>
+            <form id="settleForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-bold mb-1">رقم العملية (آخر 4 أرقام)</label>
+                    <input type="tel" id="operationNumber" maxlength="4" class="w-full p-3 border rounded-lg text-center" placeholder="0000" required>
                 </div>
-                <div class="form-group mb-4">
-                    <label>المبلغ المدفوع</label>
-                    <input type="number" id="settleAmount" step="any" required>
+                <div>
+                    <label class="block text-sm font-bold mb-1">المبلغ الذي دفعته الآن</label>
+                    <input type="number" id="settleAmount" step="any" class="w-full p-3 border rounded-lg text-center font-bold text-blue-600" placeholder="0.00" required>
                 </div>
-                <button type="submit" class="btn-submit">تأكيد التسوية</button>
-                <button type="button" onclick="hideSettleModal()" class="btn-secondary-action mt-2">إلغاء</button>
+                <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold">إرسال التسوية</button>
+                <button type="button" onclick="hideSettleModal()" class="w-full bg-gray-100 text-gray-600 p-3 rounded-lg">إلغاء</button>
             </form>
+        </div>
+    </div>
+
+    <div id="claimModal" class="modal">
+        <div class="modal-content text-center">
+            <h2 class="text-xl font-bold mb-4">قائمة المستحقات</h2>
+            <div id="claimList" class="space-y-2 mb-4"></div>
+            <button onclick="hideClaimModal()" class="w-full bg-gray-200 p-2 rounded">إغلاق</button>
         </div>
     </div>
 
