@@ -9,28 +9,95 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
 
     <style>
-        body { background-color: #F3F4F6; font-family: 'Cairo', sans-serif; min-height: 100vh; padding-top: 64px; overflow-x: hidden; }
-        .navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 900; background-color: white; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); height: 64px; padding: 0 16px; }
-        .sidebar { position: fixed; top: 0; right: 0; height: 100%; width: 250px; background: white; z-index: 1000; box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1); transform: translateX(100%); transition: transform 0.3s ease-out; padding-top: 64px; }
+        body {
+            background-color: #F3F4F6;
+            font-family: 'Cairo', sans-serif;
+            min-height: 100vh;
+            padding-top: 64px; 
+            overflow-x: hidden; 
+            user-select: none;         
+        }
+
+        /* تحسينات الفيزيائية للأزرار */
+        button, .sidebar-link {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        button:active { transform: scale(0.95); }
+
+        .navbar {
+            position: fixed; top: 0; left: 0; right: 0;
+            z-index: 900; background-color: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); 
+            height: 64px; padding: 0 16px; 
+        }
+
+        .sidebar {
+            position: fixed; top: 0; right: 0; height: 100%; width: 280px;
+            background: white; z-index: 1000; box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1);
+            transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding-top: 64px;
+        }
         .sidebar.open { transform: translateX(0); }
-        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 999; }
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px); z-index: 999; }
         .sidebar.open + .sidebar-overlay { display: block; }
-        .sidebar-link { display: block; padding: 15px 20px; font-weight: 600; color: #4B5563; border-right: 4px solid transparent; }
-        .sidebar-link.active-summary { color: #1D4ED8; background-color: #EBF5FF; border-right-color: #1D4ED8; }
-        .container { background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); padding: 30px; max-width: 800px; width: 100%; margin: 20px auto; }
-        .summary-card { padding: 20px; border-radius: 15px; text-align: center; color: white; transition: transform 0.2s; }
+
+        .sidebar-link.active-summary { 
+            color: #1D4ED8; background-color: #EBF5FF; border-right: 4px solid #1D4ED8;
+        }
+
+        .container {
+            background: white; border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.03); 
+            padding: 30px; max-width: 800px; width: 100%; margin-top: 20px;
+        }
+
+        /* البطاقات العلوية */
+        .summary-card {
+            padding: 20px; border-radius: 20px; text-align: center; color: white;
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.15);
+        }
         .summary-card.debt { background: linear-gradient(135deg, #F87171 0%, #DC2626 100%); }
         .summary-card.credit { background: linear-gradient(135deg, #34D399 0%, #059669 100%); }
-        .balance-card { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-radius: 12px; margin-bottom: 12px; background: #FFFFFF; border: 1px solid #E5E7EB; border-right: 4px solid #3B82F6; }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; }
-        .modal.show { display: flex; }
-        .modal-content { background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 450px; text-align: right; }
-        
-        /* تصميم قائمة الإشعارات */
-        #notificationPanel { display: none; position: fixed; top: 70px; left: 20px; width: 320px; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 1100; max-height: 400px; overflow-y: auto; }
-        #notificationPanel.show { display: block; }
-        .notif-item { padding: 12px; border-bottom: 1px solid #f0f0f0; font-size: 0.85rem; }
-        .notif-item:last-child { border-bottom: none; }
+
+        /* بطاقة الدين الفردية */
+        .balance-card {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 20px; border-radius: 16px; margin-bottom: 12px;
+            background: #FFFFFF; border: 1px solid #F3F4F6; border-right: 5px solid #3B82F6;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        /* المودالات */
+        .modal { 
+            display: none; position: fixed; inset: 0; 
+            background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(8px);
+            align-items: center; justify-content: center; z-index: 1000; 
+            transition: opacity 0.3s ease;
+        }
+        .modal.show { display: flex; animation: fadeIn 0.3s ease; }
+        .modal-content { 
+            background: white; padding: 32px; border-radius: 28px; width: 92%; max-width: 460px; 
+            transform: translateY(20px); animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1) forwards;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { to { transform: translateY(0); } }
+
+        /* تصميم الإشعارات الجديد */
+        .notif-item {
+            padding: 12px; border-radius: 12px; border-bottom: 1px solid #F3F4F6;
+            transition: background 0.2s; background: #F9FAFB; margin-bottom: 8px;
+        }
+        .notif-item.unread { background: #EEF2FF; border-right: 4px solid #3B82F6; }
+
+        input {
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        input:focus {
+            border-color: #3B82F6 !important;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+            outline: none;
+        }
     </style>
 </head>
 <body>
@@ -38,96 +105,113 @@
     <nav class="navbar">
         <div class="max-w-6xl mx-auto px-4 h-full flex justify-between items-center">
             <button id="menuButton" class="text-2xl text-gray-600 p-2"><i class="fas fa-bars"></i></button>
-            <div class="text-2xl font-extrabold text-blue-600">Smart Dorm</div>
-            <button onclick="toggleNotifications()" class="relative text-gray-500 p-2">
+            <div class="text-xl font-black text-blue-600 sm:block hidden">Smart Dorm</div>
+            <button onclick="showNotifications()" class="relative text-gray-500 p-2">
                 <i class="fas fa-bell text-2xl"></i>
-                <span id="notificationBadge" class="absolute top-0 right-0 px-2 py-0.5 text-xs font-bold text-white bg-red-600 rounded-full hidden">0</span>
+                <span id="notificationBadge" class="absolute top-1 right-1 px-2 py-0.5 text-[10px] font-bold text-white bg-red-600 rounded-full hidden">0</span>
             </button>
         </div>
     </nav>
 
-    <div id="notificationPanel">
-        <div class="p-4 border-b font-bold flex justify-between items-center">
-            <span>الإشعارات</span>
-            <button onclick="toggleNotifications()" class="text-xs text-gray-400">إغلاق</button>
-        </div>
-        <div id="notificationList">
-            <p class="text-center p-4 text-gray-400">لا توجد إشعارات حالياً</p>
-        </div>
-    </div>
-
     <div id="sidebar" class="sidebar">
-        <div class="p-4 border-b">
+        <div class="p-6 border-b">
+            <div class="w-12 h-12 bg-blue-100 rounded-full mb-3 flex items-center justify-center text-blue-600 font-bold text-xl" id="userInitial">S</div>
             <h3 class="font-bold text-gray-800" id="sidebarUserName">جاري التحميل...</h3>
-            <p class="text-sm text-gray-500" id="sidebarUserEmail">...</p>
+            <p class="text-xs text-gray-500" id="sidebarUserEmail">...</p>
         </div>
-        <a href="index.html" class="sidebar-link">إضافة مصروف</a>
-        <a href="my_expenses.html" class="sidebar-link">مصروفاتي</a>
-        <a href="history.html" class="sidebar-link">السجل</a>
-        <a href="summary.html" class="sidebar-link active-summary">تسوية الأرصدة</a>
-        <button id="logoutBtn" class="sidebar-link text-red-600 w-full text-right">خروج</button>
+        <div class="py-4">
+            <a href="index.html" class="sidebar-link px-6 py-3 block"><i class="fas fa-plus-circle ml-3"></i> إضافة مصروف</a>
+            <a href="my_expenses.html" class="sidebar-link px-6 py-3 block"><i class="fas fa-file-invoice-dollar ml-3"></i> مصروفاتي</a>
+            <a href="history.html" class="sidebar-link px-6 py-3 block"><i class="fas fa-history ml-3"></i> السجل</a>
+            <a href="summary.html" class="sidebar-link active-summary px-6 py-3 block"><i class="fas fa-handshake ml-3"></i> تسوية الأرصدة</a>
+            <button id="logoutBtn" class="sidebar-link text-red-600 w-full text-right px-6 py-3 mt-4"><i class="fas fa-sign-out-alt ml-3"></i> خروج</button>
+        </div>
     </div>
     <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
 
-    <div class="content-wrapper p-4">
+    <div class="content-wrapper">
         <div class="container">
-            <h1 class="text-2xl font-extrabold text-center mb-8 border-b pb-4">ملخص الأرصدة</h1>
-            <div class="grid grid-cols-2 gap-4 mb-10">
+            <h1 class="text-2xl font-black text-gray-800 text-center mb-8">تسوية الأرصدة</h1>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
                 <div class="summary-card debt">
-                    <p class="text-sm">ديونك</p>
-                    <h3 id="totalDebt" class="text-xl font-bold">0</h3>
+                    <p class="text-xs opacity-80 uppercase tracking-wider mb-1">ديونك الحالية</p>
+                    <h3 id="totalDebt" class="text-3xl font-black">0.00</h3>
                 </div>
                 <div class="summary-card credit" onclick="showClaimModal()">
-                    <p class="text-sm">مستحقاتك</p>
-                    <h3 id="totalCredit" class="text-xl font-bold">0</h3>
+                    <p class="text-xs opacity-80 uppercase tracking-wider mb-1">مستحقاتك</p>
+                    <h3 id="totalCredit" class="text-3xl font-black">0.00</h3>
                 </div>
             </div>
 
-            <h2 class="text-lg font-bold mb-4 italic text-gray-700">ديون بانتظار تسويتك</h2>
+            <h2 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
+                <span class="w-2 h-6 bg-red-500 rounded-full ml-2"></span> ديون بانتظار دفعك
+            </h2>
+
             <div id="debtContainer" class="space-y-3"></div>
-            <div id="noDebts" class="hidden text-center text-gray-400 p-10 border-2 border-dashed rounded-lg">
-                <p>رائع! لا توجد ديون عليك</p>
+            <div id="noDebts" class="hidden text-center py-12 bg-green-50 rounded-2xl border-2 border-dashed border-green-200">
+                <i class="fas fa-check-circle text-5xl text-green-500 mb-3"></i>
+                <p class="font-bold text-green-800">حسابك خالٍ من الديون!</p>
             </div>
+        </div>
+    </div>
+
+    <div id="notificationModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4 flex items-center justify-between">
+                <span>الإشعارات</span>
+                <i class="fas fa-bell text-blue-500"></i>
+            </h2>
+            <div id="notificationsList" class="space-y-2 max-h-80 overflow-y-auto mb-4"></div>
+            <button onclick="hideNotificationModal()" class="w-full py-3 bg-gray-100 text-gray-600 rounded-xl font-bold">إغلاق</button>
         </div>
     </div>
 
     <div id="settleModal" class="modal">
         <div class="modal-content">
-            <h2 class="text-xl font-bold mb-4 text-blue-600">تأكيد عملية التسوية</h2>
-            <div class="p-3 bg-blue-50 rounded-lg mb-4 text-sm">
-                <p id="settleRelation" class="font-bold mb-1"></p>
-                <div class="flex justify-between border-t pt-2 mt-2">
-                    <span>المبلغ الكلي:</span>
-                    <span id="maxSettleAmountDisplay" class="font-bold"></span>
-                </div>
-                <div class="flex justify-between text-green-600 font-bold mt-1">
-                    <span>المبلغ المتبقي:</span>
-                    <span><span id="remainingAmountDisplay">0</span> SDG</span>
-                </div>
+            <h2 class="text-xl font-bold mb-4 text-blue-700 italic">تأكيد دفع التسوية</h2>
+            <div class="p-4 bg-blue-50 rounded-2xl mb-6 border-r-4 border-blue-500">
+                <p id="settleRelation" class="font-bold text-gray-800 mb-1"></p>
+                <p class="text-xs text-blue-600">الحد الأقصى المطلوب: <span id="maxSettleAmountDisplay" class="font-black"></span> SDG</p>
             </div>
+
             <form id="settleForm" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-bold mb-1">رقم العملية (آخر 4 أرقام)</label>
-                    <input type="tel" id="operationNumber" maxlength="4" class="w-full p-3 border rounded-lg text-center" placeholder="0000" required>
+                    <label class="block text-xs font-bold text-gray-500 mb-1 mr-1">آخر 4 أرقام من عملية بنكك</label>
+                    <input type="tel" id="operationNumber" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-center font-bold text-lg" placeholder="0000" maxlength="4" required>
                 </div>
                 <div>
-                    <label class="block text-sm font-bold mb-1">المبلغ الذي دفعته الآن</label>
-                    <input type="number" id="settleAmount" step="any" class="w-full p-3 border rounded-lg text-center font-bold text-blue-600" placeholder="0.00" required>
+                    <label class="block text-xs font-bold text-gray-500 mb-1 mr-1">المبلغ الذي دفعته</label>
+                    <input type="number" id="settleAmount" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-center font-black text-blue-600 text-2xl" placeholder="0.00" step="any" required>
                 </div>
-                <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold">إرسال التسوية</button>
-                <button type="button" onclick="hideSettleModal()" class="w-full bg-gray-100 text-gray-600 p-3 rounded-lg">إلغاء</button>
+                
+                <div id="remainingBalance" class="hidden p-3 rounded-xl text-center font-bold text-sm">
+                    المتبقي بعد الدفع: <span id="remainingValue"></span>
+                </div>
+
+                <button type="submit" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg shadow-blue-200">تأكيد العملية وإرسال الإشعار</button>
+                <button type="button" onclick="hideSettleModal()" class="w-full py-3 text-gray-400 font-bold">إلغاء</button>
             </form>
         </div>
     </div>
 
     <div id="claimModal" class="modal">
-        <div class="modal-content text-center">
-            <h2 class="text-xl font-bold mb-4">قائمة المستحقات</h2>
-            <div id="claimList" class="space-y-2 mb-4"></div>
-            <button onclick="hideClaimModal()" class="w-full bg-gray-200 p-2 rounded">إغلاق</button>
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4">تفاصيل مستحقاتك</h2>
+            <div id="claimList" class="space-y-3 mb-6"></div>
+            <button onclick="hideClaimModal()" class="w-full py-3 bg-gray-100 rounded-xl font-bold">إغلاق</button>
         </div>
     </div>
 
     <script src="summary_script.js" type="module"></script>
+    <script>
+        window.toggleSidebar = () => {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+        window.closeSidebar = () => {
+            document.getElementById('sidebar').classList.remove('open');
+        }
+        document.getElementById('menuButton').onclick = window.toggleSidebar;
+    </script>
 </body>
 </html>
