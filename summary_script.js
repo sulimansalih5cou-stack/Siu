@@ -1,7 +1,3 @@
-من هذا الكود 
-اي مبلغ يتم تسويته اضفه الئ مصروفاتي الشخصية 
-اي اقصد ان اي مبلغ يتم دفعه لتسوية اضف المبلغ الئ النصروفات الشخصية 
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { getDatabase, ref, onValue, push, update } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
@@ -266,5 +262,3 @@ function updateNotificationBadge() {
 
 document.getElementById('logoutBtn').onclick = () => signOut(auth);
 
-
-انتظر حتئ اعطيك الكود الكامل للموقع حتئ تعرف كيف تصل للمصروفات الشخصية
