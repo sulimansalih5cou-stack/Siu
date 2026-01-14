@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -9,18 +7,16 @@
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <style>
-/* CSS: الأنماط الأساسية (المستعادة من تصميمك) */
+/* CSS: الأنماط الأساسية */
 body {
     background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    /* الحفاظ على المسافة من الأعلى بسبب شريط التنقل الثابت */
     padding-top: 64px; 
 }
 
-/* شريط التنقل */
 .navbar {
     position: fixed;
     top: 0;
@@ -29,26 +25,24 @@ body {
     z-index: 900;
     background-color: white;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-    height: 64px; /* تحديد ارتفاع ثابت */
+    height: 64px;
     padding: 0 16px;
 }
-/* --- أنماط القائمة الجانبية (Sidebar) --- */
+
 .sidebar {
     position: fixed;
     top: 0;
-    right: 0; /* في وضع RTL تظهر القائمة من اليمين */
+    right: 0;
     height: 100%;
     width: 250px;
     background: white;
     z-index: 1000;
     box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
-    transform: translateX(100%); /* إخفاء القائمة في البداية */
+    transform: translateX(100%);
     transition: transform 0.3s ease-out;
     padding-top: 64px;
 }
-.sidebar.open {
-    transform: translateX(0); /* إظهار القائمة */
-}
+.sidebar.open { transform: translateX(0); }
 .sidebar-overlay {
     display: none;
     position: fixed;
@@ -56,35 +50,18 @@ body {
     background: rgba(0, 0, 0, 0.5);
     z-index: 999;
 }
-.sidebar.open + .sidebar-overlay {
-    display: block;
-}
+.sidebar.open + .sidebar-overlay { display: block; }
 .sidebar-link {
     display: block;
     padding: 15px 20px;
     font-weight: 600;
     color: #4B5563;
     transition: background-color 0.3s, color 0.3s;
-    border-right: 4px solid transparent; /* خط التحديد لليمين */
+    border-right: 4px solid transparent;
 }
-.sidebar-link:hover {
-    background-color: #F3F4F6;
-    color: #3B82F6;
-}
-.sidebar-link.active {
-    color: #1D4ED8;
-    background-color: #EBF5FF;
-    border-right-color: #1D4ED8;
-}
-/* النمط الجديد لقص النص الزائد */
-.sidebar-profile-text {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-}
-/* نهاية أنماط القائمة الجانبية */
-/* الحاوية الرئيسية */
+.sidebar-link:hover { background-color: #F3F4F6; color: #3B82F6; }
+.sidebar-link.active { color: #1D4ED8; background-color: #EBF5FF; border-right-color: #1D4ED8; }
+
 .content-wrapper {
     flex-grow: 1;
     display: flex;
@@ -102,18 +79,8 @@ body {
     margin-top: 20px;
     position: relative;
 }
-/* الأزرار العلوية */
-.top-actions {
-    position: absolute;
-    top: -50px;
-    right: 20px;
-    display: flex;
-    gap: 10px;
-    z-index: 10;
-}
-/* --- بطاقة الرصيد --- */
+
 .balance-card {
-    /* الحالة الافتراضية (موجب - أخضر) */
     background: linear-gradient(135deg, #10B981 0%, #059669 100%);
     color: white;
     padding: 20px;
@@ -123,31 +90,13 @@ body {
     box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
     transition: background 0.5s ease;
 }
-/* الحالة السالبة (دين - أحمر) */
 .balance-card.negative {
     background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%) !important;
     box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3);
 }
-.balance-card h3 {
-    font-size: 18px;
-    margin-bottom: 5px;
-    opacity: 0.9;
-}
-.balance-card p {
-    font-size: 28px;
-    font-weight: 800;
-    letter-spacing: 1px;
-}
-/* الحقول والنماذج */
-.form-group {
-    margin-bottom: 25px;
-}
-.form-group label {
-    display: block;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 8px;
-}
+
+.form-group { margin-bottom: 25px; }
+.form-group label { display: block; font-weight: 600; color: #374151; margin-bottom: 8px; }
 .form-group input, .form-group select {
     width: 100%;
     padding: 15px;
@@ -156,12 +105,7 @@ body {
     background: #F9FAFB;
     font-size: 16px;
 }
-.form-group input:focus, .form-group select:focus {
-    border-color: #3B82F6;
-    background: white;
-    outline: none;
-}
-/* Checkboxes */
+
 .checkbox-group {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -177,24 +121,22 @@ body {
     border: 2px solid transparent;
     transition: 0.3s;
 }
-.checkbox-item:hover {
-    background: #E5E7EB;
-    border-color: #3B82F6;
-}
-.checkbox-item input {
-    margin-left: 10px;
-    width: auto;
-}
-.select-all {
-    background: #3B82F6;
-    color: white;
-    padding: 10px;
-    border-radius: 10px;
+
+/* زر المصروف الشخصي الجديد */
+.personal-btn {
+    background: #EBF5FF;
+    color: #1D4ED8;
+    padding: 12px;
+    border-radius: 12px;
     cursor: pointer;
     text-align: center;
     margin-bottom: 15px;
+    font-weight: bold;
+    border: 2px dashed #3B82F6;
+    transition: 0.3s;
 }
-/* الأزرار */
+.personal-btn:hover { background: #DBEAFE; }
+
 .btn {
     background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
     color: white;
@@ -208,10 +150,8 @@ body {
     align-items: center;
     gap: 10px;
 }
-.btn-secondary {
-    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-}
-/* Modals */
+.btn-secondary { background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); }
+
 .modal {
     display: none;
     position: fixed;
@@ -221,9 +161,7 @@ body {
     justify-content: center;
     z-index: 1000;
 }
-.modal.show {
-    display: flex;
-}
+.modal.show { display: flex; }
 .modal-content {
     background: white;
     padding: 30px;
@@ -232,34 +170,14 @@ body {
     max-width: 400px;
     text-align: center;
 }
-/* رسالة تحذير المرسال */
-.warning {
-    background: #F59E0B;
-    color: white;
-    padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 15px;
-    display: none;
+
+/* ستايل رسائل التنبيه الجمالية (Toast) */
+.toast-animate {
+    animation: slideIn 0.5s ease-out, bounce 1s ease-in-out infinite alternate;
 }
-.messenger-warning {
-    background: #FEF2F2;
-    color: #B91C1C;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 15px;
-    border: 1px solid #FCA5A5;
-    text-align: right;
-}
-/* إخفاء المحتوى الافتراضي في المودال في البداية */
-#previewDetails {
-    display: block;
-}
-#messengerConfirmation {
-    display: none;
-}
-/* أنماط الإشعارات */
-.max-h-96 {
-    max-height: 24rem;
+@keyframes slideIn {
+    from { transform: translate(-50%, -100%); opacity: 0; }
+    to { transform: translate(-50%, 0); opacity: 1; }
 }
 </style>
 </head>
@@ -268,7 +186,7 @@ body {
 <nav class="navbar">
     <div class="max-w-6xl mx-auto px-4 h-full">
         <div class="flex justify-between items-center h-full">
-            <button id="menuButton" class="text-2xl text-gray-600 hover:text-blue-500 p-2 focus:outline-none">
+            <button id="menuButton" onclick="window.toggleSidebar()" class="text-2xl text-gray-600 hover:text-blue-500 p-2 focus:outline-none">
                 <i class="fas fa-bars"></i>
             </button>
             <div class="text-2xl font-extrabold text-blue-600 absolute right-1/2 transform translate-x-1/2 hidden sm:block">
@@ -285,6 +203,7 @@ body {
         </div>
     </div>
 </nav>
+
 <div id="sidebar" class="sidebar">
     <div class="p-4 border-b">
         <h3 class="text-lg font-bold text-gray-800 sidebar-profile-text" id="sidebarUserName">جاري التحميل...</h3>
@@ -299,6 +218,7 @@ body {
     </a>
 </div>
 <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+
 <div class="content-wrapper">
     <div class="container">
         <div class="text-center text-gray-500 text-sm mb-6 italic">
@@ -333,11 +253,13 @@ body {
             </div>
             <div class="form-group">
                 <label for="expenseAmount">المبلغ الكلي (SDG)</label>
-                <input type="tel" id="expenseAmount" placeholder="مثال: 5,000" oninput="formatNumber(this)" required style="direction: ltr; text-align: right;">
+                <input type="tel" id="expenseAmount" placeholder="مثال: 5,000" oninput="window.formatAmountInput(this)" required style="direction: ltr; text-align: right;">
             </div>
             <div class="form-group mt-6">
                 <label>المشاركون (من سيقتسمون المبلغ)</label>
-                <div class="select-all" onclick="selectAllParticipants()">تحديد الجميع</div>
+                <div class="personal-btn" onclick="window.selectPersonalExpense()">
+                    <i class="fas fa-user-shield ml-1"></i> تسجيل مصروف شخصي (أنا فقط)
+                </div>
                 <div class="checkbox-group" id="participantsCheckboxes">
                 </div>
             </div>
@@ -345,6 +267,7 @@ body {
         </form>
     </div>
 </div>
+
 <div id="previewModal" class="modal">
     <div class="modal-content">
         <div id="previewDetails">
@@ -360,7 +283,7 @@ body {
             <div class="messenger-warning">
                 <h3 class="font-extrabold mb-2 text-xl"><i class="fas fa-exclamation-triangle ml-1"></i> تنبيه هام: وضع المرسال!</h3>
                 <p class="text-base leading-relaxed"> 
-                    أنت على وشك تسجيل المصروف كـ **مُرسال**. هذا يعني أنك دفعت المبلغ (سيظهر هنا) بالنيابة عن المشاركين، وحصتك ستكون **صفراً**.
+                    أنت على وشك تسجيل المصروف كـ **مُرسال**. هذا يعني أنك دفعت المبلغ بالنيابة عن المشاركين، وحصتك ستكون **صفراً**.
                 </p>
                 <p class="mt-2 font-bold"> هل أنت متأكد من المتابعة بتسجيل المصروف كـ مُرسال؟ </p>
             </div>
@@ -371,12 +294,14 @@ body {
         </div>
     </div>
 </div>
+
 <div id="successModal" class="modal">
     <div class="modal-content">
         <h2 class="text-xl font-bold text-green-600 mb-4"><i class="fas fa-check-circle"></i> تم الحفظ!</h2>
         <button onclick="hideSuccessModal()" class="btn w-full">إغلاق</button>
     </div>
 </div>
+
 <div id="notificationModal" class="modal">
     <div class="modal-content max-w-md text-right">
         <h2 class="text-xl font-bold mb-4 border-b pb-2"><i class="fas fa-bell ml-1"></i> الإشعارات</h2>
@@ -385,6 +310,7 @@ body {
         <button onclick="hideNotificationModal()" class="btn w-full mt-6 bg-gray-500 text-white">إغلاق</button>
     </div>
 </div>
+
 <script>
     window.toggleSidebar = function() {
         const sidebar = document.getElementById('sidebar');
@@ -395,8 +321,6 @@ body {
         document.getElementById('sidebar').classList.remove('open');
         document.body.style.overflow = 'auto';
     }
-    // ملاحظة: تم إزالة الكود الخاص بشاشة البداية من ملف script.js (إذا كان موجودًا)
-    // الآن، سيتم تحميل الصفحة مباشرة دون أي تأخير.
 </script>
 <script src="script.js" type="module"></script>
 </body>
