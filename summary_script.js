@@ -1,4 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+Import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { getDatabase, ref, onValue, push, update } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
@@ -23,7 +23,6 @@ let allSettlements = [];
 let userNotifications = [];
 let netBalances = {};
 let currentSettleRecipientUID = '';
-let currentSettleRecipientName = ''; // لتخزين الاسم وتجنب undefined
 let currentSettleMaxAmount = 0;
 
 // --- مراقبة حالة تسجيل الدخول ---
@@ -36,13 +35,13 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
+// --- تحميل البيانات من قاعدة البيانات ---
 function loadData() {
     onValue(ref(db), (snapshot) => {
         const data = snapshot.val() || {};
         allUsers = data.users ? Object.keys(data.users).map(k => ({uid: k, ...data.users[k]})) : [];
         allExpenses = data.expenses ? Object.values(data.expenses) : [];
         allSettlements = data.settlements ? Object.values(data.settlements) : [];
-        
         userNotifications = data.notifications ? Object.keys(data.notifications)
             .map(k => ({id: k, ...data.notifications[k]}))
             .filter(n => n.uid === currentUserID)
@@ -50,10 +49,8 @@ function loadData() {
 
         const me = allUsers.find(u => u.uid === currentUserID);
         if (me) {
-            const userNameEl = document.getElementById('sidebarUserName');
-            const userEmailEl = document.getElementById('sidebarUserEmail');
-            if(userNameEl) userNameEl.textContent = me.displayName;
-            if(userEmailEl) userEmailEl.textContent = auth.currentUser.email;
+            document.getElementById('sidebarUserName').textContent = me.displayName;
+            document.getElementById('sidebarUserEmail').textContent = auth.currentUser.email;
         }
 
         calculateBalances();
@@ -61,6 +58,7 @@ function loadData() {
     });
 }
 
+// --- حساب الأرصدة والديون ---
 function calculateBalances() {
     netBalances = {};
     allUsers.forEach(u => { if(u.uid !== currentUserID) netBalances[u.uid] = 0; });
@@ -68,10 +66,8 @@ function calculateBalances() {
     allExpenses.forEach(exp => {
         const share = Number(exp.share) || 0;
         if (exp.payer_id === currentUserID) {
-            if(exp.participants_ids) {
-                exp.participants_ids.forEach(pid => { if(pid !== currentUserID) netBalances[pid] += share; });
-            }
-        } else if (exp.participants_ids && exp.participants_ids.includes(currentUserID)) {
+            exp.participants_ids.forEach(pid => { if(pid !== currentUserID) netBalances[pid] += share; });
+        } else if (exp.participants_ids.includes(currentUserID)) {
             netBalances[exp.payer_id] -= share;
         }
     });
@@ -84,11 +80,11 @@ function calculateBalances() {
     renderUI();
 }
 
+// --- تحديث واجهة المستخدم ---
 function renderUI() {
     const debtContainer = document.getElementById('debtContainer');
     const claimList = document.getElementById('claimList');
     let tDebt = 0, tCredit = 0;
-    if(!debtContainer || !claimList) return;
 
     debtContainer.innerHTML = ''; claimList.innerHTML = '';
 
@@ -125,98 +121,25 @@ function renderUI() {
     document.getElementById('noDebts').classList.toggle('hidden', tDebt > 0);
 }
 
-// --- منطق التسوية المطور ---
-
-window.showSettleModal = (name, amt, uid) => {
-    currentSettleRecipientUID = uid; 
-    currentSettleRecipientName = name; // حفظ الاسم هنا لمنع undefined
-    currentSettleMaxAmount = amt;
-
-    document.getElementById('settleRelation').textContent = `تسوية لـ ${name}`;
-    document.getElementById('maxSettleAmountDisplay').textContent = amt.toLocaleString('en-US');
-
-    // تفريغ الحقول تماماً
-    document.getElementById('settleAmount').value = "";
-    document.getElementById('operationNumber').value = "";
-    
-    updateRemainingBalance(0);
-    document.getElementById('settleModal').classList.add('show');
-};
-
-function updateRemainingBalance(val) {
-    const cleanVal = Number(String(val).replace(/,/g, '')) || 0;
-    const remaining = currentSettleMaxAmount - cleanVal;
-    const remValueSpan = document.getElementById('remainingValue');
-    if(remValueSpan) {
-        remValueSpan.textContent = remaining.toLocaleString('en-US');
-        remValueSpan.style.color = remaining < 0 ? "#ef4444" : "#6b7280";
-    }
-}
-
-document.getElementById('settleAmount').addEventListener('input', function(e) {
-    let rawValue = e.target.value.replace(/[^0-9]/g, ''); 
-    if (rawValue !== "") {
-        updateRemainingBalance(rawValue);
-        e.target.value = Number(rawValue).toLocaleString('en-US');
-    } else {
-        updateRemainingBalance(0);
-    }
-});
-
-document.getElementById('settleForm').onsubmit = async (e) => {
-    e.preventDefault();
-    const amountStr = document.getElementById('settleAmount').value.replace(/,/g, '');
-    const amount = Number(amountStr);
-    const opNum = document.getElementById('operationNumber').value;
-    const myName = document.getElementById('sidebarUserName').textContent;
-
-    if (!amountStr || amount <= 0) return alert("يرجى إدخال مبلغ صحيح");
-    if (opNum.length !== 4) return alert("يجب أن يتكون رقم العملية من 4 أرقام بالضبط");
-
+// --- ميزة النكز ---
+window.nudgeUser = async (name, uid, amount) => {
     try {
-        const updates = {};
-        const timestamp = Date.now();
-        const sKey = push(ref(db, 'settlements')).key;
-        const nKey = push(ref(db, 'notifications')).key;
-        const eKey = push(ref(db, 'expenses')).key;
-
-        updates[`settlements/${sKey}`] = { 
-            payer_id: currentUserID, 
-            recipient_id: currentSettleRecipientUID, 
-            amount: amount, 
-            operation_number: opNum, 
-            timestamp: timestamp 
-        };
-
-        // إضافة التسوية كمصروف شخصي مع اسم الشخص الصحيح
-        updates[`expenses/${eKey}`] = {
-            payer_id: currentUserID,
-            participants_ids: [currentUserID],
-            share: amount,
-            description: `تسوية دين إلى: ${currentSettleRecipientName}`, // تم الإصلاح هنا
-            timestamp: timestamp,
-            type: 'settlement_expense'
-        };
-
-        updates[`notifications/${nKey}`] = { 
-            uid: currentSettleRecipientUID, 
-            message: `✅ تسوية مستلمة: ${amount.toLocaleString('en-US')} SDG من ${myName}`, 
-            timestamp: timestamp, 
-            is_read: false 
-        };
-
-        await update(ref(db), updates);
-        alert("تمت التسوية بنجاح!");
-        hideSettleModal();
-        e.target.reset();
-    } catch(err) { alert("فشلت العملية"); }
+        const myName = document.getElementById('sidebarUserName').textContent;
+        const notifKey = push(ref(db, 'notifications')).key;
+        await update(ref(db, `notifications/${notifKey}`), {
+            uid: uid,
+            message: `🔔 نكز: يذكرك ${myName} بسداد مبلغ ${amount.toLocaleString('en-US')} SDG.`,
+            timestamp: Date.now(), 
+            is_read: false
+        });
+        alert(`تم نكز ${name} بنجاح!`);
+    } catch(e) { alert("فشل النكز"); }
 };
 
-// --- الإشعارات ---
+// --- عرض الإشعارات ---
 window.showNotifications = async () => {
     document.getElementById('notificationModal').classList.add('show');
     const list = document.getElementById('notificationsList');
-    if(!list) return;
 
     if (userNotifications.length === 0) {
         list.innerHTML = '<p class="text-center py-10 opacity-50 text-xs">لا توجد إشعارات</p>';
@@ -230,32 +153,113 @@ window.showNotifications = async () => {
 
     const unread = userNotifications.filter(n => !n.is_read);
     if (unread.length > 0) {
-        const notifUpdates = {};
-        unread.forEach(n => notifUpdates[`notifications/${n.id}/is_read`] = true);
-        await update(ref(db), notifUpdates);
+        const updates = {};
+        unread.forEach(n => updates[`notifications/${n.id}/is_read`] = true);
+        await update(ref(db), updates);
     }
 };
 
-// --- وظائف عامة ---
-window.toggleSidebar = () => {
-    const sidebar = document.getElementById('sidebar');
-    if (sidebar) {
-        sidebar.classList.toggle('open');
+// --- منطق التسوية المطور ---
+
+// 1. فتح المودال وتجهيز البيانات
+window.showSettleModal = (name, amt, uid) => {
+    currentSettleRecipientUID = uid; 
+    currentSettleMaxAmount = amt;
+
+    document.getElementById('settleRelation').textContent = `تسوية لـ ${name}`;
+    document.getElementById('maxSettleAmountDisplay').textContent = amt.toLocaleString('en-US');
+
+    // نضع القيمة رقمية صافية في البداية
+    document.getElementById('settleAmount').value = amt;
+    updateRemainingBalance(amt);
+
+    document.getElementById('settleModal').classList.add('show');
+};
+
+// 2. دالة حساب الباقي اللحظية
+function updateRemainingBalance(val) {
+    const cleanVal = Number(String(val).replace(/,/g, '')) || 0;
+    const remaining = currentSettleMaxAmount - cleanVal;
+
+    const remDiv = document.getElementById('remainingBalance');
+    const remValueSpan = document.getElementById('remainingValue');
+
+    remDiv.classList.remove('hidden');
+    remValueSpan.textContent = remaining.toLocaleString('en-US');
+
+    // تغيير اللون إذا تجاوز المبلغ المطلوب
+    remValueSpan.style.color = remaining < 0 ? "#ef4444" : "#6b7280";
+}
+
+// 3. مراقب الإدخال لمنع تداخل اللغات وتحديث الحساب
+document.getElementById('settleAmount').addEventListener('input', function(e) {
+    // السماح بالأرقام فقط
+    let rawValue = e.target.value.replace(/[^0-9]/g, ''); 
+
+    if (rawValue !== "") {
+        updateRemainingBalance(rawValue);
+        // التنسيق أثناء الكتابة (اختياري، استخدمنا en-US لضمان عدم ظهور أرقام هندية)
+        e.target.value = Number(rawValue).toLocaleString('en-US');
     } else {
-        console.error("Sidebar element not found!");
+        updateRemainingBalance(0);
+    }
+});
+
+// 4. إرسال التسوية والإشعار للطرف الآخر
+document.getElementById('settleForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const amount = Number(document.getElementById('settleAmount').value.replace(/,/g, ''));
+    const opNum = document.getElementById('operationNumber').value;
+    const myName = document.getElementById('sidebarUserName').textContent;
+
+    if (isNaN(amount) || amount <= 0) return alert("المبلغ غير صحيح");
+    if (amount > currentSettleMaxAmount + 5) return alert("المبلغ يتجاوز الدين المطلوب");
+
+    try {
+        const updates = {};
+        const sKey = push(ref(db, 'settlements')).key;
+        const nKey = push(ref(db, 'notifications')).key;
+
+        // إضافة التسوية
+        updates[`settlements/${sKey}`] = { 
+            payer_id: currentUserID, 
+            recipient_id: currentSettleRecipientUID, 
+            amount: amount, 
+            operation_number: opNum, 
+            timestamp: Date.now() 
+        };
+
+        // إرسال إشعار للطرف الآخر
+        updates[`notifications/${nKey}`] = { 
+            uid: currentSettleRecipientUID, 
+            message: `✅ تسوية مستلمة: ${amount.toLocaleString('en-US')} SDG من ${myName}`, 
+            timestamp: Date.now(), 
+            is_read: false 
+        };
+
+        await update(ref(db), updates);
+        alert("تمت التسوية بنجاح!");
+        hideSettleModal();
+        e.target.reset();
+    } catch(e) { 
+        alert("فشلت العملية، يرجى المحاولة لاحقاً"); 
     }
 };
 
+// --- وظائف مساعدة للإغلاق والفتح ---
+window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('open');
 window.hideSettleModal = () => document.getElementById('settleModal').classList.remove('show');
 window.hideNotificationModal = () => document.getElementById('notificationModal').classList.remove('show');
+window.showClaimModal = () => document.getElementById('claimModal').classList.add('show');
+window.hideClaimModal = () => document.getElementById('claimModal').classList.remove('show');
 
 function updateNotificationBadge() {
     const badge = document.getElementById('notificationBadge');
-    if(!badge) return;
     const count = userNotifications.filter(n => !n.is_read).length;
     badge.textContent = count;
     badge.classList.toggle('hidden', count === 0);
 }
 
-const logoutBtn = document.getElementById('logoutBtn');
-if(logoutBtn) logoutBtn.onclick = () => signOut(auth);
+document.getElementById('logoutBtn').onclick = () => signOut(auth);
+
+ 
