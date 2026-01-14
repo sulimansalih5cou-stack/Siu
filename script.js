@@ -23,7 +23,7 @@ try {
     window.auth = auth;
 } catch (e) {
     console.error("Firebase Initialization Error:", e);
-    alert("خطأ حاسم في تهيئة الاتصال بقاعدة البيانات.");
+    showStatus("خطأ حاسم في تهيئة الاتصال بقاعدة البيانات.", "error");
 }
 
 // متغيرات عامة
@@ -53,7 +53,7 @@ let currentSettleMaxAmount = 0;
 let currentSettleRecipientUID = '';
 
 // ============================================================
-// 🛠️ دوال مساعدة عامة
+// 🛠️ دوال مساعدة عامة وتنسيق المبالغ
 // ============================================================
 
 function getUserNameById(uid) {
@@ -65,16 +65,36 @@ function roundToTwo(num) {
     return Math.round(num * 100) / 100;
 }
 
-// ✅ تحسين تنسيق المبلغ مع الفواصل أثناء الكتابة
+// ✨ دالة تنسيق المبلغ بالفواصل (5,000)
 window.formatAmountInput = function(input) {
-    let value = input.value.replace(/,/g, '').replace(/[^0-9.]/g, '');
+    let value = input.value.replace(/,/g, '');
     if (value === "") return;
+    
+    // منع إدخال أي شيء غير الأرقام والنقطة العشرية
+    value = value.replace(/[^0-9.]/g, '');
+    
     const parts = value.split('.');
-    let integerPart = parts[0];
-    const decimalPart = parts.length > 1 ? '.' + parts[1] : '';
-    integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    input.value = integerPart + decimalPart;
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    
+    input.value = parts.join('.');
 };
+
+// ✨ دالة لإظهار رسائل حالة جميلة (Toast)
+function showStatus(message, type = 'success') {
+    const statusDiv = document.createElement('div');
+    statusDiv.className = `fixed top-5 left-1/2 transform -translate-x-1/2 z-[9999] px-6 py-3 rounded-xl shadow-2xl text-white font-bold transition-all duration-500 animate-bounce ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+    statusDiv.innerHTML = `
+        <div class="flex items-center space-x-2 space-x-reverse">
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    document.body.appendChild(statusDiv);
+    setTimeout(() => {
+        statusDiv.style.opacity = '0';
+        setTimeout(() => statusDiv.remove(), 500);
+    }, 3000);
+}
 
 function formatBankDate(timestamp) {
     if (!timestamp) return { date: '--', time: '--' };
@@ -139,7 +159,7 @@ function populateParticipants() {
         div.className = 'checkbox-item';
         div.innerHTML = `
             <label class="flex items-center w-full cursor-pointer">
-                <input type="checkbox" data-uid="${user.uid}" class="form-checkbox h-5 w-5 text-blue-600 participant-cb" onchange="window.handleCheckboxChange(this)">
+                <input type="checkbox" data-uid="${user.uid}" class="form-checkbox h-5 w-5 text-blue-600 user-checkbox" onchange="window.handleUserCheckboxChange()">
                 <span class="mr-2 font-semibold text-gray-700 select-none">${user.displayName}</span>
             </label>
         `;
@@ -147,42 +167,22 @@ function populateParticipants() {
     });
 }
 
-// ✅ منطق زر "تسجيل مصروف شخصي" (بدلاً من تحديد الجميع)
-window.togglePersonalExpense = function() {
-    const isPersonalBtn = document.getElementById('personalExpenseBtn');
-    const isMessenger = document.getElementById('isMessenger').checked;
+// ✨ تسجيل مصروف شخصي (أنا فقط)
+window.selectPersonalExpense = function() {
+    // إلغاء تحديد كل المستخدمين الآخرين
+    const checkboxes = document.querySelectorAll('.user-checkbox');
+    checkboxes.forEach(cb => cb.checked = false);
+    
+    // إلغاء تفعيل وضع المرسال لأنه مصروف شخصي
+    const messengerCheckbox = document.getElementById('isMessenger');
+    if(messengerCheckbox) messengerCheckbox.checked = false;
 
-    if (isMessenger) {
-        alert("⚠️ لا يمكن اختيار 'مصروف شخصي' عند التفعيل كمرسال.");
-        return;
-    }
-
-    const checkboxes = document.querySelectorAll('.participant-cb');
-    const isAlreadyPersonal = isPersonalBtn.classList.contains('active-personal');
-
-    if (!isAlreadyPersonal) {
-        // تفعيل الوضع الشخصي: إلغاء تحديد الجميع
-        checkboxes.forEach(cb => {
-            cb.checked = false;
-            cb.disabled = true;
-        });
-        isPersonalBtn.classList.add('active-personal', 'bg-orange-500', 'text-white');
-        isPersonalBtn.textContent = 'إلغاء المصروف الشخصي';
-    } else {
-        // إلغاء الوضع الشخصي
-        checkboxes.forEach(cb => cb.disabled = false);
-        isPersonalBtn.classList.remove('active-personal', 'bg-orange-500', 'text-white');
-        isPersonalBtn.textContent = 'تسجيل مصروف شخصي (أنا فقط)';
-    }
+    showStatus("تم اختيار مصروف شخصي (أنت فقط)", "success");
 };
 
-// منع اختيار مشاركين إذا كان الوضع شخصي
-window.handleCheckboxChange = function(cb) {
-    const isPersonal = document.getElementById('personalExpenseBtn').classList.contains('active-personal');
-    if (isPersonal) {
-        cb.checked = false;
-        alert("⚠️ أنت في وضع 'المصروف الشخصي'. ألغِ الوضع أولاً لتحديد مشاركين.");
-    }
+// دالة لمعالجة التغيير في مربعات الاختيار
+window.handleUserCheckboxChange = function() {
+    // إذا اختار مستخدم آخر، لا نفعل شيئاً خاصاً، لكن الكود سيتحقق عند الحفظ
 };
 
 // ============================================================
@@ -199,25 +199,26 @@ window.previewExpense = function() {
     const amountInput = document.getElementById('expenseAmount').value.replace(/,/g, '');
     const amount = parseFloat(amountInput); 
     const isMessenger = document.getElementById('isMessenger').checked;
-    const isPersonal = document.getElementById('personalExpenseBtn').classList.contains('active-personal');
-    const checkboxes = document.querySelectorAll('.participant-cb:checked');
+    const checkboxes = document.querySelectorAll('.user-checkbox:checked');
 
     let selectedParticipantsUids = Array.from(checkboxes).map(cb => cb.dataset.uid);
     
-    // إذا لم يكن مرسالاً، أضف المستخدم الحالي دائماً
-    if (!isMessenger) {
+    // التحقق من المصروف الشخصي (إذا لم يتم اختيار أحد، فهو شخصي)
+    const isPersonal = selectedParticipantsUids.length === 0;
+
+    if (!isPersonal) {
         selectedParticipantsUids.push(currentUserID);
     }
     selectedParticipantsUids = [...new Set(selectedParticipantsUids)];
 
-    // التحقق من المدخلات
     if (!title || isNaN(amount) || amount <= 0) {
-        alert("يرجى إدخال البيانات كاملة.");
+        showStatus("يرجى إدخال اسم المصروف والمبلغ.", "error");
         return;
     }
 
-    if (!isPersonal && !isMessenger && selectedParticipantsUids.length < 2) {
-        alert("يرجى تحديد مشارك واحد على الأقل أو اختيار 'مصروف شخصي'.");
+    // قيود المنطق المطلوبة
+    if (isMessenger && isPersonal) {
+        showStatus("لا يمكن أن تكون مرسالاً في مصروف شخصي لنفسك!", "error");
         return;
     }
 
@@ -226,24 +227,26 @@ window.previewExpense = function() {
     let finalShare = share;
 
     if (isMessenger) {
-        if (selectedParticipantsUids.length === 0) {
-            alert("بصفتك مرسالاً، يجب تحديد مشاركين آخرين.");
+        finalParticipantsUids = selectedParticipantsUids.filter(uid => uid !== currentUserID);
+        finalShare = calculateShare(amount, finalParticipantsUids.length);
+
+        if (finalParticipantsUids.length === 0) {
+            showStatus("بصفتك مرسالاً، يجب تحديد مشاركين آخرين.", "error");
             return;
         }
     }
 
-    const participantsNames = isPersonal ? "أنا فقط (مصروف شخصي)" : finalParticipantsUids.map(uid => getUserNameById(uid)).join('، ');
+    const participantsNames = isPersonal ? "أنت فقط (مصروف شخصي)" : finalParticipantsUids.map(uid => getUserNameById(uid)).join('، ');
 
     let previewHTML = `
-        <div class="p-4 bg-blue-50 rounded-lg mb-4 text-right">
-            <p class="mb-2"><strong><i class="fas fa-tag ml-1"></i> اسم المصروف:</strong> ${title}</p>
-            <p class="mb-2"><strong><i class="fas fa-money-bill-wave ml-1"></i> المبلغ:</strong> ${amount.toLocaleString('en-US', {minimumFractionDigits: 2})} SDG</p>
-            <p class="mb-2"><strong><i class="fas fa-users ml-1"></i> المشاركون:</strong> ${participantsNames}</p>
-            <hr class="my-2">
-            <p class="font-bold text-lg text-blue-700">
-                ${isMessenger ? '🔥' : '💰'} حصتك الشخصية: ${isMessenger || isPersonal ? '0.00' : finalShare.toLocaleString('en-US', {minimumFractionDigits: 2})} SDG
-            </p>
-        </div>
+        <p><strong>اسم المصروف:</strong> ${title}</p>
+        <p><strong>المبلغ الكلي:</strong> ${amount.toLocaleString('en-US', {minimumFractionDigits: 2})} SDG</p>
+        <p><strong>الدافع:</strong> ${getUserNameById(currentUserID)}</p>
+        <p><strong>المشاركون:</strong> ${participantsNames}</p>
+        <p><strong>حصة كل شخص:</strong> ${isPersonal ? amount.toLocaleString() : finalShare.toLocaleString('en-US', {minimumFractionDigits: 2})} SDG</p>
+        <p class="mt-4 font-bold text-lg text-blue-600">
+            ${isMessenger ? '🔥' : '💰'} حصتك الشخصية: ${isMessenger ? '0.00' : (isPersonal ? amount.toLocaleString() : finalShare.toLocaleString())} SDG
+        </p>
     `;
 
     document.getElementById('previewText').innerHTML = previewHTML;
@@ -260,6 +263,7 @@ window.previewExpense = function() {
     document.getElementById('previewModal').classList.add('show');
     document.getElementById('previewDetails').style.display = 'block';
     document.getElementById('messengerConfirmation').style.display = 'none';
+    document.getElementById('warning').style.display = 'none';
 };
 
 window.handleSaveClick = function() {
@@ -284,23 +288,28 @@ window.saveExpense = async function() {
 
     if (confirmSaveButton) {
         confirmSaveButton.disabled = true;
-        confirmSaveButton.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i> جاري الحفظ...'; 
+        confirmSaveButton.textContent = 'جاري الحفظ...'; 
     }
-    
+    if (confirmMessengerButton) {
+        confirmMessengerButton.disabled = true;
+        confirmMessengerButton.textContent = 'جاري التسجيل...'; 
+    }
+
     const expenseRecord = {
         title: data.title,
         total_amount: data.amount,
-        share: data.share,
+        share: data.isPersonal ? data.amount : data.share,
         payer_id: currentUserID,
         participants_ids: data.participants,
         is_messenger: data.isMessenger,
-        is_personal: data.isPersonal || false,
         timestamp: Date.now()
     };
     
     let payerContribution;
-    if (data.isMessenger || data.isPersonal) {
+    if (data.isMessenger) {
         payerContribution = data.amount;
+    } else if (data.isPersonal) {
+        payerContribution = 0; // المصروف الشخصي لا يغير الرصيد الصافي بين الأعضاء
     } else {
         payerContribution = roundToTwo(data.amount - data.share);
     }
@@ -310,9 +319,12 @@ window.saveExpense = async function() {
     const newExpenseRef = push(ref(db, 'expenses'));
 
     try {
-        await runTransaction(ref(db, `users/${currentUserID}/balance`), (currentBalance) => {
-            return roundToTwo((currentBalance || 0) + payerContribution);
-        });
+        // تحديث رصيد الدافع فقط إذا لم يكن مصروفاً شخصياً محضاُ
+        if (!data.isPersonal || data.isMessenger) {
+            await runTransaction(ref(db, `users/${currentUserID}/balance`), (currentBalance) => {
+                return roundToTwo((currentBalance || 0) + payerContribution);
+            });
+        }
 
         for (const uid of participantsToDebit) {
             await runTransaction(ref(db, `users/${uid}/balance`), (currentBalance) => {
@@ -333,21 +345,22 @@ window.saveExpense = async function() {
         await update(ref(db), updates);
 
         window.hideModal();
+        showStatus("تم حفظ العملية بنجاح!", "success");
         document.getElementById('successModal').classList.add('show');
-        
-        // إعادة تعيين الواجهة
         document.getElementById('expenseForm').reset();
-        const personalBtn = document.getElementById('personalExpenseBtn');
-        if(personalBtn.classList.contains('active-personal')) window.togglePersonalExpense();
         window.tempExpenseData = null;
 
     } catch (e) {
         console.error("Error saving expense:", e);
-        alert("❌ فشلت العملية. يرجى التحقق من اتصالك.");
+        showStatus("حدث خطأ أثناء حفظ المصروف.", "error");
     } finally {
         if (confirmSaveButton) {
             confirmSaveButton.disabled = false;
             confirmSaveButton.textContent = 'حفظ'; 
+        }
+        if (confirmMessengerButton) {
+            confirmMessengerButton.disabled = false;
+            confirmMessengerButton.textContent = 'موافق (تسجيل كمرسال)'; 
         }
     }
 };
@@ -367,7 +380,7 @@ function displayPersonalExpenses() {
     let totalPersonalDebt = 0;
 
     const personalList = allExpenses.filter(expense => 
-        expense.participants_ids.includes(currentUserID)
+        expense.participants_ids.includes(currentUserID) || (expense.payer_id === currentUserID && expense.participants_ids.length === 1 && expense.participants_ids[0] === currentUserID)
     ).sort((a, b) => b.timestamp - a.timestamp);
 
     if (personalList.length === 0) {
@@ -381,8 +394,8 @@ function displayPersonalExpenses() {
     personalList.forEach(expense => {
         const isPayer = expense.payer_id === currentUserID;
         const isMessenger = expense.is_messenger || false;
-        const isPersonal = expense.is_personal || false;
         const share = Number(expense.share);
+        const isOnlyMe = expense.participants_ids.length === 1 && expense.participants_ids[0] === currentUserID;
 
         let displayAmount = 0;
         let mainTitle;
@@ -390,13 +403,13 @@ function displayPersonalExpenses() {
 
         if (isPayer && isMessenger && share < 0.1) return;
 
-        if (isPayer && !isMessenger && !isPersonal) {
+        if (isPayer && isOnlyMe) {
+            displayAmount = expense.total_amount;
+            mainTitle = `مصروف شخصي خاص بك: ${expense.title}`;
+            totalPersonalDebt += displayAmount;
+        } else if (isPayer && !isMessenger) {
             displayAmount = share;
             mainTitle = `حصتك الخاصة في مصروف: ${expense.title}`;
-            totalPersonalDebt += displayAmount;
-        } else if (isPayer && isPersonal) {
-            displayAmount = expense.total_amount;
-            mainTitle = `مصروف شخصي: ${expense.title}`;
             totalPersonalDebt += displayAmount;
         } else if (expense.participants_ids.includes(currentUserID) && !isPayer) {
             displayAmount = share;
@@ -406,6 +419,8 @@ function displayPersonalExpenses() {
         } else {
             return;
         }
+
+        if(displayAmount < 0.1) return;
 
         const cardHTML = `
             <div class="bankak-card">
@@ -442,14 +457,22 @@ function displayPersonalExpenses() {
 // ============================================================
 function calculateNetBalances() {
     if (!currentUserID || allUsers.length === 0) return;
+
     netBalances = {};
-    allUsers.forEach(user => { if (user.uid !== currentUserID) netBalances[user.uid] = 0; });
+    allUsers.forEach(user => {
+        if (user.uid !== currentUserID) netBalances[user.uid] = 0;
+    });
 
     allExpenses.forEach(expense => {
         const share = Number(expense.share) || 0;
+        // تجاهل المصروفات الشخصية البحتة في حساب الديون بين الأعضاء
+        if (expense.participants_ids.length === 1 && expense.participants_ids[0] === currentUserID) return;
+
         if (expense.payer_id === currentUserID) {
             expense.participants_ids.forEach(uid => {
-                if (uid !== currentUserID) netBalances[uid] = Math.round((netBalances[uid] + share) * 100) / 100;
+                if (uid !== currentUserID) {
+                    netBalances[uid] = Math.round((netBalances[uid] + share) * 100) / 100;
+                }
             });
         } else if (expense.participants_ids.includes(currentUserID)) {
             const payerId = expense.payer_id;
@@ -459,8 +482,11 @@ function calculateNetBalances() {
 
     allSettlements.forEach(settlement => {
         const amount = Number(settlement.amount) || 0;
-        if (settlement.payer_id === currentUserID) netBalances[settlement.recipient_id] += amount;
-        else if (settlement.recipient_id === currentUserID) netBalances[settlement.payer_id] -= amount;
+        if (settlement.payer_id === currentUserID) {
+            netBalances[settlement.recipient_id] += amount;
+        } else if (settlement.recipient_id === currentUserID) {
+            netBalances[settlement.payer_id] -= amount;
+        }
     });
 }
 
@@ -473,41 +499,62 @@ function updateSummaryDisplay() {
 
     if (!totalDebtEl || !totalCreditEl || !debtContainer || !claimList) return;
 
-    let totalDebt = 0, totalCredit = 0, hasDebtItems = false, hasClaimItems = false;
-    debtContainer.innerHTML = ''; claimList.innerHTML = ''; 
+    let totalDebt = 0;
+    let totalCredit = 0;
+    let hasDebtItems = false;
+    let hasClaimItems = false;
+
+    debtContainer.innerHTML = '';
+    claimList.innerHTML = ''; 
 
     Object.keys(netBalances).forEach(otherUID => {
         const netAmount = netBalances[otherUID];
         const otherUserName = getUserNameById(otherUID);
-        if (Math.abs(netAmount) < 0.1) return;
+
+        if (Math.abs(netAmount) < 0.1) return; 
 
         if (netAmount < 0) {
             const amount = Math.abs(netAmount);
-            totalDebt += amount; hasDebtItems = true;
-            debtContainer.innerHTML += `
+            totalDebt += amount;
+            hasDebtItems = true;
+            const debtHTML = `
                 <div class="balance-card">
                     <div class="balance-info">
                         <span class="balance-name">${otherUserName}</span>
-                        <span class="balance-status text-red-600">يطلبك: ${amount.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG</span>
+                        <span class="balance-status text-red-600">يطلبك مبلغ: ${amount.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG</span>
                     </div>
-                    <button class="action-button" onclick="showSettleModal('${otherUserName}', ${amount}, '${otherUID}')">تسوية</button>
-                </div>`;
+                    <button class="action-button" onclick="showSettleModal('${otherUserName}', ${amount}, '${otherUID}')">تسوية المبلغ</button>
+                </div>
+            `;
+            debtContainer.innerHTML += debtHTML;
         } else if (netAmount > 0) {
             const amount = netAmount;
-            totalCredit += amount; hasClaimItems = true;
-            claimList.innerHTML += `
+            totalCredit += amount;
+            hasClaimItems = true;
+            const claimHTML = `
                 <div class="claim-item">
                     <span class="font-semibold text-gray-800">${otherUserName}: </span>
                     <div class="flex items-center space-x-2 space-x-reverse">
                         <span class="text-green-600 font-bold">${amount.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG</span>
+                        <button class="nudge-button-individual px-2 py-1 bg-blue-100 text-blue-600 rounded text-xs" onclick="nudgeUser('${otherUserName}', '${otherUID}')">نكز</button>
                     </div>
-                </div>`;
+                </div>
+            `;
+            claimList.innerHTML += claimHTML;
         }
     });
 
     totalDebtEl.innerHTML = `${totalDebt.toLocaleString(undefined, {minimumFractionDigits: 2})} <span class="text-base font-normal">SDG</span>`;
     totalCreditEl.innerHTML = `${totalCredit.toLocaleString(undefined, {minimumFractionDigits: 2})} <span class="text-base font-normal">SDG</span>`;
-    if (noDebtsEl) { if (!hasDebtItems) noDebtsEl.classList.remove('hidden'); else noDebtsEl.classList.add('hidden'); }
+
+    if (noDebtsEl) {
+        if (!hasDebtItems) noDebtsEl.classList.remove('hidden');
+        else noDebtsEl.classList.add('hidden');
+    }
+
+    if (!hasClaimItems) {
+        claimList.innerHTML = '<p class="text-center text-gray-500 py-4">لا توجد مستحقات مالية حالياً.</p>';
+    }
 }
 
 
@@ -521,7 +568,9 @@ function combineAndSortHistory() {
         const isPayer = expense.payer_id === currentUserID;
         const isParticipant = expense.participants_ids.includes(currentUserID);
         if (isPayer && (expense.is_messenger || false) && expense.share < 0.1 && expense.total_amount < 0.1) return;
-        if (isPayer || isParticipant) combined.push({ type: 'expense', ...expense, timestamp: expense.timestamp });
+        if (isPayer || isParticipant) {
+            combined.push({ type: 'expense', ...expense, timestamp: expense.timestamp });
+        }
     });
     allSettlements.forEach(settlement => {
         if (settlement.payer_id === currentUserID || settlement.recipient_id === currentUserID) {
@@ -534,12 +583,14 @@ function combineAndSortHistory() {
 function filterHistory(filter) {
     const allHistory = combineAndSortHistory();
     const now = Date.now();
+
     filteredHistory = allHistory.filter(record => {
         if (filter === '30days') return record.timestamp >= now - (30 * 24 * 60 * 60 * 1000);
         if (filter === '3months') return record.timestamp >= now - (90 * 24 * 60 * 60 * 1000);
         if (filter === 'incoming') {
             const isPayer = record.payer_id === currentUserID;
             if (record.type === 'expense' && isPayer && (record.total_amount - (record.share || 0)) > 0.1) return true;
+            if (record.type === 'expense' && isPayer && (record.is_messenger || false)) return true; 
             if (record.type === 'settlement' && record.recipient_id === currentUserID) return true;
             return false;
         }
@@ -555,48 +606,118 @@ function filterHistory(filter) {
 function displayHistory(isAppending = false) {
     const container = document.getElementById('expensesContainer');
     if (!container || isLoadingHistory) return;
+
     isLoadingHistory = true;
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = currentPage * itemsPerPage;
     const recordsToShow = filteredHistory.slice(startIndex, endIndex);
+
     if (currentPage === 1 && !isAppending) container.innerHTML = '';
 
+    if (recordsToShow.length === 0 && currentPage === 1) {
+        container.innerHTML = `<p class="text-center text-gray-500 mt-12 py-10">لا توجد سجلات معاملات.</p>`;
+        isLoadingHistory = false;
+        return;
+    }
+    
+    const loadingIndicator = document.getElementById('historyLoadingIndicator');
+    if (loadingIndicator && isAppending) loadingIndicator.classList.remove('hidden');
+
     recordsToShow.forEach(record => {
+        let cardHTML = '';
         const { date, time } = formatBankDate(record.timestamp);
+
         if (record.type === 'expense') {
             const isPayer = record.payer_id === currentUserID;
-            const isPersonal = record.is_personal || false;
-            let iconClass = 'icon-danger', amountClass = 'amount-neg', amountText = '0.00', mainTitle = '', iconBadge = 'fa-arrow-down text-red-500';
+            const payerName = getUserNameById(record.payer_id);
+            const share = Number(record.share || 0);
+            const isOnlyMe = record.participants_ids.length === 1 && record.participants_ids[0] === currentUserID;
+            
+            let iconClass = 'icon-danger', amountClass = 'amount-neg', amountText = '0.00', mainTitle = '', subTitle = `الكلي: ${record.total_amount.toLocaleString()} SDG`, iconBadge = 'fa-arrow-down text-red-500';
 
-            if (isPayer && !isPersonal) {
-                const amountClaimed = (record.is_messenger || false) ? record.total_amount : roundToTwo(record.total_amount - (record.share || 0));
+            if (isPayer && isOnlyMe) {
+                amountText = `- ${record.total_amount.toLocaleString()}`;
+                mainTitle = `مصروف شخصي: ${record.title}`;
+            } else if (isPayer) {
+                const amountClaimed = (record.is_messenger || false) ? record.total_amount : roundToTwo(record.total_amount - share);
                 if (amountClaimed > 0.1) {
                     amountText = `+ ${amountClaimed.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
                     iconClass = 'icon-success'; amountClass = 'amount-pos'; iconBadge = 'fa-arrow-up text-green-500';
-                    mainTitle = (record.is_messenger || false) ? `دفعة (مرسال): ${record.title}` : `دفعة لك عن: ${record.title}`;
+                    mainTitle = (record.is_messenger || false) ? `دفعة لك (كمرسال) عن: ${record.title}` : `دفعة لك عن: ${record.title}`;
                 } else return;
-            } else if (isPayer && isPersonal) {
-                amountText = `- ${record.total_amount.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-                mainTitle = `مصروف شخصي: ${record.title}`;
             } else {
-                amountText = `- ${Number(record.share).toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-                mainTitle = `دين لـ ${getUserNameById(record.payer_id)}: ${record.title}`;
+                if (share > 0.1) {
+                    amountText = `- ${share.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+                    mainTitle = `دين عليك لـ ${payerName} في: ${record.title}`;
+                } else return;
             }
 
-            container.innerHTML += `
+            cardHTML = `
                 <div class="bankak-card">
                     <div class="card-main-content">
                         <div class="details-wrapper">
-                            <div class="bank-icon-container ${iconClass} ml-3"><i class="fas fa-file-invoice-dollar"></i></div>
-                            <div class="details-text text-right"><p class="transaction-title">${mainTitle}</p></div>
+                            <div class="bank-icon-container ${iconClass} ml-3">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                                <span class="arrow-badge"><i class="fas ${iconBadge}"></i></span>
+                            </div>
+                            <div class="details-text text-right">
+                                <p class="transaction-title">${mainTitle}</p>
+                                <p class="transaction-sub">${subTitle}</p>
+                            </div>
                         </div>
-                        <div class="amount-display ${amountClass}">${amountText}</div>
+                        <div class="amount-display ${amountClass}">${amountText} <span class="text-sm font-normal">SDG</span></div>
+                    </div>
+                    <div class="card-footer-date"><span>${date}</span><span>${time}</span></div>
+                </div>`;
+        } else if (record.type === 'settlement') {
+            const isPayer = record.payer_id === currentUserID;
+            const otherUserName = isPayer ? getUserNameById(record.recipient_id) : getUserNameById(record.payer_id);
+            const amount = Number(record.amount);
+            
+            cardHTML = `
+                <div class="bankak-card">
+                    <div class="card-main-content">
+                        <div class="details-wrapper">
+                            <div class="bank-icon-container ${isPayer ? 'icon-danger' : 'icon-success'} ml-3">
+                                <i class="fas fa-handshake"></i>
+                            </div>
+                            <div class="details-text text-right">
+                                <p class="transaction-title">${isPayer ? 'تسوية دفعتها لـ' : 'تسوية استلمتها من'} ${otherUserName}</p>
+                                <p class="transaction-sub">رقم العملية: ${record.operation_number}</p>
+                            </div>
+                        </div>
+                        <div class="amount-display ${isPayer ? 'amount-neg' : 'amount-pos'}">
+                            ${isPayer ? '-' : '+'} ${amount.toLocaleString()} <span class="text-sm font-normal">SDG</span>
+                        </div>
                     </div>
                     <div class="card-footer-date"><span>${date}</span><span>${time}</span></div>
                 </div>`;
         }
+        container.innerHTML += cardHTML;
     });
+
+    if (loadingIndicator) loadingIndicator.classList.add('hidden');
     isLoadingHistory = false;
+}
+
+window.setFilter = function(filter, element) {
+    document.querySelectorAll('.filter-pill').forEach(el => el.classList.remove('active'));
+    element.classList.add('active');
+    activeFilter = filter;
+    currentPage = 1;
+    const container = document.getElementById('expensesContainer');
+    if (container) container.innerHTML = '<p class="text-center">جاري التحميل...</p>';
+    filterHistory(activeFilter);
+    displayHistory();
+};
+
+function checkScrollForMoreHistory() {
+    if (!document.getElementById('expensesContainer')) return;
+    if (isLoadingHistory || currentPage * itemsPerPage >= filteredHistory.length) return;
+    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 300) {
+        currentPage++;
+        displayHistory(true);
+    }
 }
 
 // ============================================================
@@ -608,8 +729,18 @@ function loadNotifications() {
     onValue(ref(db, 'notifications'), (snapshot) => {
         if (snapshot.exists()) {
             const val = snapshot.val();
-            userNotifications = Object.keys(val).map(key => ({ id: key, ...val[key] })).filter(n => n.uid === currentUserID).sort((a, b) => b.timestamp - a.timestamp); 
+            userNotifications = Object.keys(val)
+                .map(key => ({ id: key, ...val[key] }))
+                .filter(n => n.uid === currentUserID)
+                .sort((a, b) => b.timestamp - a.timestamp); 
+            currentNotificationPage = 1; 
+            const notificationModal = document.getElementById('notificationModal');
+            if (notificationModal && notificationModal.classList.contains('show')) displayNotifications();
+            else updateNotificationBadge();
+        } else {
+            userNotifications = [];
             updateNotificationBadge();
+            displayNotifications();
         }
     });
 }
@@ -622,41 +753,130 @@ function updateNotificationBadge() {
     badge.classList.toggle('hidden', unreadCount === 0);
 }
 
+function displayNotifications(isAppending = false) {
+    const listContainer = document.getElementById('notificationsList');
+    if (!listContainer || isLoadingNotifications) return;
+
+    isLoadingNotifications = true;
+    const startIndex = (currentNotificationPage - 1) * notificationsPerPage;
+    const endIndex = currentNotificationPage * notificationsPerPage;
+    const notificationsToShow = userNotifications.slice(startIndex, endIndex);
+
+    if (currentNotificationPage === 1 && !isAppending) listContainer.innerHTML = '';
+    updateNotificationBadge();
+
+    if (notificationsToShow.length === 0 && currentNotificationPage === 1) {
+        listContainer.innerHTML = '<p class="text-center text-gray-500 py-4">لا توجد إشعارات.</p>';
+        isLoadingNotifications = false;
+        return;
+    }
+
+    notificationsToShow.forEach(notification => {
+        const statusClass = notification.is_read ? 'text-gray-500 bg-gray-50' : 'font-semibold bg-blue-50 hover:bg-blue-100';
+        const { date, time } = formatBankDate(notification.timestamp);
+        listContainer.innerHTML += `
+            <div class="p-3 rounded-lg border cursor-pointer transition ${statusClass}" onclick="markNotificationAsRead('${notification.id}')">
+                <p>${notification.message}</p>
+                <p class="text-xs mt-1 text-gray-400">${time} - ${date}</p>
+            </div>`;
+    });
+    isLoadingNotifications = false;
+}
+
+window.markNotificationAsRead = async function(notificationId) {
+    if(!db) return;
+    try { await update(ref(db, `notifications/${notificationId}`), { is_read: true }); } 
+    catch(e) { console.error(e); }
+};
+
+function checkScrollForMoreNotifications() {
+    const modalContent = document.querySelector('#notificationModal .modal-content-inner');
+    if (!modalContent || isLoadingNotifications || currentNotificationPage * notificationsPerPage >= userNotifications.length) return;
+    if (modalContent.scrollTop + modalContent.clientHeight >= modalContent.scrollHeight - 50) {
+        currentNotificationPage++;
+        displayNotifications(true);
+    }
+}
+
 // ============================================================
 // 💾 دوال المودال
 // ============================================================
 
-window.hideModal = () => document.getElementById('previewModal').classList.remove('show');
+window.hideModal = () => {
+    document.getElementById('previewModal').classList.remove('show');
+    document.getElementById('previewDetails').style.display = 'block';
+    document.getElementById('messengerConfirmation').style.display = 'none';
+};
 window.hideSuccessModal = () => document.getElementById('successModal').classList.remove('show');
+window.showNotifications = () => {
+    const modal = document.getElementById('notificationModal');
+    if (!modal) return;
+    modal.classList.add('show');
+    currentNotificationPage = 1;
+    displayNotifications();
+    const modalInner = document.querySelector('#notificationModal .modal-content-inner');
+    if (modalInner) {
+        modalInner.removeEventListener('scroll', checkScrollForMoreNotifications);
+        modalInner.addEventListener('scroll', checkScrollForMoreNotifications);
+    }
+};
+window.hideNotificationModal = () => {
+    const modal = document.getElementById('notificationModal');
+    if (modal) modal.classList.remove('show');
+};
 
 // ============================================================
-// 🔄 تحميل البيانات (Load Data)
+// 🔄 تحميل البيانات (Load Data) 
 // ============================================================
 
 function refreshCurrentPageData() {
-    if (document.getElementById('debtContainer')) { calculateNetBalances(); updateSummaryDisplay(); }
-    if (document.getElementById('expensesContainer')) { currentPage = 1; filterHistory(activeFilter); displayHistory(); }
-    if (document.getElementById('personalExpensesContainer')) { displayPersonalExpenses(); }
+    if (document.getElementById('debtContainer')) {
+        calculateNetBalances(); 
+        updateSummaryDisplay(); 
+    }
+    if (document.getElementById('expensesContainer')) {
+        currentPage = 1; 
+        filterHistory(activeFilter);
+        displayHistory();
+    }
+    if (document.getElementById('personalExpensesContainer')) {
+        displayPersonalExpenses();
+    }
 }
 
 function loadData() {
     if (!currentUserID || !db) return;
+
     onValue(ref(db, 'users'), (snapshot) => {
         if (snapshot.exists()) {
             const val = snapshot.val();
             allUsers = Object.keys(val).map(k => ({uid: k, ...val[k]}));
             currentUserDB = allUsers.find(u => u.uid === currentUserID);
-            updateHomeDisplay(); populateParticipants();
+            updateHomeDisplay(); 
+            populateParticipants();
         }
     });
+
     onValue(ref(db, 'expenses'), (snapshot) => {
-        allExpenses = snapshot.exists() ? Object.keys(snapshot.val()).map(key => ({ firebaseId: key, ...snapshot.val()[key] })) : [];
-        refreshCurrentPageData();
+        if (snapshot.exists()) {
+            const val = snapshot.val();
+            allExpenses = Object.keys(val).map(key => ({ firebaseId: key, ...val[key] })).sort((a, b) => b.timestamp - a.timestamp);
+        } else {
+            allExpenses = [];
+        }
+        refreshCurrentPageData(); 
     });
+
     onValue(ref(db, 'settlements'), (snapshot) => {
-        allSettlements = snapshot.exists() ? Object.keys(snapshot.val()).map(key => ({ firebaseId: key, ...snapshot.val()[key] })) : [];
-        refreshCurrentPageData();
+        if (snapshot.exists()) {
+            const val = snapshot.val();
+            allSettlements = Object.keys(val).map(key => ({ firebaseId: key, ...val[key] }));
+        } else {
+            allSettlements = [];
+        }
+        refreshCurrentPageData(); 
     });
+
     loadNotifications();
 }
 
@@ -669,59 +889,140 @@ onAuthStateChanged(auth, (user) => {
         currentUserID = user.uid;
         loadData();
         updateHomeDisplay(); 
+        window.addEventListener('scroll', checkScrollForMoreHistory);
         const logoutSidebarBtn = document.getElementById('logoutSidebarButton');
         if (logoutSidebarBtn) logoutSidebarBtn.onclick = () => auth.signOut().then(() => window.location.href = 'auth.html');
     } else {
+        window.removeEventListener('scroll', checkScrollForMoreHistory);
         if (!window.location.href.includes('auth.html')) window.location.href = 'auth.html';
     }
 });
 
 // ============================================================
-// 💰 منطق التسوية (Settle Logic)
+// 💰 منطق التسوية (Settle Logic) 
 // ============================================================
 
 window.sendSettleTransaction = async function(recipientUID, amountInput, opNumber) {
-    const amount = parseFloat(amountInput);
-    if (!currentUserID || !recipientUID || isNaN(amount) || amount <= 0) return false;
+    const amount = parseFloat(amountInput); 
+
+    if (!currentUserID || !recipientUID || isNaN(amount) || amount <= 0 || !db) {
+        showStatus("خطأ في بيانات التسوية.", "error");
+        return false;
+    }
+
+    const payerName = getUserNameById(currentUserID);
     const updates = {};
     const newSettleRef = push(ref(db, 'settlements'));
+
     try {
-        await runTransaction(ref(db, `users/${currentUserID}/balance`), (b) => roundToTwo((b || 0) + amount));
-        await runTransaction(ref(db, `users/${recipientUID}/balance`), (b) => roundToTwo((b || 0) - amount));
-        updates[`settlements/${newSettleRef.key}`] = { payer_id: currentUserID, recipient_id: recipientUID, amount, operation_number: opNumber, timestamp: Date.now() };
+        await runTransaction(ref(db, `users/${currentUserID}/balance`), (currentBalance) => {
+            return roundToTwo((currentBalance || 0) + amount);
+        });
+
+        await runTransaction(ref(db, `users/${recipientUID}/balance`), (currentBalance) => {
+            return roundToTwo((currentBalance || 0) - amount);
+        });
+
+        updates[`settlements/${newSettleRef.key}`] = {
+            payer_id: currentUserID,
+            recipient_id: recipientUID,
+            amount: amount,
+            operation_number: opNumber,
+            timestamp: Date.now()
+        };
+
+        const newNotifKey = push(ref(db, 'notifications')).key;
+        updates[`notifications/${newNotifKey}`] = {
+            uid: recipientUID,
+            message: `${payerName} قام بتسوية دين بمبلغ ${amount.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG لك.`,
+            timestamp: Date.now(),
+            is_read: false,
+            type: 'settlement_received',
+            settlement_id: newSettleRef.key
+        };
+
         await update(ref(db), updates);
         return true;
-    } catch (e) { return false; }
+    } catch (e) {
+        console.error("Error performing settlement:", e);
+        showStatus('فشلت عملية التسوية في قاعدة البيانات.', "error");
+        return false;
+    }
 };
 
 window.showSettleModal = function(user, amount, uid) {
-    currentSettleUser = user; currentSettleMaxAmount = amount; currentSettleRecipientUID = uid;
-    document.getElementById('settleRelation').textContent = `تسوية الدين لـ ${user}`;
-    document.getElementById('maxSettleAmountDisplay').textContent = amount.toLocaleString();
-    const input = document.getElementById('settleAmount');
-    input.value = amount;
-    document.getElementById('settleModal').classList.add('show');
+    currentSettleUser = user;
+    currentSettleMaxAmount = amount;
+    currentSettleRecipientUID = uid;
+
+    const settleRelationEl = document.getElementById('settleRelation');
+    const maxSettleAmountDisplayEl = document.getElementById('maxSettleAmountDisplay');
+    const settleAmountInputEl = document.getElementById('settleAmount');
+    const settleModalEl = document.getElementById('settleModal');
+
+    if (settleRelationEl) settleRelationEl.textContent = `تسوية الدين المستحق لـ ${user}`;
+    if (maxSettleAmountDisplayEl) maxSettleAmountDisplayEl.textContent = amount.toLocaleString(undefined, {minimumFractionDigits: 2});
+    if (settleAmountInputEl) {
+        settleAmountInputEl.setAttribute('max', amount);
+        settleAmountInputEl.value = amount;
+    }
+    if (settleModalEl) settleModalEl.classList.add('show');
 }
 
 window.hideSettleModal = function() {
-    document.getElementById('settleModal').classList.remove('show');
-    document.getElementById('settleForm').reset();
+    const settleModalEl = document.getElementById('settleModal');
+    if(settleModalEl) settleModalEl.classList.remove('show');
+    const settleForm = document.getElementById('settleForm');
+    if(settleForm) settleForm.reset();
+    currentSettleUser = ''; currentSettleMaxAmount = 0; currentSettleRecipientUID = '';
+}
+
+// ============================================================
+// 🔥 منطق واجهة المستخدم العامة
+// ============================================================
+
+window.hideSplashScreen = function() {
+    const splash = document.getElementById('splashScreen');
+    if (splash) {
+        splash.classList.add('hidden'); 
+        setTimeout(() => splash.style.display = 'none', 500);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // إعداد مستمعات الأحداث
+    const menuButton = document.getElementById('menuButton');
+    if (menuButton) menuButton.addEventListener('click', window.toggleSidebar);
+    window.updateHomeDisplay(); 
+    if (document.getElementById('splashScreen')) setTimeout(window.hideSplashScreen, 3000); 
+    
+    // ربط الحقول بدالة التنسيق
     const amountInput = document.getElementById('expenseAmount');
     if(amountInput) amountInput.addEventListener('input', (e) => window.formatAmountInput(e.target));
+
+    const settleAmountInput = document.getElementById('settleAmount');
+    if(settleAmountInput) settleAmountInput.addEventListener('input', (e) => window.formatAmountInput(e.target));
 
     const settleFormEl = document.getElementById('settleForm');
     if(settleFormEl) {
         settleFormEl.addEventListener('submit', async function(e) {
             e.preventDefault();
-            const op = document.getElementById('operationNumber').value;
-            const amt = parseFloat(document.getElementById('settleAmount').value.replace(/,/g, ''));
-            if (op.length < 4 || isNaN(amt)) { alert("بيانات غير مكتملة"); return; }
-            const res = await window.sendSettleTransaction(currentSettleRecipientUID, amt, op);
-            if (res) { alert("✅ تم إرسال التسوية بنجاح!"); window.hideSettleModal(); }
+            const operationNumber = document.getElementById('operationNumber').value;
+            const amount = parseFloat(document.getElementById('settleAmount').value.replace(/,/g, ''));
+            
+            if (operationNumber.length < 4) {
+                showStatus("يرجى إدخال رقم عملية صحيح.", "error");
+                return;
+            }
+            if (amount <= 0 || amount > currentSettleMaxAmount + 0.1 || !currentSettleRecipientUID) {
+                showStatus("بيانات المبلغ غير صحيحة.", "error");
+                return;
+            }
+
+            const success = await window.sendSettleTransaction(currentSettleRecipientUID, amount, operationNumber);
+            if (success) {
+                showStatus(`تم تأكيد دفع ${amount.toLocaleString()} SDG.`, "success");
+                window.hideSettleModal();
+            }
         });
     }
 });
