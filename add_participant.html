@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إضافة مشارك لمصروف سابق</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+        body { font-family: 'Cairo', sans-serif; background-color: #f8fafc; }
+        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-50 pb-10">
+
+    <div class="bg-blue-600 text-white p-6 rounded-b-3xl shadow-lg mb-8">
+        <div class="max-w-2xl mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-bold">إضافة مشارك جديد</h1>
+                <p class="text-blue-100 text-xs mt-1">تعديل حصص مصروف مسجل مسبقاً</p>
+            </div>
+            <a href="index.html" class="bg-blue-500 p-2 rounded-full hover:bg-blue-400 transition">
+                <i class="fas fa-home"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="max-w-xl mx-auto px-4">
+        <div class="glass-card p-6 rounded-2xl shadow-xl space-y-6">
+            
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">
+                    <i class="fas fa-file-invoice-dollar ml-1 text-blue-500"></i> 1. اختر المصروف:
+                </label>
+                <select id="expenseSelect" class="w-full p-4 border-2 border-slate-100 rounded-xl focus:border-blue-500 outline-none bg-white transition-all">
+                    <option value="">جاري تحميل المصروفات...</option>
+                </select>
+            </div>
+
+            <div id="expensePreview" class="hidden bg-blue-50 p-4 rounded-xl border border-blue-100 animate-pulse">
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-600">المبلغ الكلي:</span>
+                    <span id="totalAmountText" class="font-bold text-blue-700">0 SDG</span>
+                </div>
+                <div class="flex justify-between text-sm mt-2">
+                    <span class="text-gray-600">الحصة الحالية للفرد:</span>
+                    <span id="currentShareText" class="font-bold text-blue-700">0 SDG</span>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">
+                    <i class="fas fa-user-plus ml-1 text-green-500"></i> 2. العضو المراد إضافته:
+                </label>
+                <select id="userSelect" class="w-full p-4 border-2 border-slate-100 rounded-xl focus:border-blue-500 outline-none bg-white transition-all">
+                    <option value="">اختر المصروف أولاً</option>
+                </select>
+            </div>
+
+            <div id="newMathInfo" class="hidden bg-green-50 p-4 rounded-xl border border-green-100 space-y-2">
+                <p class="text-xs text-green-800 font-bold underline">ملخص التعديل المالي:</p>
+                <p id="mathDescription" class="text-xs text-green-700 leading-relaxed"></p>
+            </div>
+
+            <button id="executeBtn" onclick="handleProcess()" disabled
+                    class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all shadow-lg flex justify-center items-center">
+                <span>تحديث البيانات وتعديل الأرصدة</span>
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        // استيراد Firebase بنفس طريقتك
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, onValue, push, update, runTransaction } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+        // إعدادات Firebase الخاصة بك (نسختها من كودك)
+        const firebaseConfig = {
+            apiKey: "AIzaSyA2GNsXj4DzWyCYLKuVT3i1XBKfjX3ccuM",
+            authDomain: "siu-students.firebaseapp.com",
+            databaseURL: "https://siu-students-default-rtdb.firebaseio.com",
+            projectId: "siu-students",
+            storageBucket: "siu-students.firebasestorage.app",
+            messagingSenderId: "76007314543",
+            appId: "1:76007314543:web:4850b668cec4b93bdc699a",
+            measurementId: "G-SB6884R2FX"
+        };
+
+        // تهيئة Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+
+        // متغيرات البيانات
+        let allUsers = [];
+        let allExpenses = [];
+        let currentUserID = null;
+
+        // دالة التقريب (نفس كودك)
+        const roundToTwo = (num) => Math.round(num * 100) / 100;
+
+        // دالة إظهار الحالة (Toast)
+        function showStatus(message, type = 'success') {
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `fixed bottom-10 left-1/2 transform -translate-x-1/2 z-[9999] px-6 py-3 rounded-xl shadow-2xl text-white font-bold transition-all duration-500 ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
+            statusDiv.textContent = message;
+            document.body.appendChild(statusDiv);
+            setTimeout(() => { statusDiv.style.opacity = '0'; setTimeout(() => statusDiv.remove(), 500); }, 3000);
+        }
+
+        // مراقبة حالة المستخدم وجلب البيانات
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserID = user.uid;
+                startDataListeners();
+            } else {
+                window.location.href = 'auth.html'; // التوجيه لتسجيل الدخول
+            }
+        });
+
+        function startDataListeners() {
+            // 1. جلب المستخدمين
+            onValue(ref(db, 'users'), (snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    allUsers = Object.keys(data).map(k => ({ uid: k, ...data[k] }));
+                }
+            });
+
+            // 2. جلب المصاريف
+            onValue(ref(db, 'expenses'), (snapshot) => {
+                const select = document.getElementById('expenseSelect');
+                select.innerHTML = '<option value="">-- اختر المصروف من القائمة --</option>';
+                
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    allExpenses = Object.keys(data).map(k => ({ id: k, ...data[k] }))
+                                   .sort((a,b) => b.timestamp - a.timestamp); // الأحدث أولاً
+
+                    allExpenses.forEach(exp => {
+                        const opt = document.createElement('option');
+                        opt.value = exp.id;
+                        opt.textContent = `${exp.title} (${exp.total_amount} SDG)`;
+                        select.appendChild(opt);
+                    });
+                }
+            });
+        }
+
+        // معالجة تغيير المصروف Selected
+        document.getElementById('expenseSelect').addEventListener('change', function() {
+            const expId = this.value;
+            const userSelect = document.getElementById('userSelect');
+            userSelect.innerHTML = '<option value="">-- اختر العضو الجديد --</option>';
+            document.getElementById('expensePreview').classList.add('hidden');
+            document.getElementById('newMathInfo').classList.add('hidden');
+            document.getElementById('executeBtn').disabled = true;
+
+            if (!expId) return;
+
+            const expense = allExpenses.find(e => e.id === expId);
+            
+            // تحديث الواجهة بالبيانات الحالية
+            document.getElementById('totalAmountText').textContent = expense.total_amount.toLocaleString() + ' SDG';
+            document.getElementById('currentShareText').textContent = expense.share.toLocaleString() + ' SDG';
+            document.getElementById('expensePreview').classList.remove('hidden');
+
+            // ملء قائمة المستخدمين (فقط من ليسوا مشاركين حالياً)
+            allUsers.forEach(u => {
+                if (!expense.participants_ids.includes(u.uid)) {
+                    const opt = document.createElement('option');
+                    opt.value = u.uid;
+                    opt.textContent = u.displayName;
+                    userSelect.appendChild(opt);
+                }
+            });
+        });
+
+        // معالجة اختيار العضو الجديد
+        document.getElementById('userSelect').addEventListener('change', function() {
+            const expId = document.getElementById('expenseSelect').value;
+            const newUserUid = this.value;
+            
+            if (!expId || !newUserUid) {
+                document.getElementById('newMathInfo').classList.add('hidden');
+                document.getElementById('executeBtn').disabled = true;
+                return;
+            }
+
+            const expense = allExpenses.find(e => e.id === expId);
+            const currentParticipantsCount = expense.participants_ids.length;
+            const newCount = currentParticipantsCount + 1;
+            const newShare = roundToTwo(expense.total_amount / newCount);
+            const refundAmount = roundToTwo(expense.share - newShare);
+
+            document.getElementById('mathDescription').innerHTML = `
+                - سيتم خصم <b>${newShare.toLocaleString()} SDG</b> من رصيد العضو الجديد.<br>
+                - سيتم إضافة <b>${refundAmount.toLocaleString()} SDG</b> لرصيد الـ ${currentParticipantsCount} مشاركين القدامى (بمن فيهم الدافع).
+            `;
+            document.getElementById('newMathInfo').classList.remove('hidden');
+            document.getElementById('executeBtn').disabled = false;
+        });
+
+        // تنفيذ العملية البرمجية
+        window.handleProcess = async function() {
+            const expId = document.getElementById('expenseSelect').value;
+            const newUserUid = document.getElementById('userSelect').value;
+            const btn = document.getElementById('executeBtn');
+
+            if (!confirm("هل أنت متأكد؟ سيتم تعديل أرصدة جميع المشاركين في هذا المصروف فوراً.")) return;
+
+            btn.disabled = true;
+            btn.textContent = "جاري تحديث قاعدة البيانات...";
+
+            try {
+                const expenseRef = ref(db, `expenses/${expId}`);
+                
+                await runTransaction(expenseRef, (expense) => {
+                    if (expense) {
+                        const total = expense.total_amount;
+                        const oldShare = expense.share;
+                        const oldParticipants = expense.participants_ids;
+                        const payerId = expense.payer_id;
+
+                        const newCount = oldParticipants.length + 1;
+                        const newShare = roundToTwo(total / newCount);
+                        const refund = roundToTwo(oldShare - newShare);
+
+                        // 1. تحديث أرصدة القدامى (بما فيهم الدافع لزيادة ما يطلبه)
+                        oldParticipants.forEach(uid => {
+                            runTransaction(ref(db, `users/${uid}/balance`), (bal) => roundToTwo((bal || 0) + refund));
+                        });
+
+                        // 2. تحديث رصيد المشارك الجديد (خصم الدين)
+                        runTransaction(ref(db, `users/${newUserUid}/balance`), (bal) => roundToTwo((bal || 0) - newShare));
+
+                        // 3. تعديل بيانات المصروف
+                        expense.share = newShare;
+                        expense.participants_ids.push(newUserUid);
+                    }
+                    return expense;
+                });
+
+                // 4. إرسال إشعار للمشارك الجديد
+                const notifKey = push(ref(db, 'notifications')).key;
+                const updateData = {};
+                updateData[`notifications/${notifKey}`] = {
+                    uid: newUserUid,
+                    message: `تمت إضافتك لمصروف: ${allExpenses.find(e=>e.id===expId).title}. حصتك الجديدة: ${roundToTwo(allExpenses.find(e=>e.id===expId).total_amount/(allExpenses.find(e=>e.id===expId).participants_ids.length + 1))} SDG.`,
+                    timestamp: Date.now(),
+                    is_read: false,
+                    type: 'debit'
+                };
+                await update(ref(db), updateData);
+
+                showStatus("تمت العملية بنجاح وتعديل كافة الأرصدة!");
+                setTimeout(() => window.location.href = 'index.html', 2000);
+
+            } catch (err) {
+                console.error(err);
+                showStatus("فشلت العملية: " + err.message, "error");
+                btn.disabled = false;
+            }
+        };
+    </script>
+</body>
+</html>
