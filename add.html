@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إضافة مشارك لمصروف سابق</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; }
+        .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid #3b82f6; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-2xl mx-auto">
+        <div class="mb-8 text-center">
+            <h1 class="text-2xl font-bold text-gray-800">إضافة عضو لمصروف قديم</h1>
+            <p class="text-gray-500 text-sm mt-2">قم باختيار المصروف ثم الشخص الذي انضم لاحقاً</p>
+        </div>
+
+        <div class="card p-6 space-y-6">
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">1. اختر المصروف من السجل:</label>
+                <select id="expenseSelect" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50">
+                    <option value="">جاري تحميل المصاريف...</option>
+                </select>
+                <div id="expenseInfo" class="mt-2 text-xs text-blue-600 hidden italic"></div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">2. من هو الشخص الذي تريد إضافته؟</label>
+                <select id="userSelect" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50">
+                    <option value="">اختر المصروف أولاً</option>
+                </select>
+            </div>
+
+            <div id="mathPreview" class="hidden bg-yellow-50 p-4 rounded-xl border border-yellow-100">
+                <h4 class="text-sm font-bold text-yellow-800 mb-2 underline">توضيح الحسبة الجديدة:</h4>
+                <p id="mathText" class="text-xs text-yellow-700 leading-relaxed"></p>
+            </div>
+
+            <button id="submitBtn" onclick="processNewParticipant()" disabled
+                    class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all shadow-lg">
+                <span id="btnText">تحديث الموازنات وإضافة العضو</span>
+            </button>
+        </div>
+        
+        <a href="index.html" class="block text-center mt-6 text-blue-600 hover:underline text-sm">العودة للرئيسية</a>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, onValue, runTransaction, push, update } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+        // إعدادات Firebase الخاصة بك
+        const firebaseConfig = {
+            apiKey: "AIzaSyA2GNsXj4DzWyCYLKuVT3i1XBKfjX3ccuM",
+            authDomain: "siu-students.firebaseapp.com",
+            databaseURL: "https://siu-students-default-rtdb.firebaseio.com",
+            projectId: "siu-students",
+            storageBucket: "siu-students.firebasestorage.app",
+            messagingSenderId: "76007314543",
+            appId: "1:76007314543:web:4850b668cec4b93bdc699a"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+
+        let allUsers = [];
+        let allExpenses = [];
+        let currentUserID = null;
+
+        // دالة التقريب لخانة عشرية واحدة أو اثنتين
+        const roundToTwo = (num) => Math.round(num * 100) / 100;
+
+        // 1. مراقبة حالة تسجيل الدخول
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserID = user.uid;
+                fetchInitialData();
+            } else {
+                window.location.href = 'auth.html';
+            }
+        });
+
+        // 2. جلب البيانات الأساسية
+        function fetchInitialData() {
+            // جلب المستخدمين
+            onValue(ref(db, 'users'), (snapshot) => {
+                if (snapshot.exists()) {
+                    allUsers = Object.entries(snapshot.val()).map(([uid, data]) => ({ uid, ...data }));
+                }
+            });
+
+            // جلب المصاريف
+            onValue(ref(db, 'expenses'), (snapshot) => {
+                const select = document.getElementById('expenseSelect');
+                select.innerHTML = '<option value="">-- اختر المصروف --</option>';
+                
+                if (snapshot.exists()) {
+                    allExpenses = Object.entries(snapshot.val()).map(([id, data]) => ({ id, ...data }));
+                    // عرض آخر 20 مصروف فقط لسهولة الاختيار
+                    allExpenses.sort((a, b) => b.timestamp - a.timestamp).slice(0, 20).forEach(exp => {
+                        const opt = document.createElement('option');
+                        opt.value = exp.id;
+                        opt.textContent = `${exp.title} (${exp.total_amount} SDG)`;
+                        select.appendChild(opt);
+                    });
+                }
+            });
+        }
+
+        // 3. عند اختيار مصروف معين
+        document.getElementById('expenseSelect').onchange = function() {
+            const expId = this.value;
+            const userSelect = document.getElementById('userSelect');
+            const mathPreview = document.getElementById('mathPreview');
+            userSelect.innerHTML = '<option value="">-- اختر العضو الجديد --</option>';
+            
+            if (!expId) {
+                mathPreview.classList.add('hidden');
+                return;
+            }
+
+            const expense = allExpenses.find(e => e.id === expId);
+            const infoDiv = document.getElementById('expenseInfo');
+            infoDiv.textContent = `المشاركين الحاليين: ${expense.participants_ids.length} أشخاص | الحصة الحالية: ${expense.share} SDG`;
+            infoDiv.classList.remove('hidden');
+
+            // تصفية المستخدمين (فقط من ليسوا في المصروف)
+            allUsers.forEach(u => {
+                if (!expense.participants_ids.includes(u.uid)) {
+                    const opt = document.createElement('option');
+                    opt.value = u.uid;
+                    opt.textContent = u.displayName;
+                    userSelect.appendChild(opt);
+                }
+            });
+
+            document.getElementById('submitBtn').disabled = true;
+        };
+
+        // 4. عند اختيار المستخدم الجديد (عرض الحسبة)
+        document.getElementById('userSelect').onchange = function() {
+            const expId = document.getElementById('expenseSelect').value;
+            const newUserUid = this.value;
+            if (!expId || !newUserUid) return;
+
+            const expense = allExpenses.find(e => e.id === expId);
+            const newCount = expense.participants_ids.length + 1;
+            const newShare = roundToTwo(expense.total_amount / newCount);
+            const diff = roundToTwo(expense.share - newShare);
+
+            document.getElementById('mathPreview').classList.remove('hidden');
+            document.getElementById('mathText').innerHTML = `
+                بما أن المبلغ الكلي <b>${expense.total_amount}</b>، سيصبح نصيب الفرد <b>${newShare}</b> بدلاً من ${expense.share}.<br>
+                - سيتم تسجيل دين على العضو الجديد بمبلغ <b>${newShare}</b>.<br>
+                - سيتم رد مبلغ <b>${diff}</b> لرصيد المشاركين الـ ${expense.participants_ids.length} القدامى.
+            `;
+            document.getElementById('submitBtn').disabled = false;
+        };
+
+        // 5. الوظيفة البرمجية الأساسية (التحديث)
+        window.processNewParticipant = async function() {
+            const expId = document.getElementById('expenseSelect').value;
+            const newUserUid = document.getElementById('userSelect').value;
+            const btn = document.getElementById('submitBtn');
+            const btnText = document.getElementById('btnText');
+
+            if (!confirm("هل أنت متأكد من تعديل موازنات هذا المصروف؟")) return;
+
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="loading-spinner"></span> جاري معالجة البيانات...';
+
+            const expenseRef = ref(db, `expenses/${expId}`);
+
+            try {
+                // استخدام Transaction لضمان سلامة البيانات
+                await runTransaction(expenseRef, (expense) => {
+                    if (expense) {
+                        const total = expense.total_amount;
+                        const oldShare = expense.share;
+                        const oldParticipants = expense.participants_ids;
+                        const payerId = expense.payer_id;
+
+                        const newCount = oldParticipants.length + 1;
+                        const newShare = roundToTwo(total / newCount);
+                        const diff = roundToTwo(oldShare - newShare);
+
+                        // أ. تحديث أرصدة القدامى (تخفيف الدين)
+                        oldParticipants.forEach(uid => {
+                            if (uid !== payerId) {
+                                runTransaction(ref(db, `users/${uid}/balance`), (b) => roundToTwo((b || 0) + diff));
+                            }
+                        });
+
+                        // ب. تحديث رصيد الجديد (إضافة دين)
+                        runTransaction(ref(db, `users/${newUserUid}/balance`), (b) => roundToTwo((b || 0) - newShare));
+
+                        // ج. تحديث بيانات المصروف
+                        expense.share = newShare;
+                        expense.participants_ids.push(newUserUid);
+                    }
+                    return expense;
+                });
+
+                // د. إرسال إشعار للجديد
+                const notifRef = push(ref(db, 'notifications'));
+                await update(notifRef, {
+                    uid: newUserUid,
+                    message: `تمت إضافتك لمصروف سابق وتعديل حصتك لتكون ${roundToTwo(allExpenses.find(e=>e.id===expId).total_amount / (allExpenses.find(e=>e.id===expId).participants_ids.length + 1))} SDG.`,
+                    timestamp: Date.now(),
+                    is_read: false
+                });
+
+                alert("تم تحديث كافة الأرصدة بنجاح!");
+                location.reload();
+
+            } catch (err) {
+                console.error(err);
+                alert("حدث خطأ تقني: " + err.message);
+                btn.disabled = false;
+                btnText.textContent = "تحديث الموازنات وإضافة العضو";
+            }
+        };
+    </script>
+</body>
+</html>
