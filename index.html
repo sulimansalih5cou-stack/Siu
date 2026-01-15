@@ -3,193 +3,273 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>الرئيسية - Smart Dorm</title>
+<title>الرئيسية - إضافة مصروف - Smart Dorm Expenses</title>
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <style>
-    /* الإبقاء على نفس الأنماط الجمالية التي فضلتها */
-    body {
-        background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        min-height: 100vh;
-        padding-top: 64px; 
-    }
+/* CSS: الأنماط الأساسية المستعادة بالكامل */
+body {
+    background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding-top: 64px; 
+}
 
-    .navbar {
-        position: fixed;
-        top: 0; left: 0; right: 0;
-        z-index: 900;
-        background-color: white;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-        height: 64px;
-        padding: 0 16px;
-    }
+.navbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 900;
+    background-color: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    height: 64px;
+    padding: 0 16px;
+}
 
-    .sidebar {
-        position: fixed;
-        top: 0; right: 0;
-        height: 100%;
-        width: 250px;
-        background: white;
-        z-index: 1000;
-        box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
-        transform: translateX(100%);
-        transition: transform 0.3s ease-out;
-        padding-top: 64px;
-    }
-    .sidebar.open { transform: translateX(0); }
+/* --- القائمة الجانبية (Sidebar) --- */
+.sidebar {
+    position: fixed;
+    top: 0; right: 0;
+    height: 100%;
+    width: 250px;
+    background: white;
+    z-index: 1000;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+    transform: translateX(100%);
+    transition: transform 0.3s ease-out;
+    padding-top: 64px;
+}
+.sidebar.open { transform: translateX(0); }
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+.sidebar.open + .sidebar-overlay { display: block; }
 
-    .sidebar-overlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 999;
-    }
-    /* يظهر الغطاء عند فتح القائمة */
-    .sidebar.open + .sidebar-overlay { display: block; }
+.sidebar-link {
+    display: block;
+    padding: 15px 20px;
+    font-weight: 600;
+    color: #4B5563;
+    transition: background-color 0.3s, color 0.3s;
+    border-right: 4px solid transparent;
+}
+.sidebar-link:hover { background-color: #F3F4F6; color: #3B82F6; }
+.sidebar-link.active { color: #1D4ED8; background-color: #EBF5FF; border-right-color: #1D4ED8; }
 
-    .sidebar-link {
-        display: block;
-        padding: 15px 20px;
-        font-weight: 600;
-        color: #4B5563;
-        border-right: 4px solid transparent;
-    }
-    .sidebar-link.active { color: #1D4ED8; background-color: #EBF5FF; border-right-color: #1D4ED8; }
+.container {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    padding: 40px;
+    max-width: 600px;
+    width: 100%;
+    margin: 20px auto;
+    position: relative;
+}
 
-    .container {
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        padding: 30px;
-        max-width: 600px;
-        width: 100%;
-        margin: 20px auto;
-    }
+/* --- بطاقة الرصيد --- */
+.balance-card {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+}
+.balance-card.negative {
+    background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%) !important;
+}
 
-    /* زر المصروف الشخصي الجديد */
-    .personal-btn {
-        background: #F0F9FF;
-        color: #0369A1;
-        padding: 12px;
-        border-radius: 12px;
-        cursor: pointer;
-        text-align: center;
-        margin-bottom: 15px;
-        font-weight: bold;
-        border: 2px dashed #0EA5E9;
-        transition: 0.3s;
-    }
-    .personal-btn:hover { background: #E0F2FE; }
+/* الحقول */
+.form-group { margin-bottom: 25px; }
+.form-group label { display: block; font-weight: 600; color: #374151; margin-bottom: 8px; }
+.form-group input {
+    width: 100%; padding: 15px; border: 2px solid #E5E7EB; border-radius: 12px; background: #F9FAFB;
+}
 
-    .form-group { margin-bottom: 20px; }
-    .form-group label { display: block; font-weight: 600; color: #374151; margin-bottom: 8px; }
-    .form-group input {
-        width: 100%; padding: 12px; border: 2px solid #E5E7EB; border-radius: 12px;
-    }
+/* الأزرار الخاصة بالاختيار */
+.select-all {
+    background: #3B82F6;
+    color: white;
+    padding: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: center;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
 
-    .btn {
-        background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
-        color: white; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold;
-    }
-    
-    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1100; }
-    .modal.show { display: flex; }
+/* 🔥 ستايل زر المصروف الشخصي الجديد 🔥 */
+.personal-btn {
+    background: #EBF5FF;
+    color: #1D4ED8;
+    padding: 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: center;
+    margin-bottom: 15px;
+    font-weight: bold;
+    border: 2px dashed #3B82F6;
+    transition: 0.3s;
+}
+.personal-btn:hover { background: #DBEAFE; }
+
+.checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    background: #F3F4F6;
+    padding: 12px 15px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.btn {
+    background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+    color: white;
+    padding: 15px;
+    border-radius: 12px;
+    width: 100%;
+    font-weight: 600;
+}
+
+.modal {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000;
+}
+.modal.show { display: flex; }
+.modal-content { background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 400px; text-align: center; }
 </style>
 </head>
 <body>
 
 <nav class="navbar">
-    <div class="max-w-6xl mx-auto px-4 h-full flex justify-between items-center">
-        <button id="menuButton" class="text-2xl text-gray-600 p-2 focus:outline-none">
-            <i class="fas fa-bars"></i>
-        </button>
-        
-        <div class="text-xl font-extrabold text-blue-600">
-            <i class="fas fa-home"></i> Smart Dorm
+    <div class="max-w-6xl mx-auto px-4 h-full">
+        <div class="flex justify-between items-center h-full">
+            <button id="menuButton" class="text-2xl text-gray-600 hover:text-blue-500 p-2 focus:outline-none">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="text-2xl font-extrabold text-blue-600 absolute right-1/2 transform translate-x-1/2 hidden sm:block">
+                <i class="fas fa-home"></i> Smart Dorm
+            </div>
+            <div class="flex items-center">
+                <button id="notificationButton" class="relative text-gray-500 p-2" onclick="showNotifications()">
+                    <i class="fas fa-bell text-2xl"></i>
+                    <span id="notificationBadge" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold text-red-100 bg-red-600 rounded-full hidden">0</span>
+                </button>
+            </div>
         </div>
-
-        <button id="notificationButton" class="relative text-gray-500 p-2" onclick="showNotifications()">
-            <i class="fas fa-bell text-2xl"></i>
-            <span id="notificationBadge" class="absolute top-1 right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full hidden">0</span>
-        </button>
     </div>
 </nav>
 
 <div id="sidebar" class="sidebar">
     <div class="p-4 border-b">
-        <h3 class="text-lg font-bold text-gray-800" id="sidebarUserName">جاري التحميل...</h3>
-        <p class="text-sm text-gray-500" id="sidebarUserEmail">...</p>
+        <h3 class="text-lg font-bold text-gray-800 sidebar-profile-text" id="sidebarUserName">جاري التحميل...</h3>
+        <p class="text-sm text-gray-500 sidebar-profile-text" id="sidebarUserEmail">...</p>
     </div>
     <a href="index.html" class="sidebar-link active"><i class="fas fa-plus-circle ml-2"></i> إضافة مصروف</a>
     <a href="my_expenses.html" class="sidebar-link"><i class="fas fa-file-invoice-dollar ml-2"></i> مصروفاتي</a>
     <a href="history.html" class="sidebar-link"><i class="fas fa-history ml-2"></i> السجل</a>
-    <a href="summary.html" class="sidebar-link"><i class="fas fa-handshake ml-2"></i> تسوية الأرصدة</a>
+    <a href="summary.html" class="sidebar-link"><i class="fas fa-handshake ml-2"></i> الملخص والتسوية</a>
     <a href="auth.html" id="logoutSidebarButton" class="sidebar-link text-red-600 mt-4 border-t pt-4">
         <i class="fas fa-sign-out-alt ml-2"></i> خروج
     </a>
 </div>
 <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
 
-<div class="content-wrapper px-4">
+<div class="content-wrapper">
     <div class="container">
+        <div id="currentBalanceCard" class="balance-card">
+            <h3><i class="fas fa-user-circle ml-1"></i> مرحباً، <span id="userNamePlaceholder">...</span></h3>
+            <p dir="ltr"><span id="currentBalance">...</span> <span class="text-lg font-normal">SDG</span></p>
+        </div>
+
         <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">إضافة مصروف جديد</h1>
+        
         <form id="expenseForm">
             <div class="form-group">
-                <label>اسم المصروف</label>
+                <label for="expenseTitle">اسم المصروف</label>
                 <input type="text" id="expenseTitle" placeholder="مثال: عشاء، كهرباء..." list="suggestions" required>
+                <datalist id="suggestions">
+                    <option value="أكل"><option value="شرب"><option value="كهرباء"><option value="نظافة">
+                </datalist>
+            </div>
+
+            <div class="form-group flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
+                <label for="isMessenger" class="text-sm font-semibold text-red-700 cursor-pointer">
+                    <i class="fas fa-hand-holding-usd ml-1"></i> دفعت كمُرسال (لست مشاركاً)
+                </label>
+                <input type="checkbox" id="isMessenger" class="form-checkbox h-5 w-5 text-red-600">
             </div>
 
             <div class="form-group">
-                <label>المبلغ (SDG)</label>
-                <input type="tel" id="expenseAmount" placeholder="0.00" required style="direction: ltr; text-align: right;">
+                <label for="expenseAmount">المبلغ الكلي (SDG)</label>
+                <input type="tel" id="expenseAmount" placeholder="مثال: 5,000" oninput="formatNumber(this)" required style="direction: ltr; text-align: right;">
             </div>
 
-            <div class="form-group">
-                <label>المشاركون</label>
+            <div class="form-group mt-6">
+                <label>المشاركون (من سيقتسمون المبلغ)</label>
+                
                 <div class="personal-btn" onclick="window.selectPersonalExpense()">
-                    <i class="fas fa-user-shield ml-2"></i> تسجيل مصروف شخصي (أنا فقط)
+                    <i class="fas fa-user-shield ml-1"></i> تسجيل مصروف شخصي (أنا فقط)
                 </div>
-                <div id="participantsCheckboxes" class="grid grid-cols-2 gap-3 mt-3">
+
+                <div class="select-all" onclick="selectAllParticipants()">تحديد الجميع</div>
+                
+                <div class="checkbox-group" id="participantsCheckboxes">
                     </div>
             </div>
 
-            <button type="button" onclick="previewExpense()" class="btn">معاينة وحفظ</button>
+            <button type="button" onclick="previewExpense()" class="btn bg-blue-600">معاينة وحفظ</button>
         </form>
     </div>
 </div>
 
-<div id="notificationModal" class="modal">
-    <div class="modal-content bg-white p-6 rounded-2xl w-full max-w-md mx-4 text-right">
-        <h2 class="text-xl font-bold mb-4 border-b pb-2"><i class="fas fa-bell ml-2"></i> الإشعارات</h2>
-        <div id="notificationsList" class="space-y-3 text-sm max-h-96 overflow-y-auto">
+<div id="previewModal" class="modal">
+    <div class="modal-content">
+        <div id="previewDetails">
+            <h2 class="text-xl font-bold mb-4">تأكيد المصروف</h2>
+            <div id="previewText" class="text-right text-gray-700 mb-6 text-sm leading-loose"></div>
+            <div class="flex justify-center gap-4">
+                <button onclick="handleSaveClick()" class="btn w-auto px-8">حفظ</button>
+                <button onclick="hideModal()" class="btn w-auto bg-gray-500 text-white px-8">إلغاء</button>
             </div>
-        <button onclick="hideNotificationModal()" class="btn mt-6 bg-gray-500">إغلاق</button>
+        </div>
+    </div>
+</div>
+
+<div id="notificationModal" class="modal">
+    <div class="modal-content max-w-md text-right">
+        <h2 class="text-xl font-bold mb-4 border-b pb-2"><i class="fas fa-bell ml-1"></i> الإشعارات</h2>
+        <div id="notificationsList" class="space-y-3 text-sm max-h-96 overflow-y-auto"></div>
+        <button onclick="hideNotificationModal()" class="btn w-full mt-6 bg-gray-500 text-white">إغلاق</button>
     </div>
 </div>
 
 <script>
-    // وظيفة فتح القائمة الجانبية المحدثة
+    // الحفاظ على منطق القائمة الجانبية الذي يعمل عندك
     window.toggleSidebar = function() {
         const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebarOverlay');
         sidebar.classList.toggle('open');
-        overlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
         document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : 'auto';
     }
-
     window.closeSidebar = function() {
         document.getElementById('sidebar').classList.remove('open');
-        document.getElementById('sidebarOverlay').style.display = 'none';
         document.body.style.overflow = 'auto';
     }
-
     document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('menuButton').addEventListener('click', window.toggleSidebar);
     });
 </script>
-
 <script src="script.js" type="module"></script>
 </body>
 </html>
