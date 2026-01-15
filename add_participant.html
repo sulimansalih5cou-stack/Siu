@@ -3,80 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إضافة مشارك لمصروف سابق</title>
+    <title>تعديل المشاركين</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
-        body { font-family: 'Cairo', sans-serif; background-color: #f8fafc; }
-        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+        body { font-family: 'Cairo', sans-serif; background: #f0f2f5; }
+        
+        /* تأثيرات البطاقة الزجاجية */
+        .main-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        /* تنسيق القوائم المنسدلة بشكل مخصص */
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%234B5563'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: left 1rem center;
+            background-size: 1.5em;
+        }
+
+        .step-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 0.8rem;
+            margin-left: 0.75rem;
+        }
     </style>
 </head>
-<body class="min-h-screen bg-slate-50 pb-10">
+<body class="min-h-screen flex flex-col items-center justify-start pb-10">
 
-    <div class="bg-blue-600 text-white p-6 rounded-b-3xl shadow-lg mb-8">
-        <div class="max-w-2xl mx-auto flex justify-between items-center">
-            <div>
-                <h1 class="text-xl font-bold">إضافة مشارك جديد</h1>
-                <p class="text-blue-100 text-xs mt-1">تعديل حصص مصروف مسجل مسبقاً</p>
-            </div>
-            <a href="index.html" class="bg-blue-500 p-2 rounded-full hover:bg-blue-400 transition">
-                <i class="fas fa-home"></i>
+    <div class="w-full max-w-2xl mt-6 px-4">
+        <div class="flex items-center justify-between mb-8">
+            <a href="index.html" class="w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-md text-gray-600 hover:text-blue-600 transition-all">
+                <i class="fas fa-arrow-right"></i>
             </a>
-        </div>
-    </div>
+            <h1 class="text-xl font-extrabold text-gray-800">تعديل قائمة المشاركين</h1>
+            <div class="w-10"></div> </div>
 
-    <div class="max-w-xl mx-auto px-4">
-        <div class="glass-card p-6 rounded-2xl shadow-xl space-y-6">
+        <div class="main-card p-8 space-y-8">
             
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">
-                    <i class="fas fa-file-invoice-dollar ml-1 text-blue-500"></i> 1. اختر المصروف:
-                </label>
-                <select id="expenseSelect" class="w-full p-4 border-2 border-slate-100 rounded-xl focus:border-blue-500 outline-none bg-white transition-all">
-                    <option value="">جاري تحميل المصروفات...</option>
-                </select>
-            </div>
-
-            <div id="expensePreview" class="hidden bg-blue-50 p-4 rounded-xl border border-blue-100 animate-pulse">
-                <div class="flex justify-between text-sm">
-                    <span class="text-gray-600">المبلغ الكلي:</span>
-                    <span id="totalAmountText" class="font-bold text-blue-700">0 SDG</span>
+            <div class="space-y-4">
+                <div class="flex items-center">
+                    <span class="step-badge shadow-blue-200 shadow-lg">1</span>
+                    <h2 class="text-gray-700 font-bold">اختيار العملية المالية</h2>
                 </div>
-                <div class="flex justify-between text-sm mt-2">
-                    <span class="text-gray-600">الحصة الحالية للفرد:</span>
-                    <span id="currentShareText" class="font-bold text-blue-700">0 SDG</span>
+                
+                <div class="relative">
+                    <select id="expenseSelect" class="w-full bg-gray-50 border-none ring-1 ring-gray-200 p-4 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-semibold text-gray-700">
+                        <option value="">جاري جلب المصاريف...</option>
+                    </select>
+                </div>
+
+                <div id="expensePreview" class="hidden grid grid-cols-2 gap-4 animate-in fade-in zoom-in duration-300">
+                    <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                        <p class="text-xs text-blue-500 font-bold">المبلغ الإجمالي</p>
+                        <p id="totalAmountText" class="text-lg font-black text-blue-700 mt-1">0</p>
+                    </div>
+                    <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100">
+                        <p class="text-xs text-indigo-500 font-bold">الحصة الحالية</p>
+                        <p id="currentShareText" class="text-lg font-black text-indigo-700 mt-1">0</p>
+                    </div>
                 </div>
             </div>
 
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">
-                    <i class="fas fa-user-plus ml-1 text-green-500"></i> 2. العضو المراد إضافته:
-                </label>
-                <select id="userSelect" class="w-full p-4 border-2 border-slate-100 rounded-xl focus:border-blue-500 outline-none bg-white transition-all">
-                    <option value="">اختر المصروف أولاً</option>
-                </select>
+            <div class="space-y-4">
+                <div class="flex items-center">
+                    <span class="step-badge bg-emerald-500 shadow-emerald-200 shadow-lg">2</span>
+                    <h2 class="text-gray-700 font-bold">إضافة الشخص المنضم</h2>
+                </div>
+                
+                <div class="relative">
+                    <select id="userSelect" class="w-full bg-gray-50 border-none ring-1 ring-gray-200 p-4 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-semibold text-gray-700">
+                        <option value="">-- اختر العضو الجديد --</option>
+                    </select>
+                </div>
             </div>
 
-            <div id="newMathInfo" class="hidden bg-green-50 p-4 rounded-xl border border-green-100 space-y-2">
-                <p class="text-xs text-green-800 font-bold underline">ملخص التعديل المالي:</p>
-                <p id="mathDescription" class="text-xs text-green-700 leading-relaxed"></p>
+            <hr class="border-gray-100">
+
+            <div id="newMathInfo" class="hidden bg-slate-900 text-white p-6 rounded-3xl space-y-4 shadow-xl relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                    <i class="fas fa-calculator text-9xl -rotate-12 transform translate-x-1/2 translate-y-1/2"></i>
+                </div>
+                <h3 class="flex items-center text-sm font-bold text-blue-400">
+                    <i class="fas fa-info-circle ml-2"></i> ملخص إعادة الحسبة
+                </h3>
+                <p id="mathDescription" class="text-sm leading-relaxed text-gray-300"></p>
             </div>
 
             <button id="executeBtn" onclick="handleProcess()" disabled
-                    class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all shadow-lg flex justify-center items-center">
-                <span>تحديث البيانات وتعديل الأرصدة</span>
+                    class="w-full py-5 rounded-2xl font-black text-lg transition-all transform active:scale-95 flex justify-center items-center shadow-lg
+                    bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:shadow-blue-200 disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-500 disabled:shadow-none">
+                <i class="fas fa-check-double ml-2"></i> تأكيد وحفظ التغييرات
             </button>
         </div>
     </div>
 
     <script type="module">
-        // استيراد Firebase بنفس طريقتك
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getDatabase, ref, onValue, push, update, runTransaction } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
-        // إعدادات Firebase الخاصة بك (نسختها من كودك)
         const firebaseConfig = {
             apiKey: "AIzaSyA2GNsXj4DzWyCYLKuVT3i1XBKfjX3ccuM",
             authDomain: "siu-students.firebaseapp.com",
@@ -88,40 +128,26 @@
             measurementId: "G-SB6884R2FX"
         };
 
-        // تهيئة Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const auth = getAuth(app);
 
-        // متغيرات البيانات
         let allUsers = [];
         let allExpenses = [];
         let currentUserID = null;
 
-        // دالة التقريب (نفس كودك)
         const roundToTwo = (num) => Math.round(num * 100) / 100;
 
-        // دالة إظهار الحالة (Toast)
-        function showStatus(message, type = 'success') {
-            const statusDiv = document.createElement('div');
-            statusDiv.className = `fixed bottom-10 left-1/2 transform -translate-x-1/2 z-[9999] px-6 py-3 rounded-xl shadow-2xl text-white font-bold transition-all duration-500 ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
-            statusDiv.textContent = message;
-            document.body.appendChild(statusDiv);
-            setTimeout(() => { statusDiv.style.opacity = '0'; setTimeout(() => statusDiv.remove(), 500); }, 3000);
-        }
-
-        // مراقبة حالة المستخدم وجلب البيانات
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUserID = user.uid;
                 startDataListeners();
             } else {
-                window.location.href = 'auth.html'; // التوجيه لتسجيل الدخول
+                window.location.href = 'auth.html';
             }
         });
 
         function startDataListeners() {
-            // 1. جلب المستخدمين
             onValue(ref(db, 'users'), (snapshot) => {
                 if (snapshot.exists()) {
                     const data = snapshot.val();
@@ -129,27 +155,21 @@
                 }
             });
 
-            // 2. جلب المصاريف
             onValue(ref(db, 'expenses'), (snapshot) => {
                 const select = document.getElementById('expenseSelect');
-                select.innerHTML = '<option value="">-- اختر المصروف من القائمة --</option>';
-                
+                select.innerHTML = '<option value="">-- اختر المصروف --</option>';
                 if (snapshot.exists()) {
-                    const data = snapshot.val();
-                    allExpenses = Object.keys(data).map(k => ({ id: k, ...data[k] }))
-                                   .sort((a,b) => b.timestamp - a.timestamp); // الأحدث أولاً
-
+                    allExpenses = Object.keys(snapshot.val()).map(k => ({ id: k, ...snapshot.val()[k] })).sort((a,b) => b.timestamp - a.timestamp);
                     allExpenses.forEach(exp => {
                         const opt = document.createElement('option');
                         opt.value = exp.id;
-                        opt.textContent = `${exp.title} (${exp.total_amount} SDG)`;
+                        opt.textContent = `${exp.title}`;
                         select.appendChild(opt);
                     });
                 }
             });
         }
 
-        // معالجة تغيير المصروف Selected
         document.getElementById('expenseSelect').addEventListener('change', function() {
             const expId = this.value;
             const userSelect = document.getElementById('userSelect');
@@ -161,13 +181,10 @@
             if (!expId) return;
 
             const expense = allExpenses.find(e => e.id === expId);
-            
-            // تحديث الواجهة بالبيانات الحالية
             document.getElementById('totalAmountText').textContent = expense.total_amount.toLocaleString() + ' SDG';
             document.getElementById('currentShareText').textContent = expense.share.toLocaleString() + ' SDG';
             document.getElementById('expensePreview').classList.remove('hidden');
 
-            // ملء قائمة المستخدمين (فقط من ليسوا مشاركين حالياً)
             allUsers.forEach(u => {
                 if (!expense.participants_ids.includes(u.uid)) {
                     const opt = document.createElement('option');
@@ -178,89 +195,53 @@
             });
         });
 
-        // معالجة اختيار العضو الجديد
         document.getElementById('userSelect').addEventListener('change', function() {
             const expId = document.getElementById('expenseSelect').value;
             const newUserUid = this.value;
-            
-            if (!expId || !newUserUid) {
-                document.getElementById('newMathInfo').classList.add('hidden');
-                document.getElementById('executeBtn').disabled = true;
-                return;
-            }
+            if (!expId || !newUserUid) return;
 
             const expense = allExpenses.find(e => e.id === expId);
-            const currentParticipantsCount = expense.participants_ids.length;
-            const newCount = currentParticipantsCount + 1;
-            const newShare = roundToTwo(expense.total_amount / newCount);
-            const refundAmount = roundToTwo(expense.share - newShare);
+            const newShare = roundToTwo(expense.total_amount / (expense.participants_ids.length + 1));
+            const refund = roundToTwo(expense.share - newShare);
 
             document.getElementById('mathDescription').innerHTML = `
-                - سيتم خصم <b>${newShare.toLocaleString()} SDG</b> من رصيد العضو الجديد.<br>
-                - سيتم إضافة <b>${refundAmount.toLocaleString()} SDG</b> لرصيد الـ ${currentParticipantsCount} مشاركين القدامى (بمن فيهم الدافع).
+                سيتم سحب <span class="text-white font-bold">${newShare.toLocaleString()} SDG</span> من العضو الجديد، ورد مبلغ <span class="text-emerald-400 font-bold">${refund.toLocaleString()} SDG</span> لكل واحد من الأعضاء القدامى.
             `;
             document.getElementById('newMathInfo').classList.remove('hidden');
             document.getElementById('executeBtn').disabled = false;
         });
 
-        // تنفيذ العملية البرمجية
         window.handleProcess = async function() {
             const expId = document.getElementById('expenseSelect').value;
             const newUserUid = document.getElementById('userSelect').value;
             const btn = document.getElementById('executeBtn');
 
-            if (!confirm("هل أنت متأكد؟ سيتم تعديل أرصدة جميع المشاركين في هذا المصروف فوراً.")) return;
+            if (!confirm("تأكيد العملية؟")) return;
 
             btn.disabled = true;
-            btn.textContent = "جاري تحديث قاعدة البيانات...";
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i> جاري الحفظ...';
 
             try {
                 const expenseRef = ref(db, `expenses/${expId}`);
-                
                 await runTransaction(expenseRef, (expense) => {
                     if (expense) {
-                        const total = expense.total_amount;
-                        const oldShare = expense.share;
-                        const oldParticipants = expense.participants_ids;
-                        const payerId = expense.payer_id;
-
-                        const newCount = oldParticipants.length + 1;
-                        const newShare = roundToTwo(total / newCount);
-                        const refund = roundToTwo(oldShare - newShare);
-
-                        // 1. تحديث أرصدة القدامى (بما فيهم الدافع لزيادة ما يطلبه)
-                        oldParticipants.forEach(uid => {
-                            runTransaction(ref(db, `users/${uid}/balance`), (bal) => roundToTwo((bal || 0) + refund));
+                        const newShare = roundToTwo(expense.total_amount / (expense.participants_ids.length + 1));
+                        const refund = roundToTwo(expense.share - newShare);
+                        
+                        expense.participants_ids.forEach(uid => {
+                            runTransaction(ref(db, `users/${uid}/balance`), b => roundToTwo((b || 0) + refund));
                         });
-
-                        // 2. تحديث رصيد المشارك الجديد (خصم الدين)
-                        runTransaction(ref(db, `users/${newUserUid}/balance`), (bal) => roundToTwo((bal || 0) - newShare));
-
-                        // 3. تعديل بيانات المصروف
+                        runTransaction(ref(db, `users/${newUserUid}/balance`), b => roundToTwo((b || 0) - newShare));
+                        
                         expense.share = newShare;
                         expense.participants_ids.push(newUserUid);
                     }
                     return expense;
                 });
-
-                // 4. إرسال إشعار للمشارك الجديد
-                const notifKey = push(ref(db, 'notifications')).key;
-                const updateData = {};
-                updateData[`notifications/${notifKey}`] = {
-                    uid: newUserUid,
-                    message: `تمت إضافتك لمصروف: ${allExpenses.find(e=>e.id===expId).title}. حصتك الجديدة: ${roundToTwo(allExpenses.find(e=>e.id===expId).total_amount/(allExpenses.find(e=>e.id===expId).participants_ids.length + 1))} SDG.`,
-                    timestamp: Date.now(),
-                    is_read: false,
-                    type: 'debit'
-                };
-                await update(ref(db), updateData);
-
-                showStatus("تمت العملية بنجاح وتعديل كافة الأرصدة!");
-                setTimeout(() => window.location.href = 'index.html', 2000);
-
+                alert("تم التحديث بنجاح!");
+                window.location.href = 'index.html';
             } catch (err) {
-                console.error(err);
-                showStatus("فشلت العملية: " + err.message, "error");
+                alert("حدث خطأ: " + err.message);
                 btn.disabled = false;
             }
         };
