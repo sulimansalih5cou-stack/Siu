@@ -1,5 +1,6 @@
 /**
- * كود خبير البرمجة - المحرك الموحد للأشرطة وإدارة التنبيهات (نسخة مصححة)
+ * layout.js - خبير البرمجة
+ * المحرك الموحد للأشرطة وإدارة التنبيهات
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -7,7 +8,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function renderMainLayout() {
-    // 1. كود HTML للشريط العلوي
     const navbarHTML = `
     <nav class="navbar">
         <div class="max-w-6xl mx-auto px-4 h-full">
@@ -21,16 +21,13 @@ function renderMainLayout() {
                 <div class="flex items-center">
                     <button id="notificationButton" class="relative text-gray-500 hover:text-red-500 p-2 focus:outline-none" onclick="handleNotificationClick()">
                         <i class="fas fa-bell text-2xl"></i>
-                        <span id="notificationBadge" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full hidden">
-                            0
-                        </span>
+                        <span id="notificationBadge" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full hidden">0</span>
                     </button>
                 </div>
             </div>
         </div>
     </nav>`;
 
-    // 2. كود HTML للشريط الجانبي + الغطاء الشفاف
     const sidebarHTML = `
     <div id="sidebar" class="sidebar">
         <div class="p-4 border-b">
@@ -49,52 +46,43 @@ function renderMainLayout() {
     </div>
     <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>`;
 
-    // 3. الحقن في الحاويات
     const topPlaceholder = document.getElementById('top-nav-placeholder');
     const sidePlaceholder = document.getElementById('sidebar-placeholder');
 
     if (topPlaceholder) topPlaceholder.innerHTML = navbarHTML;
     if (sidePlaceholder) sidePlaceholder.innerHTML = sidebarHTML;
 
-    // 4. تمييز الرابط الحالي
+    // تمييز الصفحة الحالية
     const currentPath = window.location.pathname.split("/").pop() || 'index.html';
     document.querySelectorAll('.sidebar-link').forEach(link => {
-        if (link.getAttribute('href') === currentPath) {
-            link.classList.add('active');
-        }
+        if (link.getAttribute('href') === currentPath) link.classList.add('active');
     });
-
-    checkNotificationStatus();
 }
 
-// دالة الجرس
+// دالة الجرس - تفتح المودال وتصفر الإشعارات في Firebase
 window.handleNotificationClick = function() {
-    const badge = document.getElementById('notificationBadge');
-    if (badge) badge.classList.add('hidden');
-    localStorage.setItem('notif_read_status', 'true');
-
     if (typeof window.showNotifications === "function") {
         window.showNotifications();
-    } else {
-        const modal = document.getElementById('notificationModal');
-        if (modal) modal.classList.add('show');
+    }
+    if (typeof window.markAllAsRead === "function") {
+        window.markAllAsRead();
     }
 }
 
-function checkNotificationStatus() {
-    const isRead = localStorage.getItem('notif_read_status');
+// دالة تحديث الرقم فوق الجرس (يستدعيها script.js)
+window.updateBellBadge = function(unreadCount) {
     const badge = document.getElementById('notificationBadge');
-    if (isRead === 'true' && badge) badge.classList.add('hidden');
+    if (badge) {
+        badge.textContent = unreadCount;
+        unreadCount > 0 ? badge.classList.remove('hidden') : badge.classList.add('hidden');
+    }
 }
 
-// وظائف القائمة (تم تعديلها لضمان عمل الـ Overlay)
 window.toggleSidebar = function() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
     if (sidebar) sidebar.classList.toggle('open');
-    if (overlay) {
-        overlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
-    }
+    if (overlay) overlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
 };
 
 window.closeSidebar = function() {
