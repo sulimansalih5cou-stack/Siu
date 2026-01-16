@@ -1,78 +1,96 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>الرئيسية - Smart Dorm Expenses</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
-    <style>
-        body {
-            background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            padding-top: 64px; 
-        }
-        /* أنماط الأشرطة (يجب أن تظل هنا أو في ملف CSS موحد) */
-        .navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 900; background-color: white; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); height: 64px; padding: 0 16px; }
-        .sidebar { position: fixed; top: 0; right: 0; height: 100%; width: 250px; background: white; z-index: 1000; box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1); transform: translateX(100%); transition: transform 0.3s ease-out; padding-top: 64px; }
-        .sidebar.open { transform: translateX(0); }
-        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 999; }
-        .sidebar-link { display: block; padding: 15px 20px; font-weight: 600; color: #4B5563; transition: 0.3s; border-right: 4px solid transparent; }
-        .sidebar-link:hover { background-color: #F3F4F6; color: #3B82F6; }
-        .sidebar-link.active { color: #1D4ED8; background-color: #EBF5FF; border-right-color: #1D4ED8; }
-        
-        /* أنماط المحتوى */
-        .content-wrapper { flex-grow: 1; display: flex; align-items: flex-start; justify-content: center; padding: 20px; }
-        .container { background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); padding: 40px; max-width: 600px; width: 100%; margin-top: 20px; position: relative; }
-        .balance-card { background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 30px; }
-        .form-group { margin-bottom: 25px; }
-        .form-group label { display: block; font-weight: 600; margin-bottom: 8px; }
-        .form-group input, .form-group select { width: 100%; padding: 15px; border: 2px solid #E5E7EB; border-radius: 12px; }
-        .checkbox-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
-        .btn { background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); color: white; padding: 15px; border-radius: 12px; width: 100%; font-weight: 600; cursor: pointer; }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1100; }
-        .modal.show { display: flex; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الرئيسية - Smart Dorm Expenses</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+/* CSS: الأنماط الأساسية (للمحتوى فقط) */
+body {
+    background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding-top: 64px; 
+}
+
+/* ملاحظة: أبقِ أنماط الـ navbar والـ sidebar هنا أو في ملف CSS خارجي */
+.navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 900; background-color: white; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); height: 64px; padding: 0 16px; }
+.sidebar { position: fixed; top: 0; right: 0; height: 100%; width: 250px; background: white; z-index: 1000; box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1); transform: translateX(100%); transition: transform 0.3s ease-out; padding-top: 64px; }
+.sidebar.open { transform: translateX(0); }
+.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 999; }
+.sidebar.open + .sidebar-overlay { display: block; }
+.sidebar-link { display: block; padding: 15px 20px; font-weight: 600; color: #4B5563; transition: 0.3s; border-right: 4px solid transparent; }
+.sidebar-link:hover { background-color: #F3F4F6; color: #3B82F6; }
+.sidebar-link.active { color: #1D4ED8; background-color: #EBF5FF; border-right-color: #1D4ED8; }
+.sidebar-profile-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+/* تنسيقات المحتوى الداخلي */
+.content-wrapper { flex-grow: 1; display: flex; align-items: flex-start; justify-content: center; padding: 20px; }
+.container { background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); padding: 40px; max-width: 600px; width: 100%; margin-top: 20px; position: relative; }
+.balance-card { background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3); }
+.balance-card.negative { background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%) !important; }
+.form-group { margin-bottom: 25px; }
+.form-group label { display: block; font-weight: 600; color: #374151; margin-bottom: 8px; }
+.form-group input { width: 100%; padding: 15px; border: 2px solid #E5E7EB; border-radius: 12px; background: #F9FAFB; }
+.checkbox-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+.checkbox-item { display: flex; align-items: center; background: #F3F4F6; padding: 12px; border-radius: 10px; cursor: pointer; }
+.btn { background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); color: white; padding: 15px; border-radius: 12px; font-weight: 600; width: 100%; justify-content: center; display: flex; gap: 10px; }
+.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1100; }
+.modal.show { display: flex; }
+</style>
 </head>
 <body>
 
+<div id="top-nav-placeholder"></div>
+<div id="sidebar-placeholder"></div>
+
 <div class="content-wrapper">
     <div class="container">
-        <div id="currentBalanceCard" class="balance-card">
-            <h3>مرحباً، <span id="userNamePlaceholder">...</span></h3>
-            <p dir="ltr"><span id="currentBalance">0</span> SDG</p>
+        <div class="text-center text-gray-500 text-sm mb-6 italic">
+            <i class="fas fa-wallet"></i> نظام إدارة مصروفات السكن الذكي
         </div>
-
-        <h1 class="text-2xl font-bold text-center mb-6">إضافة مصروف جديد</h1>
+        <div id="currentBalanceCard" class="balance-card">
+            <h3> <i class="fas fa-user-circle ml-1"></i> مرحباً، <span id="userNamePlaceholder" class="font-bold underline">...</span> </h3>
+            <p dir="ltr"><span id="currentBalance">جاري التحميل...</span> <span class="text-lg font-normal">SDG</span></p>
+        </div>
+        
+        <h1 class="text-2xl font-bold text-center text-gray-800 mb-6"> إضافة مصروف جديد </h1>
         
         <form id="expenseForm">
             <div class="form-group">
-                <label>اسم المصروف</label>
+                <label for="expenseTitle">اسم المصروف</label>
                 <input type="text" id="expenseTitle" placeholder="مثال: عشاء" required>
             </div>
-            <div class="form-group flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                <label for="isMessenger" class="text-red-700 cursor-pointer">دفعت كمُرسال</label>
+            <div class="form-group flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
+                <label for="isMessenger" class="text-sm font-semibold text-red-700 cursor-pointer">دفعت كمُرسال</label>
                 <input type="checkbox" id="isMessenger" class="h-5 w-5">
             </div>
             <div class="form-group">
-                <label>المبلغ الكلي</label>
-                <input type="tel" id="expenseAmount" required style="direction: ltr; text-align: right;">
+                <label for="expenseAmount">المبلغ الكلي (SDG)</label>
+                <input type="tel" id="expenseAmount" oninput="formatNumber(this)" required style="direction: ltr; text-align: right;">
             </div>
-            <div class="form-group">
+            <div class="form-group mt-6">
                 <label>المشاركون</label>
-                <div id="participantsCheckboxes" class="checkbox-group"></div>
+                <div class="checkbox-group" id="participantsCheckboxes"></div>
             </div>
-            <button type="button" onclick="previewExpense()" class="btn">معاينة وحفظ</button>
+            <button type="button" onclick="previewExpense()" class="btn"> معاينة وحفظ </button>
         </form>
     </div>
 </div>
 
-<div id="previewModal" class="modal"> </div>
-<div id="notificationModal" class="modal"> </div>
+<div id="previewModal" class="modal">...</div>
+<div id="successModal" class="modal">...</div>
+<div id="notificationModal" class="modal">
+    <div class="modal-content max-w-md text-right">
+        <h2 class="text-xl font-bold mb-4 border-b pb-2">الإشعارات</h2>
+        <div id="notificationsList" class="space-y-3 text-sm max-h-96 overflow-y-auto"></div>
+        <button onclick="hideNotificationModal()" class="btn mt-6 bg-gray-500">إغلاق</button>
+    </div>
+</div>
 
 <script src="layout.js"></script>
 <script src="script.js" type="module"></script>
