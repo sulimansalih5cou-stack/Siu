@@ -1,5 +1,5 @@
 /**
- * كود خبير البرمجة - المحرك الموحد للأشرطة وإدارة التنبيهات
+ * كود خبير البرمجة - المحرك الموحد للأشرطة وإدارة التنبيهات (نسخة مصححة)
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function renderMainLayout() {
-    // كود HTML للشريط العلوي (Navbar)
+    // 1. كود HTML للشريط العلوي
     const navbarHTML = `
     <nav class="navbar">
         <div class="max-w-6xl mx-auto px-4 h-full">
@@ -30,7 +30,7 @@ function renderMainLayout() {
         </div>
     </nav>`;
 
-    // كود HTML للشريط الجانبي (Sidebar)
+    // 2. كود HTML للشريط الجانبي + الغطاء الشفاف
     const sidebarHTML = `
     <div id="sidebar" class="sidebar">
         <div class="p-4 border-b">
@@ -49,14 +49,14 @@ function renderMainLayout() {
     </div>
     <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>`;
 
-    // حقن الأكواد في الصفحات إذا كانت الحاويات موجودة
+    // 3. الحقن في الحاويات
     const topPlaceholder = document.getElementById('top-nav-placeholder');
     const sidePlaceholder = document.getElementById('sidebar-placeholder');
 
     if (topPlaceholder) topPlaceholder.innerHTML = navbarHTML;
     if (sidePlaceholder) sidePlaceholder.innerHTML = sidebarHTML;
 
-    // تمييز الرابط الحالي (Active Link)
+    // 4. تمييز الرابط الحالي
     const currentPath = window.location.pathname.split("/").pop() || 'index.html';
     document.querySelectorAll('.sidebar-link').forEach(link => {
         if (link.getAttribute('href') === currentPath) {
@@ -64,25 +64,18 @@ function renderMainLayout() {
         }
     });
 
-    // فحص حالة الجرس من ذاكرة المتصفح
     checkNotificationStatus();
 }
 
-// دالة التحكم في الجرس (حل مشكلتك)
-function handleNotificationClick() {
+// دالة الجرس
+window.handleNotificationClick = function() {
     const badge = document.getElementById('notificationBadge');
-    if (badge) {
-        badge.classList.add('hidden'); // إخفاء العلامة فوراً
-    }
-    
-    // حفظ الحالة في المتصفح لكي لا يظهر في الصفحات الأخرى
+    if (badge) badge.classList.add('hidden');
     localStorage.setItem('notif_read_status', 'true');
 
-    // استدعاء دالة عرض الإشعارات الأصلية من ملفك script.js (إذا كانت موجودة)
     if (typeof window.showNotifications === "function") {
         window.showNotifications();
     } else {
-        // إذا لم تكن الدالة موجودة في الصفحة الحالية، يمكنك فتح المودال يدوياً
         const modal = document.getElementById('notificationModal');
         if (modal) modal.classList.add('show');
     }
@@ -91,18 +84,22 @@ function handleNotificationClick() {
 function checkNotificationStatus() {
     const isRead = localStorage.getItem('notif_read_status');
     const badge = document.getElementById('notificationBadge');
-    if (isRead === 'true' && badge) {
-        badge.classList.add('hidden');
-    }
+    if (isRead === 'true' && badge) badge.classList.add('hidden');
 }
 
-// وظائف فتح وإغلاق القائمة
+// وظائف القائمة (تم تعديلها لضمان عمل الـ Overlay)
 window.toggleSidebar = function() {
     const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
     if (sidebar) sidebar.classList.toggle('open');
+    if (overlay) {
+        overlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
+    }
 };
 
 window.closeSidebar = function() {
     const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
     if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.style.display = 'none';
 };
