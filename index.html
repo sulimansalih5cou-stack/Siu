@@ -1,99 +1,152 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>الرئيسية - Smart Dorm Expenses</title>
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-<style>
-/* CSS: الأنماط الأساسية (للمحتوى فقط) */
-body {
-    background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    padding-top: 64px; 
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الرئيسية - Smart Dorm Expenses</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* CSS: الأنماط الأساسية */
+        body {
+            background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding-top: 64px; 
+        }
 
-/* ملاحظة: أبقِ أنماط الـ navbar والـ sidebar هنا أو في ملف CSS خارجي */
-.navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 900; background-color: white; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); height: 64px; padding: 0 16px; }
-.sidebar { position: fixed; top: 0; right: 0; height: 100%; width: 250px; background: white; z-index: 1000; box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1); transform: translateX(100%); transition: transform 0.3s ease-out; padding-top: 64px; }
-.sidebar.open { transform: translateX(0); }
-.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 999; }
-.sidebar.open + .sidebar-overlay { display: block; }
-.sidebar-link { display: block; padding: 15px 20px; font-weight: 600; color: #4B5563; transition: 0.3s; border-right: 4px solid transparent; }
-.sidebar-link:hover { background-color: #F3F4F6; color: #3B82F6; }
-.sidebar-link.active { color: #1D4ED8; background-color: #EBF5FF; border-right-color: #1D4ED8; }
-.sidebar-profile-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        /* تنسيقات الـ Layout الأساسية */
+        .navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 900; background-color: white; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); height: 64px; }
+        .sidebar { position: fixed; top: 0; right: 0; height: 100%; width: 250px; background: white; z-index: 1000; box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1); transform: translateX(100%); transition: transform 0.3s ease-out; padding-top: 64px; }
+        .sidebar.open { transform: translateX(0); }
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 999; }
+        
+        /* تنسيق المودال (النافذة المنبثقة) */
+        .modal { 
+            display: none; 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(0,0,0,0.6); 
+            backdrop-filter: blur(4px);
+            align-items: center; 
+            justify-content: center; 
+            z-index: 2000; 
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 24px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
 
-/* تنسيقات المحتوى الداخلي */
-.content-wrapper { flex-grow: 1; display: flex; align-items: flex-start; justify-content: center; padding: 20px; }
-.container { background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); padding: 40px; max-width: 600px; width: 100%; margin-top: 20px; position: relative; }
-.balance-card { background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3); }
-.balance-card.negative { background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%) !important; }
-.form-group { margin-bottom: 25px; }
-.form-group label { display: block; font-weight: 600; color: #374151; margin-bottom: 8px; }
-.form-group input { width: 100%; padding: 15px; border: 2px solid #E5E7EB; border-radius: 12px; background: #F9FAFB; }
-.checkbox-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
-.checkbox-item { display: flex; align-items: center; background: #F3F4F6; padding: 12px; border-radius: 10px; cursor: pointer; }
-.btn { background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); color: white; padding: 15px; border-radius: 12px; font-weight: 600; width: 100%; justify-content: center; display: flex; gap: 10px; }
-.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1100; }
-.modal.show { display: flex; }
-</style>
+        /* تنسيقات المحتوى الداخلي */
+        .container { background: white; border-radius: 24px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05); padding: 30px; max-width: 600px; width: 100%; margin: 20px auto; }
+        .balance-card { background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; padding: 25px; border-radius: 20px; text-align: center; margin-bottom: 25px; }
+        .balance-card.negative { background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%) !important; }
+        
+        .form-group input { width: 100%; padding: 14px; border: 2px solid #F3F4F6; border-radius: 12px; background: #F9FAFB; transition: 0.3s; }
+        .form-group input:focus { border-color: #3B82F6; outline: none; background: white; }
+        
+        .btn { background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); color: white; padding: 16px; border-radius: 14px; font-weight: 700; width: 100%; transition: 0.3s; cursor: pointer; border: none; }
+        .btn:active { transform: scale(0.98); }
+    </style>
 </head>
 <body>
 
 <div id="top-nav-placeholder"></div>
 <div id="sidebar-placeholder"></div>
 
-<div class="content-wrapper">
+<div class="content-wrapper px-4">
     <div class="container">
-        <div class="text-center text-gray-500 text-sm mb-6 italic">
-            <i class="fas fa-wallet"></i> نظام إدارة مصروفات السكن الذكي
+        <div class="text-center text-gray-400 text-xs mb-4 uppercase tracking-widest font-bold">
+            Smart Dorm System
         </div>
+        
         <div id="currentBalanceCard" class="balance-card">
-            <h3> <i class="fas fa-user-circle ml-1"></i> مرحباً، <span id="userNamePlaceholder" class="font-bold underline">...</span> </h3>
-            <p dir="ltr"><span id="currentBalance">جاري التحميل...</span> <span class="text-lg font-normal">SDG</span></p>
+            <h3 class="text-lg opacity-90 mb-1"> <i class="fas fa-user-circle ml-1"></i> مرحباً، <span id="userNamePlaceholder">...</span> </h3>
+            <div class="text-3xl font-black tracking-tight" dir="ltr">
+                <span id="currentBalance">0.00</span> <span class="text-sm font-light">SDG</span>
+            </div>
         </div>
-        
-        <h1 class="text-2xl font-bold text-center text-gray-800 mb-6"> إضافة مصروف جديد </h1>
-        
-        <form id="expenseForm">
+
+        <h1 class="text-xl font-bold text-right text-gray-800 mb-6"> <i class="fas fa-plus-circle ml-1 text-blue-600"></i> إضافة مصروف </h1>
+
+        <form id="expenseForm" class="space-y-5">
             <div class="form-group">
-                <label for="expenseTitle">اسم المصروف</label>
-                <input type="text" id="expenseTitle" placeholder="مثال: عشاء" required>
+                <label class="block text-sm font-bold text-gray-700 mb-2">اسم المصروف</label>
+                <input type="text" id="expenseTitle" placeholder="مثال: شراء خبز" required>
             </div>
-            <div class="form-group flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
-                <label for="isMessenger" class="text-sm font-semibold text-red-700 cursor-pointer">دفعت كمُرسال</label>
-                <input type="checkbox" id="isMessenger" class="h-5 w-5">
+            
+            <div class="flex gap-3">
+                <div class="flex-1 p-3 bg-red-50 rounded-xl border border-red-100 flex items-center justify-between">
+                    <label for="isMessenger" class="text-xs font-bold text-red-700 cursor-pointer">دفعت كمُرسال</label>
+                    <input type="checkbox" id="isMessenger" class="h-5 w-5 accent-red-600">
+                </div>
+                <button type="button" id="personalExpenseBtn" onclick="window.togglePersonalExpense()" class="flex-1 p-3 bg-gray-100 text-gray-700 text-xs font-bold rounded-xl border border-gray-200 transition-all">
+                    مصروف شخصي فقط
+                </button>
             </div>
+
             <div class="form-group">
-                <label for="expenseAmount">المبلغ الكلي (SDG)</label>
-                <input type="tel" id="expenseAmount" oninput="formatNumber(this)" required style="direction: ltr; text-align: right;">
+                <label class="block text-sm font-bold text-gray-700 mb-2">المبلغ الكلي</label>
+                <input type="tel" id="expenseAmount" placeholder="0.00" required style="direction: ltr; text-align: right; font-weight: bold; font-size: 1.2rem;">
             </div>
-            <div class="form-group mt-6">
-                <label>المشاركون</label>
-                <div class="checkbox-group" id="participantsCheckboxes"></div>
+
+            <div class="form-group">
+                <label class="block text-sm font-bold text-gray-700 mb-3">تحديد المشاركين</label>
+                <div class="grid grid-cols-2 gap-3" id="participantsCheckboxes">
+                    </div>
             </div>
-            <button type="button" onclick="previewExpense()" class="btn"> معاينة وحفظ </button>
+
+            <button type="button" onclick="window.previewExpense()" class="btn shadow-lg shadow-blue-200"> 
+                معاينة وحفظ المصروف 
+            </button>
         </form>
     </div>
 </div>
 
-<div id="previewModal" class="modal">...</div>
-<div id="successModal" class="modal">...</div>
-<div id="notificationModal" class="modal">
-    <div class="modal-content max-w-md text-right">
-        <h2 class="text-xl font-bold mb-4 border-b pb-2">الإشعارات</h2>
-        <div id="notificationsList" class="space-y-3 text-sm max-h-96 overflow-y-auto"></div>
-        <button onclick="hideNotificationModal()" class="btn mt-6 bg-gray-500">إغلاق</button>
+<div id="notificationModal" class="modal" onclick="if(event.target == this) this.classList.remove('show')">
+    <div class="modal-content">
+        <div class="flex justify-between items-center mb-6 border-b pb-4">
+            <h2 class="text-xl font-extrabold text-gray-800"> <i class="fas fa-bell ml-2 text-blue-600"></i> الإشعارات </h2>
+            <button onclick="document.getElementById('notificationModal').classList.remove('show')" class="text-gray-400 hover:text-red-500 transition-colors">
+                <i class="fas fa-times-circle text-2xl"></i>
+            </button>
+        </div>
+        
+        <div id="notificationsList" class="space-y-3 max-h-80 overflow-y-auto pr-1">
+            <div class="text-center py-8">
+                <i class="fas fa-spinner fa-spin text-blue-500 text-2xl"></i>
+                <p class="text-sm text-gray-500 mt-2">جاري البحث عن تحديثات...</p>
+            </div>
+        </div>
+
+        <button onclick="document.getElementById('notificationModal').classList.remove('show')" class="w-full mt-6 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-all">
+            إغلاق النافذة
+        </button>
     </div>
 </div>
 
+<div id="previewModal" class="modal"> </div>
+<div id="successModal" class="modal"> </div>
+
 <script src="layout.js"></script>
 <script src="script.js" type="module"></script>
+
+<script>
+    // وظيفة تنسيق الأرقام أثناء الكتابة
+    function formatNumber(input) {
+        let value = input.value.replace(/,/g, '');
+        if (!isNaN(value) && value !== "") {
+            input.value = parseFloat(value).toLocaleString('en-US');
+        }
+    }
+</script>
 
 </body>
 </html>
