@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -16,7 +15,7 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            padding-top: 64px; /* تم تعديلها لتناسب ارتفاع شريط التنقل الجديد */
+            padding-top: 64px;
         }
 
         /* شريط التنقل */
@@ -24,26 +23,26 @@
             position: fixed; top: 0; left: 0; right: 0;
             z-index: 900; background-color: white;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-            height: 64px; /* تحديد ارتفاع ثابت */
+            height: 64px;
             padding: 0 16px; 
         }
 
-        /* --- 🔥 أنماط القائمة الجانبية (Sidebar) 🔥 --- */
+        /* --- أنماط القائمة الجانبية (Sidebar) --- */
         .sidebar {
             position: fixed;
             top: 0;
-            right: 0; /* في وضع RTL تظهر القائمة من اليمين */
+            right: 0;
             height: 100%;
             width: 250px;
             background: white;
             z-index: 1000;
             box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
-            transform: translateX(100%); /* إخفاء القائمة في البداية */
+            transform: translateX(100%);
             transition: transform 0.3s ease-out;
             padding-top: 64px;
         }
         .sidebar.open {
-            transform: translateX(0); /* إظهار القائمة */
+            transform: translateX(0);
         }
         .sidebar-overlay {
             display: none;
@@ -61,7 +60,7 @@
             font-weight: 600;
             color: #4B5563;
             transition: background-color 0.3s, color 0.3s;
-            border-right: 4px solid transparent; /* خط التحديد لليمين */
+            border-right: 4px solid transparent;
         }
         .sidebar-link:hover {
             background-color: #F3F4F6;
@@ -73,15 +72,13 @@
             border-right-color: #1D4ED8;
         }
 
-        /* 🔥 النمط الجديد لقص النص الزائد 🔥 */
+        /* النمط الجديد لقص النص الزائد */
         .sidebar-profile-text {
             white-space: nowrap; 
             overflow: hidden;    
             text-overflow: ellipsis;
             max-width: 100%;
         }
-        /* نهاية أنماط القائمة الجانبية */
-
 
         /* الحاوية الرئيسية */
         .content-wrapper {
@@ -94,30 +91,18 @@
             max-width: 600px; width: 100%; margin-top: 20px; position: relative;
         }
 
-        /* الأزرار العلوية */
-        .top-actions {
-            position: absolute; top: -50px; right: 20px;
-            display: flex; gap: 10px; z-index: 10;
-        }
-        /* ملاحظة: تم حذف هذا القسم مؤقتاً في الـ HTML حيث سيتم نقل أزرار السجل والخروج إلى القائمة الجانبية */
-        /* إذا كنت تريد إبقاء هذه الأزرار (السجل والخروج) على الواجهة الرئيسية، أعد إضافة هذا القسم إلى الـ HTML، لكن التعديل الحالي نقلهما إلى القائمة الجانبية */
-
-        /* --- 🔥 بطاقة الرصيد --- */
+        /* --- بطاقة الرصيد --- */
         .balance-card {
-            /* الحالة الافتراضية (موجب - أخضر) */
             background: linear-gradient(135deg, #10B981 0%, #059669 100%);
             color: white; padding: 20px; border-radius: 15px;
             text-align: center; margin-bottom: 30px;
             box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
             transition: background 0.5s ease;
         }
-
-        /* الحالة السالبة (دين - أحمر) */
         .balance-card.negative {
             background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%) !important;
             box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3);
         }
-
         .balance-card h3 { font-size: 18px; margin-bottom: 5px; opacity: 0.9; }
         .balance-card p { font-size: 28px; font-weight: 800; letter-spacing: 1px; }
 
@@ -150,6 +135,7 @@
             background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
             color: white; padding: 15px 30px; border-radius: 12px; font-size: 16px; font-weight: 600;
             width: 100%; display: inline-flex; justify-content: center; align-items: center; gap: 10px;
+            border: none; cursor: pointer;
         }
         .btn-secondary { background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); }
 
@@ -170,7 +156,19 @@
         #messengerConfirmation { display: none; } 
 
         /* أنماط الإشعارات */
-        .max-h-96 { max-height: 24rem; } 
+        .max-h-96 { max-height: 24rem; }
+        
+        /* Loading spinner */
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -207,15 +205,12 @@
         <a href="index.html" class="sidebar-link active"><i class="fas fa-plus-circle ml-2"></i> إضافة مصروف</a>
         <a href="my_expenses.html" class="sidebar-link"><i class="fas fa-file-invoice-dollar ml-2"></i> مصروفاتي</a>
         <a href="history.html" class="sidebar-link"><i class="fas fa-history ml-2"></i> السجل</a>
-
-<a href="summary.html" class="sidebar-link active"><i class="fas fa-plus-circle ml-2"></i>  الملخص والتسوية</a>
-
+        <a href="summary.html" class="sidebar-link"><i class="fas fa-chart-pie ml-2"></i> الملخص والتسوية</a>
         <a href="auth.html" id="logoutSidebarButton" class="sidebar-link text-red-600 hover:text-red-800 mt-4">
             <i class="fas fa-sign-out-alt ml-2"></i> خروج
         </a>
     </div>
     <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
-
 
     <div class="content-wrapper">
         <div class="container">
@@ -252,17 +247,18 @@
                     </label>
                     <input type="checkbox" id="isMessenger" class="form-checkbox h-5 w-5 text-red-600">
                 </div>
+
                 <div class="form-group">
                     <label for="expenseAmount">المبلغ الكلي (SDG)</label>
                     <input type="tel" id="expenseAmount" placeholder="مثال: 5,000" oninput="formatNumber(this)" required style="direction: ltr; text-align: right;">
                 </div>
 
-
                 <div class="form-group mt-6">
                     <label>المشاركون (من سيقتسمون المبلغ)</label>
                     <div class="select-all" onclick="selectAllParticipants()">تحديد الجميع</div>
                     <div class="checkbox-group" id="participantsCheckboxes">
-                        </div>
+                        <div class="text-center text-gray-400 py-4">جاري تحميل المستخدمين...</div>
+                    </div>
                 </div>
 
                 <button type="button" onclick="previewExpense()" class="btn btn-secondary">
@@ -274,7 +270,6 @@
 
     <div id="previewModal" class="modal">
         <div class="modal-content">
-
             <div id="previewDetails">
                 <div id="warning" class="warning"><i class="fas fa-exclamation-triangle"></i> تحذير: مصروف مكرر!</div>
                 <h2 class="text-xl font-bold mb-4">تأكيد المصروف</h2>
@@ -289,7 +284,7 @@
                 <div class="messenger-warning">
                     <h3 class="font-extrabold mb-2 text-xl"><i class="fas fa-exclamation-triangle ml-1"></i> تنبيه هام: وضع المرسال!</h3>
                     <p class="text-base leading-relaxed">
-                        أنت على وشك تسجيل المصروف كـ **مُرسال**. هذا يعني أنك دفعت المبلغ (سيظهر هنا) بالنيابة عن المشاركين، وحصتك ستكون **صفراً**.
+                        أنت على وشك تسجيل المصروف كـ <strong>مُرسال</strong>. هذا يعني أنك دفعت المبلغ بالنيابة عن المشاركين، وحصتك ستكون <strong>صفراً</strong>.
                     </p>
                     <p class="mt-2 font-bold">
                         هل أنت متأكد من المتابعة بتسجيل المصروف كـ مُرسال؟
@@ -300,7 +295,6 @@
                     <button onclick="hideModal()" class="btn w-auto bg-gray-500 text-white">إلغاء</button>
                 </div>
             </div>
-
         </div>
     </div>
 
@@ -315,25 +309,293 @@
         <div class="modal-content max-w-md text-right">
             <h2 class="text-xl font-bold mb-4 border-b pb-2"><i class="fas fa-bell ml-1"></i> الإشعارات</h2>
             <div id="notificationsList" class="space-y-3 text-sm max-h-96 overflow-y-auto">
-                </div>
+            </div>
             <button onclick="hideNotificationModal()" class="btn w-full mt-6 bg-gray-500 text-white">إغلاق</button>
         </div>
     </div>
 
-    <script>
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, onValue, set, push, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // 🔥 استبدل هذا ببيانات Firebase الخاصة بك
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let currentUser = null;
+        let currentUserData = null;
+        let allUsers = {};
+        let tempExpenseData = null;
+
+        // Auth Guard - التحقق من تسجيل الدخول
+        onAuthStateChanged(auth, (user) => {
+            if (!user || !user.emailVerified) {
+                window.location.href = 'auth.html';
+                return;
+            }
+            currentUser = user;
+            loadUserData();
+            loadUsers();
+        });
+
+        // تحميل بيانات المستخدم الحالي
+        function loadUserData() {
+            const userRef = ref(db, 'users/' + currentUser.uid);
+            onValue(userRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    currentUserData = snapshot.val();
+                    updateUI();
+                }
+            });
+        }
+
+        // تحديث واجهة المستخدم
+        function updateUI() {
+            const balance = currentUserData.balance || 0;
+            const balanceCard = document.getElementById('currentBalanceCard');
+            const balanceEl = document.getElementById('currentBalance');
+            
+            document.getElementById('userNamePlaceholder').textContent = currentUserData.username;
+            document.getElementById('sidebarUserName').textContent = currentUserData.username;
+            document.getElementById('sidebarUserEmail').textContent = currentUserData.email;
+            
+            balanceEl.textContent = balance.toLocaleString('ar-SD');
+            
+            if (balance < 0) {
+                balanceCard.classList.add('negative');
+            } else {
+                balanceCard.classList.remove('negative');
+            }
+        }
+
+        // تحميل قائمة المستخدمين للمشاركة
+        function loadUsers() {
+            const usersRef = ref(db, 'users');
+            onValue(usersRef, (snapshot) => {
+                allUsers = {};
+                const container = document.getElementById('participantsCheckboxes');
+                container.innerHTML = '';
+                
+                snapshot.forEach((child) => {
+                    const uid = child.key;
+                    const data = child.val();
+                    allUsers[uid] = data;
+                    
+                    if (uid !== currentUser.uid) {
+                        const div = document.createElement('div');
+                        div.className = 'checkbox-item';
+                        div.innerHTML = `
+                            <input type="checkbox" id="user_${uid}" value="${uid}" class="participant-checkbox">
+                            <label for="user_${uid}" class="cursor-pointer flex-1">${data.username}</label>
+                        `;
+                        container.appendChild(div);
+                    }
+                });
+            });
+        }
+
+        // تسجيل الخروج
+        document.getElementById('logoutSidebarButton').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await signOut(auth);
+            window.location.href = 'auth.html';
+        });
+
+        // 🔥 الدوال العامة (Global Functions) للوصول من HTML
+        
         window.toggleSidebar = function() {
             const sidebar = document.getElementById('sidebar');
             sidebar.classList.toggle('open');
             document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : 'auto';
-        }
+        };
+
         window.closeSidebar = function() {
             document.getElementById('sidebar').classList.remove('open');
             document.body.style.overflow = 'auto';
-        }
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('menuButton').addEventListener('click', window.toggleSidebar);
+        };
+
+        window.formatNumber = function(input) {
+            let value = input.value.replace(/,/g, '');
+            if (value) {
+                input.value = parseInt(value).toLocaleString('en-US');
+            }
+        };
+
+        window.selectAllParticipants = function() {
+            const checkboxes = document.querySelectorAll('.participant-checkbox');
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            checkboxes.forEach(cb => cb.checked = !allChecked);
+        };
+
+        window.previewExpense = function() {
+            const title = document.getElementById('expenseTitle').value.trim();
+            const amountStr = document.getElementById('expenseAmount').value.replace(/,/g, '');
+            const amount = parseFloat(amountStr);
+            const isMessenger = document.getElementById('isMessenger').checked;
+            
+            if (!title || !amount || amount <= 0) {
+                alert('يرجى إدخال عنوان المصروف والمبلغ بشكل صحيح');
+                return;
+            }
+
+            const checkboxes = document.querySelectorAll('.participant-checkbox:checked');
+            if (checkboxes.length === 0) {
+                alert('يرجى اختيار مشارك واحد على الأقل');
+                return;
+            }
+
+            const participants = Array.from(checkboxes).map(cb => cb.value);
+            const participantNames = participants.map(uid => allUsers[uid]?.username).join('، ');
+            
+            let share = amount / (isMessenger ? participants.length : participants.length + 1);
+            
+            let previewHTML = `
+                <strong>العنوان:</strong> ${title}<br>
+                <strong>المبلغ الكلي:</strong> ${amount.toLocaleString()} SDG<br>
+                <strong>نوع المصروف:</strong> ${isMessenger ? 'دفع كمُرسال (لست مشاركاً)' : 'مشاركة عادية'}<br>
+                <strong>المشاركون:</strong> ${participantNames}<br>
+                <strong>الحصة لكل شخص:</strong> ${share.toFixed(2)} SDG<br>
+            `;
+
+            if (!isMessenger) {
+                previewHTML += `<strong>حصتك:</strong> ${share.toFixed(2)} SDG<br>`;
+            }
+
+            document.getElementById('previewText').innerHTML = previewHTML;
+            
+            tempExpenseData = {
+                title: title,
+                amount: amount,
+                isMessenger: isMessenger,
+                participants: participants
+            };
+
+            if (isMessenger) {
+                document.getElementById('previewDetails').style.display = 'none';
+                document.getElementById('messengerConfirmation').style.display = 'block';
+            } else {
+                document.getElementById('previewDetails').style.display = 'block';
+                document.getElementById('messengerConfirmation').style.display = 'none';
+            }
+
+            document.getElementById('previewModal').classList.add('show');
+        };
+
+        window.handleSaveClick = function() {
+            saveExpense();
+        };
+
+        window.saveExpense = async function() {
+            if (!tempExpenseData) return;
+
+            const { title, amount, isMessenger, participants } = tempExpenseData;
+            
+            try {
+                // حساب التحديثات
+                const updates = {};
+                const share = amount / (isMessenger ? participants.length : participants.length + 1);
+                
+                // خصم من المشاركين
+                participants.forEach(uid => {
+                    const currentBalance = allUsers[uid].balance || 0;
+                    updates[`users/${uid}/balance`] = currentBalance - share;
+                });
+
+                // تحديث رصيد الدافع
+                const payerBalance = currentUserData.balance || 0;
+                if (isMessenger) {
+                    // وضع المرسال: يحصل على المبلغ كاملاً
+                    updates[`users/${currentUser.uid}/balance`] = payerBalance + amount;
+                } else {
+                    // الوضع العادي: يحصل على (المبلغ - حصته)
+                    updates[`users/${currentUser.uid}/balance`] = payerBalance + (amount - share);
+                }
+
+                // تطبيق التحديثات
+                await update(ref(db), updates);
+
+                // حفظ سجل المصروف
+                const expenseRef = push(ref(db, 'expenses'));
+                const expenseData = {
+                    title: title,
+                    amount: amount,
+                    payer_id: currentUser.uid,
+                    timestamp: Date.now(),
+                    type: isMessenger ? 'MESSENGER' : 'NORMAL',
+                    participants: {}
+                };
+
+                if (isMessenger) {
+                    participants.forEach(uid => expenseData.participants[uid] = true);
+                } else {
+                    expenseData.participants[currentUser.uid] = true;
+                    participants.forEach(uid => expenseData.participants[uid] = true);
+                }
+
+                await set(expenseRef, expenseData);
+
+                // إغلاق المودالات وإعادة تعيين النموذج
+                hideModal();
+                hideSuccessModal();
+                document.getElementById('expenseForm').reset();
+                document.getElementById('participantsCheckboxes').innerHTML = '<div class="text-center text-gray-400 py-4">جاري تحميل المستخدمين...</div>';
+                
+                // إظهار نجاح
+                document.getElementById('successModal').classList.add('show');
+                
+                // إعادة تحميل المستخدمين
+                loadUsers();
+                
+            } catch (error) {
+                console.error(error);
+                alert('حدث خطأ أثناء الحفظ: ' + error.message);
+            }
+        };
+
+        window.hideModal = function() {
+            document.getElementById('previewModal').classList.remove('show');
+            tempExpenseData = null;
+        };
+
+        window.hideSuccessModal = function() {
+            document.getElementById('successModal').classList.remove('show');
+        };
+
+        // الإشعارات (Placeholder)
+        window.showNotifications = function() {
+            document.getElementById('notificationModal').classList.add('show');
+            // يمكن إضافة منطق جلب الإشعارات هنا
+            document.getElementById('notificationsList').innerHTML = '<p class="text-gray-500 text-center">لا توجد إشعارات جديدة</p>';
+        };
+
+        window.hideNotificationModal = function() {
+            document.getElementById('notificationModal').classList.remove('show');
+        };
+
+        // إغلاق المودال عند النقر خارج المحتوى
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('show');
+                }
+            });
         });
+
+        // ربط زر القائمة
+        document.getElementById('menuButton').addEventListener('click', window.toggleSidebar);
     </script>
-    <script src="script.js" type="module"></script> 
 </body>
 </html>
