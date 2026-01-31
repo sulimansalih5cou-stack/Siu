@@ -200,8 +200,25 @@
             background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
             color: white; padding: 15px 30px; border-radius: 12px; font-size: 16px; font-weight: 600;
             width: 100%; display: inline-flex; justify-content: center; align-items: center; gap: 10px;
+            transition: all 0.3s ease;
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
         }
         .max-h-96 { max-height: 24rem; } 
+        
+        /* 🔥 رسالة الخطأ 🔥 */
+        .error-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: #DC2626;
+        }
+        .error-message i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
@@ -258,11 +275,11 @@
     <div class="max-w-3xl mx-auto px-4">
 
         <div class="filter-scroll" id="filtersContainer">
-            <div class="filter-pill active" onclick="setFilter('30days', this)">آخر 30 يوم</div>
-            <div class="filter-pill" onclick="setFilter('3months', this)">آخر 3 شهور</div>
-            <div class="filter-pill" onclick="setFilter('incoming', this)">الواردة (لك)</div>
-            <div class="filter-pill" onclick="setFilter('outgoing', this)">الصادرة (عليك)</div>
-            <div class="filter-pill" onclick="setFilter('all', this)">الكل</div>
+            <div class="filter-pill active" onclick="setFilterWithProtection('30days', this)">آخر 30 يوم</div>
+            <div class="filter-pill" onclick="setFilterWithProtection('3months', this)">آخر 3 شهور</div>
+            <div class="filter-pill" onclick="setFilterWithProtection('incoming', this)">الواردة (لك)</div>
+            <div class="filter-pill" onclick="setFilterWithProtection('outgoing', this)">الصادرة (عليك)</div>
+            <div class="filter-pill" onclick="setFilterWithProtection('all', this)">الكل</div>
         </div>
 
         <div id="expensesContainer">
@@ -272,7 +289,7 @@
             </p>
         </div>
 
-        <button id="loadMoreButton" onclick="loadMoreHistory()" class="btn w-full mt-4 bg-red-600 hover:bg-red-700 hidden">
+        <button id="loadMoreButton" onclick="loadMoreHistoryWithProtection()" class="btn w-full mt-4 bg-red-600 hover:bg-red-700 hidden">
             <i class="fas fa-redo-alt ml-2"></i> عرض المزيد من السجلات
         </button>
         </div>
@@ -287,6 +304,95 @@
     </div>
 
     <script>
+        // 🔥 منع الضغط المزدوج - متغيرات عامة
+        let isFiltering = false;
+        let isLoadingMore = false;
+
+        // 🔥 حماية زر الفلترة
+        window.setFilterWithProtection = function(filterType, element) {
+            if (isFiltering) {
+                console.log('منع الضغط المزدوج: الفلترة جارية...');
+                return;
+            }
+            
+            isFiltering = true;
+            
+            // تحديث الواجهة
+            document.querySelectorAll('.filter-pill').forEach(el => el.classList.remove('active'));
+            if (element) element.classList.add('active');
+            
+            // استدعاء الدالة الأصلية من script.js
+            if (typeof window.setFilter === 'function') {
+                window.setFilter(filterType, element);
+            } else {
+                console.error('دالة setFilter غير موجودة في script.js');
+                showError('حدث خطأ في تحميل البيانات');
+            }
+            
+            // إعادة التفعيل بعد فترة قصيرة
+            setTimeout(() => {
+                isFiltering = false;
+            }, 500);
+        };
+
+        // 🔥 حماية زر عرض المزيد
+        window.loadMoreHistoryWithProtection = function() {
+            if (isLoadingMore) {
+                console.log('منع الضغط المزدوج: التحميل جارٍ...');
+                return;
+            }
+            
+            isLoadingMore = true;
+            const btn = document.getElementById('loadMoreButton');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i> جاري التحميل...';
+            }
+            
+            // استدعاء الدالة الأصلية من script.js
+            if (typeof window.loadMoreHistory === 'function') {
+                window.loadMoreHistory();
+            } else {
+                console.error('دالة loadMoreHistory غير موجودة في script.js');
+            }
+            
+            // إعادة التفعيل بعد فترة
+            setTimeout(() => {
+                isLoadingMore = false;
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-redo-alt ml-2"></i> عرض المزيد من السجلات';
+                }
+            }, 1000);
+        };
+
+        // 🔥 دالة عرض رسالة الخطأ
+        function showError(message) {
+            const container = document.getElementById('expensesContainer');
+            if (container) {
+                container.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <h3 class="text-xl font-bold mb-2">عذراً!</h3>
+                        <p>${message}</p>
+                        <button onclick="location.reload()" class="btn mt-4 bg-blue-600 hover:bg-blue-700">
+                            <i class="fas fa-redo ml-2"></i> إعادة المحاولة
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // 🔥 التحقق من تحميل script.js
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                if (typeof window.setFilter !== 'function') {
+                    console.error('script.js لم يتم تحميله بشكل صحيح');
+                    showError('فشل تحميل البيانات. يرجى التحقق من الاتصال بالإنترنت وإعادة المحاولة.');
+                }
+            }, 3000); // انتظر 3 ثواني قبل التحقق
+        });
+
         window.toggleSidebar = function() {
             const sidebar = document.getElementById('sidebar');
             sidebar.classList.toggle('open');
