@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>كشف الحساب - Smart Dorm</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #F3F4F6;
+            font-family: 'Cairo', sans-serif;
+            padding-bottom: 60px;
+        }
+
+        /* --- 1. بطاقة المستخدم (الهيدر) --- */
+        .user-profile-card {
+            background: linear-gradient(135deg, #B91C1C 0%, #991B1B 100%);
+            color: white;
+            padding: 25px 20px;
+            border-bottom-left-radius: 25px;
+            border-bottom-right-radius: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 25px -5px rgba(185, 28, 28, 0.4);
+        }
+
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            padding: 6px 14px;
+            border-radius: 8px;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: background 0.3s;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.3); }
+
+        /* --- 2. بطاقة المعاملة (التصميم المعدل) --- */
+        .bankak-card {
+            background: white;
+            border: 1px solid #F3F4F6;
+            border-radius: 12px;
+            margin-bottom: 15px; /* مسافة بين البطاقات */
+            padding: 15px 18px;
+            position: relative;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease;
+        }
+        .bankak-card:hover { transform: translateY(-2px); }
+
+        /* الجزء العلوي (المحتوى الرئيسي) */
+        .card-main-content {
+            display: flex;
+            justify-content: space-between; /* توزيع: المبلغ يسار، التفاصيل يمين */
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #E5E7EB; /* الخط الفاصل */
+        }
+
+        /* تنسيق المبلغ (يسار) */
+        .amount-display {
+            font-size: 1.4rem;
+            font-weight: 800;
+            direction: ltr; 
+            font-family: sans-serif;
+            order: 2; /* يضمن ظهوره في اليسار في وضع RTL عبر Flexbox adjustment */
+            margin-right: auto; /* يدفعه لأقصى اليسار */
+        }
+        .amount-pos { color: #059669; }
+        .amount-neg { color: #DC2626; }
+
+        /* حاوية التفاصيل والأيقونة (يمين) */
+        .details-wrapper {
+            display: flex;
+            align-items: center;
+            order: 1;
+            flex-grow: 1;
+        }
+
+        .details-text {
+            margin-right: 10px; /* مسافة بين الأيقونة والنص */
+        }
+
+        .transaction-title {
+            font-weight: 700;
+            color: #1F2937;
+            font-size: 1rem;
+        }
+
+        .transaction-sub {
+            font-size: 0.85rem;
+            color: #6B7280;
+        }
+
+        /* الأيقونة */
+        .bank-icon-container {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid;
+            position: relative;
+            background-color: #FAFAFA;
+            flex-shrink: 0;
+        }
+        .icon-success { border-color: #059669; color: #059669; }
+        .icon-danger { border-color: #DC2626; color: #DC2626; }
+
+        .arrow-badge {
+            position: absolute;
+            bottom: -2px; right: -2px;
+            background: white; border-radius: 50%;
+            padding: 2px; font-size: 0.7rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* --- الجزء السفلي (التاريخ والوقت) --- */
+        .card-footer-date {
+            text-align: right;
+            font-size: 0.75rem;
+            color: #9CA3AF;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* الفلاتر */
+        .filter-scroll {
+            display: flex; gap: 10px; overflow-x: auto;
+            padding-bottom: 10px; margin-bottom: 10px;
+            scrollbar-width: none;
+        }
+        .filter-scroll::-webkit-scrollbar { display: none; }
+
+        .filter-pill {
+            white-space: nowrap; padding: 6px 16px;
+            border-radius: 20px; background: white;
+            color: #6B7280; font-size: 0.85rem; font-weight: 600;
+            border: 1px solid #E5E7EB; cursor: pointer; transition: 0.2s;
+        }
+        .filter-pill.active {
+            background: #FEF2F2; color: #B91C1C; border-color: #B91C1C;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="user-profile-card">
+        <div class="flex justify-between items-center">
+            <div>
+                <h2 class="text-xl font-bold mb-1">مرحباً، <span id="displayHeaderName">...</span></h2>
+                <p class="text-sm opacity-80 dir-ltr" id="displayHeaderEmail">...</p>
+            </div>
+            <a href="index.html" class="back-btn">
+                <i class="fas fa-arrow-right ml-1"></i> رجوع
+            </a>
+        </div>
+        </div>
+
+    <div class="max-w-3xl mx-auto px-4">
+
+        <div class="filter-scroll" id="filtersContainer">
+            <div class="filter-pill active" onclick="setFilter('30days', this)">آخر 30 يوم</div>
+            <div class="filter-pill" onclick="setFilter('3months', this)">آخر 3 شهور</div>
+            <div class="filter-pill" onclick="setFilter('incoming', this)">الواردة (لك)</div>
+            <div class="filter-pill" onclick="setFilter('outgoing', this)">الصادرة (عليك)</div>
+            <div class="filter-pill" onclick="setFilter('all', this)">الكل</div>
+        </div>
+
+        <div id="expensesContainer">
+            <p class="text-center text-gray-400 mt-12">
+                <i class="fas fa-spinner fa-spin fa-2x mb-4"></i><br>
+                جاري التحميل...
+            </p>
+        </div>
+    </div>
+
+    <script src="script.js" type="module"></script> 
+</body>
+</html>
