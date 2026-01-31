@@ -275,7 +275,7 @@
                         </div>
                 </div>
 
-                <button type="button" id="submitExpenseBtn" onclick="previewExpense()" class="btn btn-secondary">
+                <button type="button" id="submitExpenseBtn" onclick="previewExpenseWithProtection()" class="btn btn-secondary">
                     معاينة وحفظ
                 </button>
             </form>
@@ -290,7 +290,7 @@
                 <h2 class="text-xl font-bold mb-4">تأكيد المصروف</h2>
                 <div id="previewText" class="text-right text-gray-700 mb-6 text-sm leading-loose"></div>
                 <div class="flex justify-center gap-4">
-                    <button id="mainSaveButton" onclick="handleSaveClick()" class="btn w-auto">حفظ</button>
+                    <button id="mainSaveButton" onclick="handleSaveClickWithProtection()" class="btn w-auto">حفظ</button>
                     <button onclick="hideModal()" class="btn w-auto bg-gray-500 text-white">إلغاء</button>
                 </div>
             </div>
@@ -306,7 +306,7 @@
                     </p>
                 </div>
                 <div class="flex justify-center gap-4">
-                    <button id="messengerSaveBtn" onclick="saveExpense()" class="btn w-auto bg-red-600 hover:bg-red-700">موافق (تسجيل كمرسال)</button>
+                    <button id="messengerSaveBtn" onclick="saveExpenseWithProtection()" class="btn w-auto bg-red-600 hover:bg-red-700">موافق (تسجيل كمرسال)</button>
                     <button onclick="hideModal()" class="btn w-auto bg-gray-500 text-white">إلغاء</button>
                 </div>
             </div>
@@ -333,108 +333,135 @@
     <script>
         // 🔥 منع الضغط المزدوج - متغيرات عامة
         let isSubmitting = false;
+        let submitTimeout = null;
         
         // 🔥 دالة تعطيل/تفعيل زر الإرسال
-        function disableSubmitButton(buttonId, disable) {
+        function setButtonLoading(buttonId, isLoading, originalText) {
             const btn = document.getElementById(buttonId);
             if (btn) {
-                btn.disabled = disable;
-                if (disable) {
-                    btn.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i> جاري المعالجة...';
+                btn.disabled = isLoading;
+                if (isLoading) {
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i> جاري الحفظ...';
+                    btn.style.opacity = '0.7';
                 } else {
-                    // استعادة النص الأصلي حسب الزر
-                    if (buttonId === 'submitExpenseBtn') {
-                        btn.innerHTML = 'معاينة وحفظ';
-                    } else if (buttonId === 'mainSaveButton') {
-                        btn.innerHTML = 'حفظ';
-                    } else if (buttonId === 'messengerSaveBtn') {
-                        btn.innerHTML = 'موافق (تسجيل كمرسال)';
-                    }
+                    btn.innerHTML = originalText;
+                    btn.style.opacity = '1';
                 }
             }
         }
 
-        // 🔥 تعديل دالة previewExpense لتشمل منع الضغط المزدوج
-        const originalPreviewExpense = window.previewExpense;
-        window.previewExpense = function() {
-            if (isSubmitting) return; // منع الضغط أثناء المعالجة
-            
-            // التحقق من صحة البيانات أولاً
-            const title = document.getElementById('expenseTitle').value.trim();
-            const amountStr = document.getElementById('expenseAmount').value.replace(/,/g, '');
-            const amount = parseFloat(amountStr);
-            const checkboxes = document.querySelectorAll('.participant-checkbox:checked');
-            
-            let selectedParticipantsUids = Array.from(checkboxes).map(cb => cb.dataset.uid);
-            // إضافة المستخدم الحالي إذا لم يكن مرسالاً
-            const isMessenger = document.getElementById('isMessenger').checked;
-            if (!isMessenger) {
-                // نحتاج لمعرفة currentUserID من script.js
-                selectedParticipantsUids.push(window.currentUserID);
-            }
-            selectedParticipantsUids = [...new Set(selectedParticipantsUids)];
-            
-            if (!title || isNaN(amount) || amount <= 0 || selectedParticipantsUids.length < (isMessenger ? 1 : 2)) {
-                alert("يرجى إدخال اسم المصروف والمبلغ، وتحديد مشارك واحد على الأقل.");
+        // 🔥 دالة إعادة تعيين حالة الإرسال
+        function resetSubmitState() {
+            isSubmitting = false;
+            clearTimeout(submitTimeout);
+            // إعادة تفعيل جميع الأزرار
+            setButtonLoading('submitExpenseBtn', false, 'معاينة وحفظ');
+            setButtonLoading('mainSaveButton', false, 'حفظ');
+            setButtonLoading('messengerSaveBtn', false, 'موافق (تسجيل كمرسال)');
+        }
+
+        // 🔥 حماية زر معاينة وحفظ (الرئيسي)
+        window.previewExpenseWithProtection = function() {
+            if (isSubmitting) {
+                console.log('منع الضغط المزدوج: المعالجة جارية...');
                 return;
             }
             
-            // تعطيل الزر
             isSubmitting = true;
-            disableSubmitButton('submitExpenseBtn', true);
+            setButtonLoading('submitExpenseBtn', true, 'معاينة وحفظ');
             
-            // استدعاء الدالة الأصلية بعد تأخير بسيط للسماح بتحديث الواجهة
-            setTimeout(() => {
-                if (typeof originalPreviewExpense === 'function') {
-                    originalPreviewExpense();
-                }
-                // إعادة تفعيل الزر بعد فتح المودال
-                setTimeout(() => {
-                    isSubmitting = false;
-                    disableSubmitButton('submitExpenseBtn', false);
-                }, 500);
-            }, 100);
-        };
-
-        // 🔥 تعديل دالة handleSaveClick لمنع الضغط المزدوج
-        const originalHandleSaveClick = window.handleSaveClick;
-        window.handleSaveClick = function() {
-            if (isSubmitting) return;
-            
-            isSubmitting = true;
-            disableSubmitButton('mainSaveButton', true);
-            
-            // استدعاء الدالة الأصلية
-            if (typeof originalHandleSaveClick === 'function') {
-                originalHandleSaveClick();
+            // استدعاء الدالة الأصلية من script.js
+            if (typeof window.previewExpense === 'function') {
+                window.previewExpense();
             }
             
-            // إعادة تفعيل الزر بعد فترة (سيتم إخفاء المودال عند النجاح)
-            setTimeout(() => {
+            // إعادة تفعيل الزر بعد فتح المودال (بعد 500ms)
+            submitTimeout = setTimeout(() => {
+                setButtonLoading('submitExpenseBtn', false, 'معاينة وحفظ');
                 isSubmitting = false;
-                disableSubmitButton('mainSaveButton', false);
-            }, 2000);
+            }, 500);
         };
 
-        // 🔥 تعديل دالة saveExpense لمنع الضغط المزدوج
-        const originalSaveExpense = window.saveExpense;
-        window.saveExpense = function() {
-            if (isSubmitting) return;
-            
-            isSubmitting = true;
-            disableSubmitButton('messengerSaveBtn', true);
-            
-            // استدعاء الدالة الأصلية
-            if (typeof originalSaveExpense === 'function') {
-                originalSaveExpense();
+        // 🔥 حماية زر الحفظ في المودال (المصروف العادي)
+        window.handleSaveClickWithProtection = function() {
+            if (isSubmitting) {
+                console.log('منع الضغط المزدوج: الحفظ جارٍ...');
+                return;
             }
             
-            // إعادة تفعيل الزر بعد فترة
-            setTimeout(() => {
-                isSubmitting = false;
-                disableSubmitButton('messengerSaveBtn', false);
+            isSubmitting = true;
+            setButtonLoading('mainSaveButton', true, 'حفظ');
+            
+            // استدعاء الدالة الأصلية من script.js
+            if (typeof window.handleSaveClick === 'function') {
+                window.handleSaveClick();
+            }
+            
+            // إعادة التعيين بعد 3 ثواني (أو عند إغلاق المودال)
+            submitTimeout = setTimeout(() => {
+                resetSubmitState();
             }, 3000);
         };
+
+        // 🔥 حماية زر الحفظ في وضع المرسال
+        window.saveExpenseWithProtection = function() {
+            if (isSubmitting) {
+                console.log('منع الضغط المزدوج: حفظ المرسال جارٍ...');
+                return;
+            }
+            
+            isSubmitting = true;
+            setButtonLoading('messengerSaveBtn', true, 'موافق (تسجيل كمرسال)');
+            
+            // استدعاء الدالة الأصلية من script.js
+            if (typeof window.saveExpense === 'function') {
+                window.saveExpense();
+            }
+            
+            // إعادة التعيين بعد 3 ثواني
+            submitTimeout = setTimeout(() => {
+                resetSubmitState();
+            }, 3000);
+        };
+
+        // 🔥 إعادة تعيين الأزرار عند إغلاق المودال
+        const originalHideModal = window.hideModal;
+        window.hideModal = function() {
+            resetSubmitState();
+            if (typeof originalHideModal === 'function') {
+                originalHideModal();
+            } else {
+                // إغلاق يدوي إذا لم تكن الدالة موجودة
+                const modal = document.getElementById('previewModal');
+                if (modal) {
+                    modal.classList.remove('show');
+                    const previewDetails = document.getElementById('previewDetails');
+                    const messengerConfirmation = document.getElementById('messengerConfirmation');
+                    if (previewDetails) previewDetails.style.display = 'block';
+                    if (messengerConfirmation) messengerConfirmation.style.display = 'none';
+                }
+            }
+        };
+
+        // 🔥 إعادة تعيين عند إغلاق مودال النجاح أيضاً
+        const originalHideSuccessModal = window.hideSuccessModal;
+        window.hideSuccessModal = function() {
+            resetSubmitState();
+            if (typeof originalHideSuccessModal === 'function') {
+                originalHideSuccessModal();
+            } else {
+                const modal = document.getElementById('successModal');
+                if (modal) modal.classList.remove('show');
+            }
+        };
+
+        // 🔥 مراقبة إغلاق المودال بالنقر خارج المحتوى
+        document.addEventListener('click', function(e) {
+            const previewModal = document.getElementById('previewModal');
+            if (previewModal && e.target === previewModal) {
+                resetSubmitState();
+            }
+        });
 
         window.toggleSidebar = function() {
             const sidebar = document.getElementById('sidebar');
