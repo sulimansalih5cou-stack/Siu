@@ -149,8 +149,19 @@
             background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
             color: white; padding: 15px 30px; border-radius: 12px; font-size: 16px; font-weight: 600;
             width: 100%; display: inline-flex; justify-content: center; align-items: center; gap: 10px;
+            transition: all 0.3s ease;
         }
         .btn-secondary { background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); }
+        
+        /* 🔥 أنماط الزر المعطل 🔥 */
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .btn:disabled:hover {
+            transform: none !important;
+        }
 
         /* Modals */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; }
@@ -207,7 +218,7 @@
         <a href="my_expenses.html" class="sidebar-link"><i class="fas fa-file-invoice-dollar ml-2"></i> مصروفاتي</a>
         <a href="history.html" class="sidebar-link"><i class="fas fa-history ml-2"></i> السجل</a>
 
-<a href="summary.html" class="sidebar-link active"><i class="fas fa-plus-circle ml-2"></i>  الملخص والتسوية</a>
+<a href="summary.html" class="sidebar-link"><i class="fas fa-chart-pie ml-2"></i>  الملخص والتسوية</a>
 
         <a href="auth.html" id="logoutSidebarButton" class="sidebar-link text-red-600 hover:text-red-800 mt-4">
             <i class="fas fa-sign-out-alt ml-2"></i> خروج
@@ -264,7 +275,7 @@
                         </div>
                 </div>
 
-                <button type="button" onclick="previewExpense()" class="btn btn-secondary">
+                <button type="button" id="submitExpenseBtn" onclick="previewExpense()" class="btn btn-secondary">
                     معاينة وحفظ
                 </button>
             </form>
@@ -295,7 +306,7 @@
                     </p>
                 </div>
                 <div class="flex justify-center gap-4">
-                    <button onclick="saveExpense()" class="btn w-auto bg-red-600 hover:bg-red-700">موافق (تسجيل كمرسال)</button>
+                    <button id="messengerSaveBtn" onclick="saveExpense()" class="btn w-auto bg-red-600 hover:bg-red-700">موافق (تسجيل كمرسال)</button>
                     <button onclick="hideModal()" class="btn w-auto bg-gray-500 text-white">إلغاء</button>
                 </div>
             </div>
@@ -320,6 +331,111 @@
     </div>
 
     <script>
+        // 🔥 منع الضغط المزدوج - متغيرات عامة
+        let isSubmitting = false;
+        
+        // 🔥 دالة تعطيل/تفعيل زر الإرسال
+        function disableSubmitButton(buttonId, disable) {
+            const btn = document.getElementById(buttonId);
+            if (btn) {
+                btn.disabled = disable;
+                if (disable) {
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i> جاري المعالجة...';
+                } else {
+                    // استعادة النص الأصلي حسب الزر
+                    if (buttonId === 'submitExpenseBtn') {
+                        btn.innerHTML = 'معاينة وحفظ';
+                    } else if (buttonId === 'mainSaveButton') {
+                        btn.innerHTML = 'حفظ';
+                    } else if (buttonId === 'messengerSaveBtn') {
+                        btn.innerHTML = 'موافق (تسجيل كمرسال)';
+                    }
+                }
+            }
+        }
+
+        // 🔥 تعديل دالة previewExpense لتشمل منع الضغط المزدوج
+        const originalPreviewExpense = window.previewExpense;
+        window.previewExpense = function() {
+            if (isSubmitting) return; // منع الضغط أثناء المعالجة
+            
+            // التحقق من صحة البيانات أولاً
+            const title = document.getElementById('expenseTitle').value.trim();
+            const amountStr = document.getElementById('expenseAmount').value.replace(/,/g, '');
+            const amount = parseFloat(amountStr);
+            const checkboxes = document.querySelectorAll('.participant-checkbox:checked');
+            
+            let selectedParticipantsUids = Array.from(checkboxes).map(cb => cb.dataset.uid);
+            // إضافة المستخدم الحالي إذا لم يكن مرسالاً
+            const isMessenger = document.getElementById('isMessenger').checked;
+            if (!isMessenger) {
+                // نحتاج لمعرفة currentUserID من script.js
+                selectedParticipantsUids.push(window.currentUserID);
+            }
+            selectedParticipantsUids = [...new Set(selectedParticipantsUids)];
+            
+            if (!title || isNaN(amount) || amount <= 0 || selectedParticipantsUids.length < (isMessenger ? 1 : 2)) {
+                alert("يرجى إدخال اسم المصروف والمبلغ، وتحديد مشارك واحد على الأقل.");
+                return;
+            }
+            
+            // تعطيل الزر
+            isSubmitting = true;
+            disableSubmitButton('submitExpenseBtn', true);
+            
+            // استدعاء الدالة الأصلية بعد تأخير بسيط للسماح بتحديث الواجهة
+            setTimeout(() => {
+                if (typeof originalPreviewExpense === 'function') {
+                    originalPreviewExpense();
+                }
+                // إعادة تفعيل الزر بعد فتح المودال
+                setTimeout(() => {
+                    isSubmitting = false;
+                    disableSubmitButton('submitExpenseBtn', false);
+                }, 500);
+            }, 100);
+        };
+
+        // 🔥 تعديل دالة handleSaveClick لمنع الضغط المزدوج
+        const originalHandleSaveClick = window.handleSaveClick;
+        window.handleSaveClick = function() {
+            if (isSubmitting) return;
+            
+            isSubmitting = true;
+            disableSubmitButton('mainSaveButton', true);
+            
+            // استدعاء الدالة الأصلية
+            if (typeof originalHandleSaveClick === 'function') {
+                originalHandleSaveClick();
+            }
+            
+            // إعادة تفعيل الزر بعد فترة (سيتم إخفاء المودال عند النجاح)
+            setTimeout(() => {
+                isSubmitting = false;
+                disableSubmitButton('mainSaveButton', false);
+            }, 2000);
+        };
+
+        // 🔥 تعديل دالة saveExpense لمنع الضغط المزدوج
+        const originalSaveExpense = window.saveExpense;
+        window.saveExpense = function() {
+            if (isSubmitting) return;
+            
+            isSubmitting = true;
+            disableSubmitButton('messengerSaveBtn', true);
+            
+            // استدعاء الدالة الأصلية
+            if (typeof originalSaveExpense === 'function') {
+                originalSaveExpense();
+            }
+            
+            // إعادة تفعيل الزر بعد فترة
+            setTimeout(() => {
+                isSubmitting = false;
+                disableSubmitButton('messengerSaveBtn', false);
+            }, 3000);
+        };
+
         window.toggleSidebar = function() {
             const sidebar = document.getElementById('sidebar');
             sidebar.classList.toggle('open');
