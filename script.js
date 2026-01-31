@@ -181,10 +181,10 @@ window.showEditExpenseModal = function(expenseId) {
     document.getElementById('expenseAmount').value = expense.total_amount.toLocaleString('en-US');
     document.getElementById('isMessenger').checked = expense.is_messenger || false;
 
-    // تحديد المشاركين
+    // تحديد المشاركين - التحقق من وجود participants_ids
     const checkboxes = document.querySelectorAll('.participant-checkbox');
     checkboxes.forEach(cb => {
-        cb.checked = expense.participants_ids.includes(cb.dataset.uid);
+        cb.checked = Array.isArray(expense.participants_ids) && expense.participants_ids.includes(cb.dataset.uid);
     });
 
     // تغيير واجهة الزر
@@ -255,7 +255,7 @@ window.deleteExpense = async function(expenseId) {
 
     try {
         const updates = {};
-        const share = expense.share;
+        const share = expense.share || 0;
         const isMessenger = expense.is_messenger || false;
 
         // 1. إعادة رصيد الدافع
@@ -263,16 +263,19 @@ window.deleteExpense = async function(expenseId) {
         if (payer) {
             let payerRefund;
             if (isMessenger) {
-                payerRefund = expense.total_amount;
+                payerRefund = expense.total_amount || 0;
             } else {
-                payerRefund = roundToTwo(expense.total_amount - share);
+                payerRefund = roundToTwo((expense.total_amount || 0) - share);
             }
             const newPayerBalance = roundToTwo(payer.balance - payerRefund);
             updates[`users/${expense.payer_id}/balance`] = newPayerBalance;
         }
 
-        // 2. إعادة أرصدة المشاركين
-        const participantsToRefund = expense.participants_ids.filter(id => id !== expense.payer_id);
+        // 2. إعادة أرصدة المشاركين - التحقق من participants_ids
+        const participantsToRefund = Array.isArray(expense.participants_ids) 
+            ? expense.participants_ids.filter(id => id !== expense.payer_id)
+            : [];
+            
         for (const uid of participantsToRefund) {
             const user = allUsers.find(u => u.uid === uid);
             if (user) {
@@ -303,7 +306,7 @@ async function updateExpense(newData) {
     try {
         const updates = {};
         const old = originalExpenseData;
-        const oldShare = old.share;
+        const oldShare = old.share || 0;
         const oldIsMessenger = old.is_messenger || false;
         
         const newShare = newData.share;
@@ -313,16 +316,19 @@ async function updateExpense(newData) {
         
         // إعادة رصيد الدافع
         const payer = allUsers.find(u => u.uid === old.payer_id);
-        let tempPayerBalance = payer.balance || 0;
+        let tempPayerBalance = payer?.balance || 0;
         
         if (oldIsMessenger) {
-            tempPayerBalance = roundToTwo(tempPayerBalance - old.total_amount);
+            tempPayerBalance = roundToTwo(tempPayerBalance - (old.total_amount || 0));
         } else {
-            tempPayerBalance = roundToTwo(tempPayerBalance - (old.total_amount - oldShare));
+            tempPayerBalance = roundToTwo(tempPayerBalance - ((old.total_amount || 0) - oldShare));
         }
 
-        // إعادة أرصدة المشاركين القدامى
-        const oldParticipants = old.participants_ids.filter(id => id !== old.payer_id);
+        // إعادة أرصدة المشاركين القدامى - التحقق من participants_ids
+        const oldParticipants = Array.isArray(old.participants_ids)
+            ? old.participants_ids.filter(id => id !== old.payer_id)
+            : [];
+            
         for (const uid of oldParticipants) {
             const user = allUsers.find(u => u.uid === uid);
             if (user) {
@@ -507,7 +513,7 @@ window.saveExpense = async function() {
                 payerContribution = roundToTwo(data.amount - data.share);
             }
 
-            const oldBalance = currentUserDB.balance || 0;
+            const oldBalance = currentUserDB?.balance || 0;
             updates[`users/${currentUserID}/balance`] = roundToTwo(oldBalance + payerContribution);
 
             const participantsToDebit = data.participants.filter(uid => uid !== currentUserID);
@@ -574,7 +580,9 @@ function displayPersonalExpenses() {
 
     const personalList = allExpenses.filter(expense => {
         const isPayer = expense.payer_id === currentUserID;
-        const isParticipant = expense.participants_ids.includes(currentUserID);
+        // 🔥 التحقق من وجود participants_ids قبل استخدام includes
+        const isParticipant = Array.isArray(expense.participants_ids) && 
+                              expense.participants_ids.includes(currentUserID);
         return isPayer || isParticipant;
     }).sort((a, b) => b.timestamp - a.timestamp);
 
@@ -593,25 +601,25 @@ function displayPersonalExpenses() {
         const { date, time } = formatBankDate(expense.timestamp);
 
         // تخطي المرسل بحصة 0
-        if (isPayer && isMessenger && share < 0.1 && expense.total_amount < 0.1) return;
+        if (isPayer && isMessenger && share < 0.1 && (expense.total_amount || 0) < 0.1) return;
 
         let displayAmount = 0;
         let mainTitle, subTitle, iconClass, amountClass;
 
         if (isPayer && !isMessenger) {
             displayAmount = share;
-            mainTitle = `حصتك في: ${expense.title}`;
-            subTitle = `دفعت ${expense.total_amount.toLocaleString()} SDG`;
+            mainTitle = `حصتك في: ${expense.title || 'بدون عنوان'}`;
+            subTitle = `دفعت ${(expense.total_amount || 0).toLocaleString()} SDG`;
             totalPersonalDebt += displayAmount;
         } else if (isPayer && isMessenger) {
             displayAmount = 0;
-            mainTitle = `دفعت كمرسال: ${expense.title}`;
-            subTitle = `المبلغ: ${expense.total_amount.toLocaleString()} SDG`;
+            mainTitle = `دفعت كمرسال: ${expense.title || 'بدون عنوان'}`;
+            subTitle = `المبلغ: ${(expense.total_amount || 0).toLocaleString()} SDG`;
         } else {
             displayAmount = share;
             const payerName = getUserNameById(expense.payer_id);
             mainTitle = `دين لـ ${payerName}`;
-            subTitle = `في: ${expense.title}`;
+            subTitle = `في: ${expense.title || 'بدون عنوان'}`;
             totalPersonalDebt += displayAmount;
         }
 
@@ -685,20 +693,21 @@ function calculateNetBalances() {
     // من المصروفات
     allExpenses.forEach(expense => {
         const payerId = expense.payer_id;
-        const share = expense.share;
+        const share = expense.share || 0;
         const isMessenger = expense.is_messenger || false;
 
         if (payerId === currentUserID) {
+            // 🔥 التحقق من وجود participants_ids قبل استخدام filter
             const participantsToCheck = isMessenger 
-                ? expense.participants_ids.filter(id => id !== currentUserID)
-                : expense.participants_ids.filter(id => id !== currentUserID);
+                ? (Array.isArray(expense.participants_ids) ? expense.participants_ids.filter(id => id !== currentUserID) : [])
+                : (Array.isArray(expense.participants_ids) ? expense.participants_ids.filter(id => id !== currentUserID) : []);
 
             participantsToCheck.forEach(participantId => {
                 if(netBalances[participantId] !== undefined) {
                     netBalances[participantId] = roundToTwo(netBalances[participantId] + share);
                 }
             });
-        } else if (expense.participants_ids.includes(currentUserID)) {
+        } else if (Array.isArray(expense.participants_ids) && expense.participants_ids.includes(currentUserID)) {
             if(netBalances[payerId] !== undefined) {
                 netBalances[payerId] = roundToTwo(netBalances[payerId] - share);
             }
@@ -809,29 +818,38 @@ function combineAndSortHistory() {
     const combined = [];
 
     allExpenses.forEach(expense => {
+        // 🔥 التحقق من وجود البيانات الأساسية
+        if (!expense || typeof expense !== 'object') return;
+        
         const isPayer = expense.payer_id === currentUserID;
-        const isParticipant = expense.participants_ids.includes(currentUserID);
+        // 🔥 التحقق من أن participants_ids مصفوفة قبل استخدام includes
+        const isParticipant = Array.isArray(expense.participants_ids) && 
+                              expense.participants_ids.includes(currentUserID);
 
         if (isPayer || isParticipant) {
             combined.push({
                 type: 'expense',
                 ...expense,
-                timestamp: expense.timestamp
+                timestamp: expense.timestamp || 0
             });
         }
     });
 
     allSettlements.forEach(settlement => {
+        // 🔥 التحقق من وجود البيانات الأساسية
+        if (!settlement || typeof settlement !== 'object') return;
+        
         if (settlement.payer_id === currentUserID || settlement.recipient_id === currentUserID) {
             combined.push({
                 type: 'settlement',
                 ...settlement,
-                timestamp: settlement.timestamp
+                timestamp: settlement.timestamp || 0
             });
         }
     });
 
-    return combined.sort((a, b) => b.timestamp - a.timestamp);
+    // 🔥 التأكد من وجود timestamp قبل المقارنة
+    return combined.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 }
 
 function filterHistory(filterType) {
@@ -839,17 +857,24 @@ function filterHistory(filterType) {
     const now = Date.now();
 
     filteredHistory = allHistory.filter(record => {
+        // 🔥 التحقق من وجود timestamp
+        const recordTime = record.timestamp || 0;
+        
         if (filterType === '30days') {
-            return record.timestamp >= now - (30 * 24 * 60 * 60 * 1000);
+            return recordTime >= now - (30 * 24 * 60 * 60 * 1000);
         } else if (filterType === '3months') {
-            return record.timestamp >= now - (90 * 24 * 60 * 60 * 1000);
+            return recordTime >= now - (90 * 24 * 60 * 60 * 1000);
         } else if (filterType === 'incoming') {
             if (record.type === 'settlement' && record.recipient_id === currentUserID) return true;
             if (record.type === 'expense' && record.payer_id === currentUserID) return true;
             return false;
         } else if (filterType === 'outgoing') {
             if (record.type === 'settlement' && record.payer_id === currentUserID) return true;
-            if (record.type === 'expense' && record.participants_ids.includes(currentUserID) && record.payer_id !== currentUserID) return true;
+            // 🔥 التحقق من participants_ids قبل includes
+            if (record.type === 'expense' && 
+                Array.isArray(record.participants_ids) && 
+                record.participants_ids.includes(currentUserID) && 
+                record.payer_id !== currentUserID) return true;
             return false;
         }
         return true;
@@ -889,19 +914,20 @@ function displayHistory(isAppending = false) {
             const isPayer = record.payer_id === currentUserID;
             const payerName = getUserNameById(record.payer_id);
             const share = record.share || 0;
+            const totalAmount = record.total_amount || 0;
             
             let iconClass = 'bg-red-100 text-red-600';
             let amountText = '';
-            let title = record.title;
+            let title = record.title || 'بدون عنوان';
 
             if (isPayer) {
                 if (record.is_messenger) {
                     iconClass = 'bg-purple-100 text-purple-600';
-                    amountText = `+${record.total_amount.toLocaleString()}`;
+                    amountText = `+${totalAmount.toLocaleString()}`;
                     title += ' (مرسال)';
                 } else {
                     iconClass = 'bg-green-100 text-green-600';
-                    amountText = `+${(record.total_amount - share).toLocaleString()}`;
+                    amountText = `+${(totalAmount - share).toLocaleString()}`;
                 }
             } else {
                 amountText = `-${share.toLocaleString()}`;
@@ -924,6 +950,7 @@ function displayHistory(isAppending = false) {
         } else {
             const isPayer = record.payer_id === currentUserID;
             const otherName = isPayer ? getUserNameById(record.recipient_id) : getUserNameById(record.payer_id);
+            const amount = record.amount || 0;
             
             cardHTML = `
                 <div class="bankak-card flex items-center justify-between p-4 bg-white rounded-xl shadow-sm mb-3">
@@ -937,7 +964,7 @@ function displayHistory(isAppending = false) {
                         </div>
                     </div>
                     <span class="font-bold ${isPayer ? 'text-red-600' : 'text-green-600'}">
-                        ${isPayer ? '-' : '+'}${record.amount.toLocaleString()} SDG
+                        ${isPayer ? '-' : '+'}${amount.toLocaleString()} SDG
                     </span>
                 </div>
             `;
@@ -1137,8 +1164,8 @@ window.sendSettleTransaction = async function(recipientUID, amount, opNumber) {
 
         if (!payer || !recipient) return false;
 
-        updates[`users/${currentUserID}/balance`] = roundToTwo(payer.balance + amount);
-        updates[`users/${recipientUID}/balance`] = roundToTwo(recipient.balance - amount);
+        updates[`users/${currentUserID}/balance`] = roundToTwo((payer.balance || 0) + amount);
+        updates[`users/${recipientUID}/balance`] = roundToTwo((recipient.balance || 0) - amount);
 
         const newSettleKey = push(ref(db, 'settlements')).key;
         updates[`settlements/${newSettleKey}`] = {
@@ -1175,8 +1202,10 @@ window.hideModal = function() {
     const modal = document.getElementById('previewModal');
     if (modal) {
         modal.classList.remove('show');
-        document.getElementById('previewDetails').style.display = 'block';
-        document.getElementById('messengerConfirmation').style.display = 'none';
+        const previewDetails = document.getElementById('previewDetails');
+        const messengerConfirmation = document.getElementById('messengerConfirmation');
+        if (previewDetails) previewDetails.style.display = 'block';
+        if (messengerConfirmation) messengerConfirmation.style.display = 'none';
     }
 };
 
