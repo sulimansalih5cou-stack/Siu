@@ -219,6 +219,18 @@
             font-size: 3rem;
             margin-bottom: 15px;
         }
+        
+        /* 🔥 رسالة لا توجد بيانات 🔥 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #9CA3AF;
+        }
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
     </style>
 </head>
 <body>
@@ -323,10 +335,15 @@
             
             // استدعاء الدالة الأصلية من script.js
             if (typeof window.setFilter === 'function') {
-                window.setFilter(filterType, element);
+                try {
+                    window.setFilter(filterType, element);
+                } catch (error) {
+                    console.error('خطأ في setFilter:', error);
+                    showError('حدث خطأ في تصفية البيانات');
+                }
             } else {
                 console.error('دالة setFilter غير موجودة في script.js');
-                showError('حدث خطأ في تحميل البيانات');
+                showError('فشل تحميل البيانات. يرجى تحديث الصفحة.');
             }
             
             // إعادة التفعيل بعد فترة قصيرة
@@ -351,7 +368,11 @@
             
             // استدعاء الدالة الأصلية من script.js
             if (typeof window.loadMoreHistory === 'function') {
-                window.loadMoreHistory();
+                try {
+                    window.loadMoreHistory();
+                } catch (error) {
+                    console.error('خطأ في loadMoreHistory:', error);
+                }
             } else {
                 console.error('دالة loadMoreHistory غير موجودة في script.js');
             }
@@ -378,6 +399,20 @@
                         <button onclick="location.reload()" class="btn mt-4 bg-blue-600 hover:bg-blue-700">
                             <i class="fas fa-redo ml-2"></i> إعادة المحاولة
                         </button>
+                    </div>
+                `;
+            }
+        }
+
+        // 🔥 دالة عرض حالة فارغة
+        function showEmptyState() {
+            const container = document.getElementById('expensesContainer');
+            if (container) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h3 class="text-xl font-bold mb-2">لا توجد سجلات</h3>
+                        <p>لم يتم العثور على أي معاملات في هذا النطاق الزمني</p>
                     </div>
                 `;
             }
