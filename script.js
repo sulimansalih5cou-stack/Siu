@@ -86,7 +86,7 @@ function formatBankDate(timestamp) {
     const day = dateObj.getDate();
     const month = dateObj.toLocaleString('ar-EG', { month: 'short' });
     const year = dateObj.getFullYear();
-    const date = `${day}-${month}-${year}`;
+    const date = `${day} ${month} ${year}`;
     const time = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
     return { date, time };
 }
@@ -153,12 +153,9 @@ window.selectAllParticipants = function() {
 };
 
 // ============================================================
-// ✏️ تعديل/حذف المصروف - جديد
+// ✏️ تعديل/حذف المصروف
 // ============================================================
 
-/**
- * عرض نموذج تعديل المصروف في نفس الصفحة
- */
 window.showEditExpenseModal = function(expenseId) {
     const expense = allExpenses.find(e => e.firebaseId === expenseId);
     if (!expense) {
@@ -166,28 +163,23 @@ window.showEditExpenseModal = function(expenseId) {
         return;
     }
 
-    // التحقق من الصلاحية
     if (expense.payer_id !== currentUserID) {
         alert('لا يمكنك تعديل هذا المصروف لأنك لست الدافع!');
         return;
     }
 
-    // تخزين البيانات الأصلية
     editingExpenseId = expenseId;
-    originalExpenseData = JSON.parse(JSON.stringify(expense)); // نسخ عميقة
+    originalExpenseData = JSON.parse(JSON.stringify(expense));
 
-    // ملء النموذج
     document.getElementById('expenseTitle').value = expense.title;
     document.getElementById('expenseAmount').value = expense.total_amount.toLocaleString('en-US');
     document.getElementById('isMessenger').checked = expense.is_messenger || false;
 
-    // تحديد المشاركين - التحقق من وجود participants_ids
     const checkboxes = document.querySelectorAll('.participant-checkbox');
     checkboxes.forEach(cb => {
         cb.checked = Array.isArray(expense.participants_ids) && expense.participants_ids.includes(cb.dataset.uid);
     });
 
-    // تغيير واجهة الزر
     const submitBtn = document.querySelector('#expenseForm button[type="button"]');
     if (submitBtn) {
         submitBtn.innerHTML = '<i class="fas fa-save ml-2"></i> تحديث المصروف';
@@ -196,7 +188,6 @@ window.showEditExpenseModal = function(expenseId) {
         submitBtn.onclick = () => previewExpense(true);
     }
 
-    // إضافة زر إلغاء
     let cancelBtn = document.getElementById('cancelEditBtn');
     if (!cancelBtn) {
         cancelBtn = document.createElement('button');
@@ -209,13 +200,9 @@ window.showEditExpenseModal = function(expenseId) {
         submitBtn.parentNode.appendChild(cancelBtn);
     }
 
-    // التمرير لأعلى
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-/**
- * إعادة تعيين وضع التعديل
- */
 function resetEditMode() {
     editingExpenseId = null;
     originalExpenseData = null;
@@ -234,9 +221,6 @@ function resetEditMode() {
     if (cancelBtn) cancelBtn.remove();
 }
 
-/**
- * حذف مصروف مع إعادة حساب جميع الأرصدة
- */
 window.deleteExpense = async function(expenseId) {
     const expense = allExpenses.find(e => e.firebaseId === expenseId);
     if (!expense) {
@@ -258,7 +242,6 @@ window.deleteExpense = async function(expenseId) {
         const share = expense.share || 0;
         const isMessenger = expense.is_messenger || false;
 
-        // 1. إعادة رصيد الدافع
         const payer = allUsers.find(u => u.uid === expense.payer_id);
         if (payer) {
             let payerRefund;
@@ -271,7 +254,6 @@ window.deleteExpense = async function(expenseId) {
             updates[`users/${expense.payer_id}/balance`] = newPayerBalance;
         }
 
-        // 2. إعادة أرصدة المشاركين - التحقق من participants_ids
         const participantsToRefund = Array.isArray(expense.participants_ids) 
             ? expense.participants_ids.filter(id => id !== expense.payer_id)
             : [];
@@ -284,11 +266,9 @@ window.deleteExpense = async function(expenseId) {
             }
         }
 
-        // 3. حذف المصروف
         updates[`expenses/${expenseId}`] = null;
 
         await update(ref(db), updates);
-
         alert('تم حذف المصروف وإعادة حساب الأرصدة بنجاح!');
 
     } catch (error) {
@@ -297,9 +277,6 @@ window.deleteExpense = async function(expenseId) {
     }
 };
 
-/**
- * تحديث مصروف موجود
- */
 async function updateExpense(newData) {
     if (!editingExpenseId || !originalExpenseData) return false;
 
@@ -312,9 +289,6 @@ async function updateExpense(newData) {
         const newShare = newData.share;
         const newIsMessenger = newData.isMessenger;
 
-        // ========== الخطوة 1: التراجع عن القديم ==========
-        
-        // إعادة رصيد الدافع
         const payer = allUsers.find(u => u.uid === old.payer_id);
         let tempPayerBalance = payer?.balance || 0;
         
@@ -324,7 +298,6 @@ async function updateExpense(newData) {
             tempPayerBalance = roundToTwo(tempPayerBalance - ((old.total_amount || 0) - oldShare));
         }
 
-        // إعادة أرصدة المشاركين القدامى - التحقق من participants_ids
         const oldParticipants = Array.isArray(old.participants_ids)
             ? old.participants_ids.filter(id => id !== old.payer_id)
             : [];
@@ -334,13 +307,10 @@ async function updateExpense(newData) {
             if (user) {
                 const tempBalance = roundToTwo((user.balance || 0) + oldShare);
                 updates[`users/${uid}/balance`] = tempBalance;
-                user.balance = tempBalance; // تحديث محلي
+                user.balance = tempBalance;
             }
         }
 
-        // ========== الخطوة 2: تطبيق الجديد ==========
-        
-        // تحديث رصيد الدافع
         let newPayerAdd;
         if (newIsMessenger) {
             newPayerAdd = newData.amount;
@@ -349,7 +319,6 @@ async function updateExpense(newData) {
         }
         updates[`users/${old.payer_id}/balance`] = roundToTwo(tempPayerBalance + newPayerAdd);
 
-        // تحديث أرصدة المشاركين الجدد
         const newParticipants = newData.participants.filter(id => id !== old.payer_id);
         for (const uid of newParticipants) {
             const user = allUsers.find(u => u.uid === uid);
@@ -360,8 +329,6 @@ async function updateExpense(newData) {
             }
         }
 
-        // ========== الخطوة 3: تحديث المصروف ==========
-        
         updates[`expenses/${editingExpenseId}`] = {
             title: newData.title,
             total_amount: newData.amount,
@@ -503,7 +470,6 @@ window.saveExpense = async function() {
                 document.getElementById('expenseForm').reset();
             }
         } else {
-            // إنشاء جديد
             const updates = {};
             
             let payerContribution;
@@ -580,7 +546,6 @@ function displayPersonalExpenses() {
 
     const personalList = allExpenses.filter(expense => {
         const isPayer = expense.payer_id === currentUserID;
-        // 🔥 التحقق من وجود participants_ids قبل استخدام includes
         const isParticipant = Array.isArray(expense.participants_ids) && 
                               expense.participants_ids.includes(currentUserID);
         return isPayer || isParticipant;
@@ -600,11 +565,10 @@ function displayPersonalExpenses() {
         const share = expense.share || 0;
         const { date, time } = formatBankDate(expense.timestamp);
 
-        // تخطي المرسل بحصة 0
         if (isPayer && isMessenger && share < 0.1 && (expense.total_amount || 0) < 0.1) return;
 
         let displayAmount = 0;
-        let mainTitle, subTitle, iconClass, amountClass;
+        let mainTitle, subTitle;
 
         if (isPayer && !isMessenger) {
             displayAmount = share;
@@ -627,7 +591,6 @@ function displayPersonalExpenses() {
 
         const amountDisplay = displayAmount.toLocaleString('en-US', {minimumFractionDigits: 1, maximumFractionDigits: 2});
         
-        // أزرار التعديل والحذف
         let actionButtons = '';
         if (isPayer) {
             actionButtons = `
@@ -690,14 +653,12 @@ function calculateNetBalances() {
         }
     });
 
-    // من المصروفات
     allExpenses.forEach(expense => {
         const payerId = expense.payer_id;
         const share = expense.share || 0;
         const isMessenger = expense.is_messenger || false;
 
         if (payerId === currentUserID) {
-            // 🔥 التحقق من وجود participants_ids قبل استخدام filter
             const participantsToCheck = isMessenger 
                 ? (Array.isArray(expense.participants_ids) ? expense.participants_ids.filter(id => id !== currentUserID) : [])
                 : (Array.isArray(expense.participants_ids) ? expense.participants_ids.filter(id => id !== currentUserID) : []);
@@ -714,7 +675,6 @@ function calculateNetBalances() {
         }
     });
 
-    // من التسويات
     allSettlements.forEach(settlement => {
         const { payer_id, recipient_id, amount } = settlement;
 
@@ -750,7 +710,6 @@ function updateSummaryDisplay() {
         if (Math.abs(netAmount) < 0.1) return;
 
         if (netAmount < 0) {
-            // أنت مدين
             const amount = Math.abs(netAmount);
             totalDebt += amount;
             hasDebtItems = true;
@@ -771,7 +730,6 @@ function updateSummaryDisplay() {
             }
 
         } else if (netAmount > 0) {
-            // أنت دائن
             const amount = netAmount;
             totalCredit += amount;
             hasClaimItems = true;
@@ -811,18 +769,16 @@ function updateSummaryDisplay() {
 }
 
 // ============================================================
-// 📜 السجل - history.html
+// 📜 السجل - history.html (التصميم الجديد)
 // ============================================================
 
 function combineAndSortHistory() {
     const combined = [];
 
     allExpenses.forEach(expense => {
-        // 🔥 التحقق من وجود البيانات الأساسية
         if (!expense || typeof expense !== 'object') return;
         
         const isPayer = expense.payer_id === currentUserID;
-        // 🔥 التحقق من أن participants_ids مصفوفة قبل استخدام includes
         const isParticipant = Array.isArray(expense.participants_ids) && 
                               expense.participants_ids.includes(currentUserID);
 
@@ -836,7 +792,6 @@ function combineAndSortHistory() {
     });
 
     allSettlements.forEach(settlement => {
-        // 🔥 التحقق من وجود البيانات الأساسية
         if (!settlement || typeof settlement !== 'object') return;
         
         if (settlement.payer_id === currentUserID || settlement.recipient_id === currentUserID) {
@@ -848,7 +803,6 @@ function combineAndSortHistory() {
         }
     });
 
-    // 🔥 التأكد من وجود timestamp قبل المقارنة
     return combined.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 }
 
@@ -857,7 +811,6 @@ function filterHistory(filterType) {
     const now = Date.now();
 
     filteredHistory = allHistory.filter(record => {
-        // 🔥 التحقق من وجود timestamp
         const recordTime = record.timestamp || 0;
         
         if (filterType === '30days') {
@@ -870,7 +823,6 @@ function filterHistory(filterType) {
             return false;
         } else if (filterType === 'outgoing') {
             if (record.type === 'settlement' && record.payer_id === currentUserID) return true;
-            // 🔥 التحقق من participants_ids قبل includes
             if (record.type === 'expense' && 
                 Array.isArray(record.participants_ids) && 
                 record.participants_ids.includes(currentUserID) && 
@@ -897,9 +849,10 @@ function displayHistory(isAppending = false) {
 
     if (recordsToShow.length === 0 && currentPage === 1) {
         container.innerHTML = `
-            <div class="text-center py-12 text-gray-500">
-                <i class="fas fa-inbox fa-3x mb-4"></i>
-                <p>لا توجد سجلات</p>
+            <div class="empty-state">
+                <div class="text-6xl mb-4">📭</div>
+                <h3 class="text-xl font-bold text-gray-700 mb-2">لا توجد سجلات</h3>
+                <p>لم يتم العثور على أي معاملات في هذا النطاق الزمني</p>
             </div>
         `;
         isLoadingHistory = false;
@@ -915,57 +868,132 @@ function displayHistory(isAppending = false) {
             const payerName = getUserNameById(record.payer_id);
             const share = record.share || 0;
             const totalAmount = record.total_amount || 0;
+            const participantsCount = Array.isArray(record.participants_ids) ? record.participants_ids.length : 0;
             
-            let iconClass = 'bg-red-100 text-red-600';
-            let amountText = '';
-            let title = record.title || 'بدون عنوان';
+            let cardClass, amountClass, circleClass, amountSign, amountValue, title, subtitle;
 
             if (isPayer) {
                 if (record.is_messenger) {
-                    iconClass = 'bg-purple-100 text-purple-600';
-                    amountText = `+${totalAmount.toLocaleString()}`;
-                    title += ' (مرسال)';
+                    // مرسال
+                    cardClass = 'card-messenger';
+                    amountClass = 'amount-expense';
+                    circleClass = 'expense';
+                    amountSign = '-';
+                    amountValue = totalAmount.toLocaleString();
+                    title = record.title || 'بدون عنوان';
+                    subtitle = `دفعت كمرسال: ${totalAmount.toLocaleString()} SDG<br>لست مشاركاً في التقسيم`;
                 } else {
-                    iconClass = 'bg-green-100 text-green-600';
-                    amountText = `+${(totalAmount - share).toLocaleString()}`;
+                    // دافع عادي - مستحق له (دخل)
+                    cardClass = 'card-income';
+                    amountClass = 'amount-income';
+                    circleClass = 'income';
+                    amountSign = '+';
+                    amountValue = (totalAmount - share).toLocaleString();
+                    title = record.title || 'بدون عنوان';
+                    subtitle = `مشاركة في مصروف: ${record.title || ''}<br><span class="payer-name">الدافع: ${payerName}</span><br>حصتك المطلوبة`;
                 }
             } else {
-                amountText = `-${share.toLocaleString()}`;
+                // مشارك - عليه دين (خرج)
+                cardClass = 'card-expense';
+                amountClass = 'amount-expense';
+                circleClass = 'expense';
+                amountSign = '-';
+                amountValue = share.toLocaleString();
+                title = record.title || 'بدون عنوان';
+                subtitle = `مشاركة في مصروف: ${record.title || ''}<br><span class="payer-name">الدافع: ${payerName}</span><br>حصتك المطلوبة`;
             }
 
             cardHTML = `
-                <div class="bankak-card flex items-center justify-between p-4 bg-white rounded-xl shadow-sm mb-3">
-                    <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-full ${iconClass} flex items-center justify-center">
-                            <i class="fas fa-receipt"></i>
-                        </div>
+                <div class="transaction-card ${cardClass}">
+                    <div class="card-header">
                         <div>
-                            <p class="font-bold text-gray-800">${title}</p>
-                            <p class="text-sm text-gray-500">${payerName} • ${date}</p>
+                            <div class="transaction-title">${title}</div>
+                            <div class="transaction-subtitle">${subtitle}</div>
+                        </div>
+                        <div class="currency-circle ${circleClass}">
+                            <span>ج.س</span>
                         </div>
                     </div>
-                    <span class="font-bold ${isPayer ? 'text-green-600' : 'text-red-600'}">${amountText} SDG</span>
+                    
+                    <div class="main-amount ${amountClass}">
+                        <span class="amount-sign">${amountSign}</span>
+                        ${amountValue}
+                    </div>
+                    
+                    <div class="card-footer">
+                        <div class="datetime">
+                            <div class="datetime-item">
+                                <i class="far fa-clock"></i>
+                                <span>${time}</span>
+                            </div>
+                            <div class="datetime-item">
+                                <i class="far fa-calendar-alt"></i>
+                                <span>${date}</span>
+                            </div>
+                        </div>
+                        ${record.edited ? '<span class="text-amber-600 text-sm font-bold"><i class="fas fa-edit ml-1"></i>معدل</span>' : ''}
+                    </div>
                 </div>
             `;
+
         } else {
+            // تسوية
             const isPayer = record.payer_id === currentUserID;
             const otherName = isPayer ? getUserNameById(record.recipient_id) : getUserNameById(record.payer_id);
             const amount = record.amount || 0;
             
+            let cardClass, amountClass, circleClass, amountSign, title, subtitle;
+
+            if (isPayer) {
+                // دفعت تسوية (خرج)
+                cardClass = 'card-expense';
+                amountClass = 'amount-expense';
+                circleClass = 'expense';
+                amountSign = '-';
+                title = 'تسوية';
+                subtitle = `دفعت لـ: <span class="payer-name">${otherName}</span><br>سداد دين`;
+            } else {
+                // استلمت تسوية (دخل)
+                cardClass = 'card-income';
+                amountClass = 'amount-income';
+                circleClass = 'income';
+                amountSign = '+';
+                title = 'تسوية';
+                subtitle = `استلمت من: <span class="payer-name">${otherName}</span><br>استرداد مبلغ`;
+            }
+
             cardHTML = `
-                <div class="bankak-card flex items-center justify-between p-4 bg-white rounded-xl shadow-sm mb-3">
-                    <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
-                            <i class="fas fa-handshake"></i>
-                        </div>
+                <div class="transaction-card ${cardClass}">
+                    <div class="card-header">
                         <div>
-                            <p class="font-bold text-gray-800">${isPayer ? 'تسوية دفعتها' : 'تسوية تلقيتها'}</p>
-                            <p class="text-sm text-gray-500">${otherName} • ${date}</p>
+                            <div class="transaction-title">${title}</div>
+                            <div class="transaction-subtitle">${subtitle}</div>
+                        </div>
+                        <div class="currency-circle ${circleClass}">
+                            <span>ج.س</span>
                         </div>
                     </div>
-                    <span class="font-bold ${isPayer ? 'text-red-600' : 'text-green-600'}">
-                        ${isPayer ? '-' : '+'}${amount.toLocaleString()} SDG
-                    </span>
+                    
+                    <div class="main-amount ${amountClass}">
+                        <span class="amount-sign">${amountSign}</span>
+                        ${amount.toLocaleString()}
+                    </div>
+                    
+                    <div class="card-footer">
+                        <div class="datetime">
+                            <div class="datetime-item">
+                                <i class="far fa-clock"></i>
+                                <span>${time}</span>
+                            </div>
+                            <div class="datetime-item">
+                                <i class="far fa-calendar-alt"></i>
+                                <span>${date}</span>
+                            </div>
+                        </div>
+                        <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-bold">
+                            <i class="fas fa-handshake ml-1"></i>تسوية
+                        </span>
+                    </div>
                 </div>
             `;
         }
@@ -973,7 +1001,6 @@ function displayHistory(isAppending = false) {
         container.innerHTML += cardHTML;
     });
 
-    // زر عرض المزيد
     const loadMoreBtn = document.getElementById('loadMoreButton');
     if (loadMoreBtn) {
         if (endIndex < filteredHistory.length) {
@@ -987,7 +1014,7 @@ function displayHistory(isAppending = false) {
 }
 
 window.setFilter = function(filterType, element) {
-    document.querySelectorAll('.filter-pill').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.filter-chip').forEach(el => el.classList.remove('active'));
     if (element) element.classList.add('active');
 
     activeFilter = filterType;
@@ -1256,7 +1283,6 @@ window.closeSidebar = function() {
 function loadData() {
     if (!currentUserID) return;
 
-    // المستخدمين
     onValue(ref(db, 'users'), (snapshot) => {
         if (snapshot.exists()) {
             const val = snapshot.val();
@@ -1273,7 +1299,6 @@ function loadData() {
         }
     });
 
-    // المصروفات
     onValue(ref(db, 'expenses'), (snapshot) => {
         if (snapshot.exists()) {
             const val = snapshot.val();
@@ -1298,7 +1323,6 @@ function loadData() {
         }
     });
 
-    // التسويات
     onValue(ref(db, 'settlements'), (snapshot) => {
         if (snapshot.exists()) {
             allSettlements = Object.keys(snapshot.val()).map(key => ({
@@ -1331,7 +1355,6 @@ onAuthStateChanged(auth, (user) => {
         currentUserID = user.uid;
         loadData();
 
-        // تسجيل الخروج
         const logoutBtns = document.querySelectorAll('#logoutSidebarButton, #logoutBtn');
         logoutBtns.forEach(btn => {
             if (btn) {
@@ -1356,11 +1379,9 @@ onAuthStateChanged(auth, (user) => {
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    // زر القائمة
     const menuBtn = document.getElementById('menuButton');
     if (menuBtn) menuBtn.addEventListener('click', toggleSidebar);
 
-    // نموذج التسوية
     const settleForm = document.getElementById('settleForm');
     if (settleForm) {
         settleForm.addEventListener('submit', async (e) => {
@@ -1394,7 +1415,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // تحديث الرصيد المتبقي
     const settleAmountInput = document.getElementById('settleAmount');
     if (settleAmountInput) {
         settleAmountInput.addEventListener('input', function() {
@@ -1418,7 +1438,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // إغلاق المودالات بالنقر خارجها
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
