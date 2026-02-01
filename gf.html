@@ -1,329 +1,180 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>كشف الحساب - تصميم مشابه للصورة</title>
-
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بطاقات المعاملات المالية</title>
     <style>
-        * {
-            font-family: 'Tajawal', sans-serif;
-            box-sizing: border-box;
-        }
+        /* --- CSS: التنسيق الجمالي --- */
         body {
-            margin: 0;
-            background: #f8f8f8;
-            direction: rtl;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-        /* الرأس الأحمر */
-        header {
-            background-color: #b91c1c;
-            border-radius: 0 0 30px 30px;
-            padding: 30px 20px 40px;
-            color: white;
-            text-align: center;
-            position: relative;
-            box-shadow: 0 10px 30px rgba(185,28,28,0.3);
-        }
-        header h1 {
-            margin: 0 0 6px;
-            font-size: 28px;
-            font-weight: 900;
-        }
-        header p {
-            margin: 0;
-            font-weight: 500;
-            font-size: 15px;
-            opacity: 0.85;
-        }
-        /* زر الرجوع */
-        button.back-btn {
-            position: absolute;
-            top: 50%;
-            left: 20px;
-            transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.25);
-            border: none;
-            border-radius: 10px;
-            color: white;
-            padding: 10px 14px;
-            cursor: pointer;
-            font-weight: 700;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: background 0.3s;
-        }
-        button.back-btn:hover {
-            background: rgba(255, 255, 255, 0.4);
-        }
-        button.back-btn i {
-            font-size: 14px;
-        }
-
-        /* فلاتر */
-        .filters-container {
-            margin: 20px;
-            display: flex;
-            gap: 12px;
-            overflow-x: auto;
-            padding-bottom: 5px;
-        }
-        .filter-chip {
-            flex-shrink: 0;
-            padding: 8px 18px;
-            border-radius: 30px;
-            background: white;
-            border: 1.5px solid #ccc;
-            font-weight: 700;
-            font-size: 15px;
-            color: #555;
-            cursor: pointer;
-            transition: all 0.3s;
-            white-space: nowrap;
-        }
-        .filter-chip.active {
-            background: #fff0f0;
-            border-color: #b91c1c;
-            color: #b91c1c;
-            font-weight: 900;
-            box-shadow: 0 0 10px rgba(185,28,28,0.15);
-        }
-
-        /* حاوية المعاملات */
-        #expensesContainer {
-            margin: 0 20px 40px;
-        }
-
-        /* بطاقة المعاملة */
-        .transaction-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            padding: 18px 20px 20px;
-            margin-bottom: 15px;
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
         }
 
-        /* محتوى البطاقة العلوي */
-        .transaction-header {
+        .container {
+            width: 100%;
+            max-width: 400px;
+        }
+
+        /* حاوية البطاقة */
+        .card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 1px solid #f0f0f0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        /* الرأس: العنوان والمبلغ */
+        .card-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
         }
-        /* معلومات المعاملة */
-        .transaction-info {
-            text-align: right;
-            flex: 1;
-        }
-        .transaction-title {
-            font-size: 20px;
-            font-weight: 900;
-            color: #1f2937;
-            margin-bottom: 6px;
-        }
-        .transaction-subtitle {
-            font-size: 14px;
-            font-weight: 500;
-            color: #666666;
-            line-height: 1.4;
-            white-space: pre-line; /* لدعم تعدد أسطر */
+
+        .title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2d3436;
+            margin: 0;
         }
 
-        /* المبلغ */
-        .transaction-amount {
-            color: #b91c1c;
-            font-size: 28px;
-            font-weight: 900;
-            direction: ltr;
-            white-space: nowrap;
-            margin-left: 15px;
+        .subtitle {
+            font-size: 0.9rem;
+            color: #636e72;
+            margin: 4px 0;
+        }
+
+        .note {
+            font-size: 0.8rem;
+            color: #b2bec3;
+        }
+
+        /* منطقة المبلغ والدائرة */
+        .amount-section {
             display: flex;
             align-items: center;
-            gap: 6px;
-            min-width: 120px;
-            justify-content: flex-start;
-        }
-        .transaction-amount.no-amount {
-            color: #999;
-            font-size: 16px;
-            font-weight: 700;
-        }
-        .currency-symbol {
-            font-weight: 700;
-            font-size: 22px;
-            user-select: none;
-        }
-        .amount-prefix {
-            font-weight: 700;
-            user-select: none;
-            font-size: 26px;
+            gap: 12px;
         }
 
-        /* رمز العملة الدائري الجانبي */
-        .currency-circle {
-            border: 2.5px solid #b91c1c;
-            color: #b91c1c;
-            font-weight: 900;
-            font-size: 16px;
-            border-radius: 50%;
+        .amount {
+            font-size: 1.3rem;
+            font-weight: 800;
+        }
+
+        /* الألوان بناءً على النوع */
+        .negative-text { color: #d63031; } /* أحمر */
+        .positive-text { color: #00b894; } /* أخضر */
+
+        /* الدائرة */
+        .status-circle {
             width: 50px;
             height: 50px;
-            flex-shrink: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            cursor: default;
-            user-select: none;
-        }
-        .currency-circle::after {
-            content: '↑';
-            background: #b91c1c;
-            color: white;
-            width: 18px;
-            height: 18px;
-            font-size: 14px;
-            font-weight: 900;
             border-radius: 50%;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            position: absolute;
-            bottom: -5px;
-            right: -5px;
+            justify-content: center;
+            border: 2px solid;
+            font-weight: bold;
         }
 
-        /* فوتر البطاقة - الوقت والتاريخ */
+        .negative-border { border-color: #d63031; color: #d63031; }
+        .positive-border { border-color: #00b894; color: #00b894; }
+
+        .currency { font-size: 0.65rem; }
+        .arrow { font-size: 0.9rem; line-height: 1; }
+
+        /* الخط الفاصل المنقط */
+        .divider {
+            border: 0;
+            border-top: 1px dashed #dfe6e9;
+            margin: 15px 0;
+        }
+
+        /* التذييل: التاريخ والوقت */
         .card-footer {
-            border-top: 1px solid #eee;
-            padding-top: 10px;
-            font-size: 13px;
-            color: #999999;
             display: flex;
-            justify-content: flex-start;
-            gap: 14px;
-            font-weight: 600;
-            user-select: none;
-        }
-        .card-footer .icon {
-            margin-left: 6px;
-            color: #bbb;
-            font-size: 14px;
-            display: inline-block;
-            vertical-align: middle;
+            justify-content: space-between;
+            color: #b2bec3;
+            font-size: 0.8rem;
         }
 
-        /* أيقونات الفونت أوسم */
-        @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
     </style>
 </head>
 <body>
 
-    <header>
-        <button class="back-btn" onclick="history.back()">
-            رجوع
-            <i class="fas fa-arrow-right"></i>
-        </button>
-        <h1>مرحباً، سليمان <strong>صلاح الدين محمد</strong></h1>
-        <p>sulimansalaheldeinmohammed@gmail.com</p>
-    </header>
+    <div class="container">
+        
+        <div class="card" onclick="showInfo('ركشة', '2,500.0')">
+            <div class="card-header">
+                <div>
+                    <h3 class="title">ركشة</h3>
+                    <p class="subtitle">مشاركة في مصروف: سوار الذهب</p>
+                    <p class="note">حصتك المطلوبة</p>
+                </div>
+                <div class="amount-section">
+                    <span class="amount negative-text">- 2,500.0</span>
+                    <div class="status-circle negative-border">
+                        <span class="currency">ج.س</span>
+                        <span class="arrow">↑</span>
+                    </div>
+                </div>
+            </div>
+            <hr class="divider">
+            <div class="card-footer">
+                <span class="info-item">AM 10:35 🕒</span>
+                <span class="info-item">Nov-2025-29 📅</span>
+            </div>
+        </div>
 
-    <div class="filters-container" role="group" aria-label="فلاتر التاريخ">
-        <div class="filter-chip active" tabindex="0" role="button" aria-pressed="true">آخر 30 يوم</div>
-        <div class="filter-chip" tabindex="0" role="button" aria-pressed="false">آخر 3 شهور</div>
-        <div class="filter-chip" tabindex="0" role="button" aria-pressed="false">الواردة (لك)</div>
-        <div class="filter-chip" tabindex="0" role="button" aria-pressed="false">الصادرة (عليك)</div>
-        <div class="filter-chip" tabindex="0" role="button" aria-pressed="false">الكل</div>
+        <div class="card" onclick="showInfo('شاي', '3,333.33')">
+            <div class="card-header">
+                <div>
+                    <h3 class="title">شاي</h3>
+                    <p class="subtitle">استرداد من 2 مشارك</p>
+                    <p class="note">حصتك: SDG 1,666.7</p>
+                </div>
+                <div class="amount-section">
+                    <span class="amount positive-text">+ 3,333.33</span>
+                    <div class="status-circle positive-border">
+                        <span class="currency">ج.س</span>
+                        <span class="arrow">↓</span>
+                    </div>
+                </div>
+            </div>
+            <hr class="divider">
+            <div class="card-footer">
+                <span class="info-item">AM 10:30 🕒</span>
+                <span class="info-item">Nov-2025-29 📅</span>
+            </div>
+        </div>
+
     </div>
 
-    <main id="expensesContainer" aria-live="polite" aria-label="قائمة المعاملات">
-
-        <!-- بطاقة نموذجية للمعاملة -->
-        <article class="transaction-card" tabindex="0" role="article" aria-label="معاملة اندومي بتاريخ 29 نوفمبر 2025">
-            <div class="transaction-header">
-                <div class="transaction-info">
-                    <h2 class="transaction-title">اندومي</h2>
-                    <p class="transaction-subtitle">مشاركة في مصروف: سوار الذهب
-حصتك المطلوبة</p>
-                </div>
-                <div class="transaction-amount">
-                    <span class="amount-prefix">-</span> 2,666.67
-                    <span class="currency-symbol">ج.س</span>
-                </div>
-                <div class="currency-circle" aria-label="العملة: جنيه سوداني">ج.س</div>
-            </div>
-            <footer class="card-footer">
-                <time datetime="2025-11-29T10:36" aria-label="الوقت">AM 10:36 <i class="fas fa-clock icon"></i></time>
-                <time datetime="2025-11-29" aria-label="التاريخ">Nov-2025-29 <i class="fas fa-calendar icon"></i></time>
-            </footer>
-        </article>
-
-        <!-- أمثلة أخرى يمكن تكرارها -->
-        <article class="transaction-card" tabindex="0" role="article" aria-label="معاملة التمرين بتاريخ 29 نوفمبر 2025">
-            <div class="transaction-header">
-                <div class="transaction-info">
-                    <h2 class="transaction-title">التمرين</h2>
-                    <p class="transaction-subtitle">مشاركة في مصروف: سوار الذهب
-حصتك المطلوبة</p>
-                </div>
-                <div class="transaction-amount">
-                    <span class="amount-prefix">-</span> 4,333.33
-                    <span class="currency-symbol">ج.س</span>
-                </div>
-                <div class="currency-circle" aria-label="العملة: جنيه سوداني">ج.س</div>
-            </div>
-            <footer class="card-footer">
-                <time datetime="2025-11-29T10:35" aria-label="الوقت">AM 10:35 <i class="fas fa-clock icon"></i></time>
-                <time datetime="2025-11-29" aria-label="التاريخ">Nov-2025-29 <i class="fas fa-calendar icon"></i></time>
-            </footer>
-        </article>
-
-        <article class="transaction-card" tabindex="0" role="article" aria-label="معاملة ركشة بتاريخ 29 نوفمبر 2025">
-            <div class="transaction-header">
-                <div class="transaction-info">
-                    <h2 class="transaction-title">ركشة</h2>
-                    <p class="transaction-subtitle">مشاركة في مصروف: سوار الذهب
-حصتك المطلوبة</p>
-                </div>
-                <div class="transaction-amount">
-                    <span class="amount-prefix">-</span> 2,500.0
-                    <span class="currency-symbol">ج.س</span>
-                </div>
-                <div class="currency-circle" aria-label="العملة: جنيه سوداني">ج.س</div>
-            </div>
-            <footer class="card-footer">
-                <time datetime="2025-11-29T10:35" aria-label="الوقت">AM 10:35 <i class="fas fa-clock icon"></i></time>
-                <time datetime="2025-11-29" aria-label="التاريخ">Nov-2025-29 <i class="fas fa-calendar icon"></i></time>
-            </footer>
-        </article>
-
-        <article class="transaction-card" tabindex="0" role="article" aria-label="معاملة بلح شام بتاريخ 29 نوفمبر 2025">
-            <div class="transaction-header">
-                <div class="transaction-info">
-                    <h2 class="transaction-title">بلح شام</h2>
-                    <p class="transaction-subtitle">مشاركة في مصروف: سوار الذهب
-حصتك المطلوبة</p>
-                </div>
-                <div class="transaction-amount">
-                    <span class="amount-prefix">-</span> 1,666.67
-                    <span class="currency-symbol">ج.س</span>
-                </div>
-                <div class="currency-circle" aria-label="العملة: جنيه سوداني">ج.س</div>
-            </div>
-            <footer class="card-footer">
-                <time datetime="2025-11-29T10:35" aria-label="الوقت">AM 10:35 <i class="fas fa-clock icon"></i></time>
-                <time datetime="2025-11-29" aria-label="التاريخ">Nov-2025-29 <i class="fas fa-calendar icon"></i></time>
-            </footer>
-        </article>
-
-    </main>
+    <script>
+        function showInfo(title, amount) {
+            alert("تفاصيل المعاملة:\nالنوع: " + title + "\nالمبلغ: " + amount);
+        }
+    </script>
 
 </body>
 </html>
