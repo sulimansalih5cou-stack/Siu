@@ -3,178 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بطاقات المعاملات المالية</title>
+    <title>تطبيق المصاريف المطور</title>
     <style>
-        /* --- CSS: التنسيق الجمالي --- */
+        /* تحسين الخطوط والتنسيق العام */
+        :root {
+            --red-color: #e74c3c;
+            --green-color: #27ae60;
+            --text-dark: #2d3436;
+            --text-light: #636e72;
+            --bg-gray: #fdfdfd;
+        }
+
         body {
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        /* تحسين شكل البطاقة */
+        .transaction-card {
+            background: white;
+            border-radius: 20px;
+            padding: 18px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.03);
             display: flex;
             flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            margin: 0;
+            transition: transform 0.2s ease;
         }
 
-        .container {
-            width: 100%;
-            max-width: 400px;
+        .transaction-card:active {
+            transform: scale(0.98); /* تأثير ضغط عند اللمس */
         }
 
-        /* حاوية البطاقة */
-        .card {
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            border: 1px solid #f0f0f0;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .card:hover {
-            transform: scale(1.02);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-
-        /* الرأس: العنوان والمبلغ */
-        .card-header {
+        /* الجزء العلوي: النصوص والمبلغ */
+        .top-row {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center;
+            margin-bottom: 12px;
         }
 
-        .title {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #2d3436;
+        .main-info h3 {
             margin: 0;
+            font-size: 1.25rem;
+            color: var(--text-dark);
+            font-weight: 700;
         }
 
-        .subtitle {
-            font-size: 0.9rem;
-            color: #636e72;
+        .main-info p {
             margin: 4px 0;
+            font-size: 0.9rem;
+            color: var(--text-light);
         }
 
-        .note {
-            font-size: 0.8rem;
-            color: #b2bec3;
-        }
-
-        /* منطقة المبلغ والدائرة */
-        .amount-section {
+        .amount-group {
             display: flex;
             align-items: center;
             gap: 12px;
         }
 
-        .amount {
-            font-size: 1.3rem;
-            font-weight: 800;
+        .amount-text {
+            font-size: 1.35rem;
+            font-weight: 900;
+            letter-spacing: -0.5px;
         }
 
-        /* الألوان بناءً على النوع */
-        .negative-text { color: #d63031; } /* أحمر */
-        .positive-text { color: #00b894; } /* أخضر */
-
-        /* الدائرة */
-        .status-circle {
-            width: 50px;
-            height: 50px;
+        /* تصميم الدائرة بشكل أوضح */
+        .indicator-circle {
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            border: 2px solid;
+            border: 2.5px solid;
+            background: #fff;
+        }
+
+        .indicator-circle .currency {
+            font-size: 0.6rem;
             font-weight: bold;
         }
 
-        .negative-border { border-color: #d63031; color: #d63031; }
-        .positive-border { border-color: #00b894; color: #00b894; }
+        .indicator-circle .icon {
+            font-size: 1rem;
+            margin-top: -2px;
+        }
 
-        .currency { font-size: 0.65rem; }
-        .arrow { font-size: 0.9rem; line-height: 1; }
+        /* حالات الألوان */
+        .expense { color: var(--red-color); border-color: var(--red-color); }
+        .income { color: var(--green-color); border-color: var(--green-color); }
 
-        /* الخط الفاصل المنقط */
+        /* خط فاصل ناعم */
         .divider {
-            border: 0;
-            border-top: 1px dashed #dfe6e9;
-            margin: 15px 0;
+            height: 1px;
+            background: repeating-linear-gradient(to right, #eee 0, #eee 5px, transparent 5px, transparent 10px);
+            border: none;
+            margin: 12px 0;
         }
 
         /* التذييل: التاريخ والوقت */
-        .card-footer {
+        .footer-row {
             display: flex;
             justify-content: space-between;
-            color: #b2bec3;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
+            color: #a0a0a0;
+            font-weight: 500;
         }
 
-        .info-item {
+        .footer-row span {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
         }
+
     </style>
 </head>
 <body>
 
-    <div class="container">
-        
-        <div class="card" onclick="showInfo('ركشة', '2,500.0')">
-            <div class="card-header">
-                <div>
-                    <h3 class="title">ركشة</h3>
-                    <p class="subtitle">مشاركة في مصروف: سوار الذهب</p>
-                    <p class="note">حصتك المطلوبة</p>
-                </div>
-                <div class="amount-section">
-                    <span class="amount negative-text">- 2,500.0</span>
-                    <div class="status-circle negative-border">
-                        <span class="currency">ج.س</span>
-                        <span class="arrow">↑</span>
-                    </div>
-                </div>
+<div class="app-container">
+
+    <div class="transaction-card" onclick="alert('تفاصيل الفطور')">
+        <div class="top-row">
+            <div class="main-info">
+                <h3>الفطور</h3>
+                <p>مشاركة في مصروف: سوار الذهب</p>
+                <p style="font-size: 0.75rem; color: #b0b0b0;">حصتك المطلوبة</p>
             </div>
-            <hr class="divider">
-            <div class="card-footer">
-                <span class="info-item">AM 10:35 🕒</span>
-                <span class="info-item">Nov-2025-29 📅</span>
+            <div class="amount-group">
+                <span class="amount-text expense">- 3,333.33</span>
+                <div class="indicator-circle expense">
+                    <span class="currency">ج.س</span>
+                    <span class="icon">↑</span>
+                </div>
             </div>
         </div>
-
-        <div class="card" onclick="showInfo('شاي', '3,333.33')">
-            <div class="card-header">
-                <div>
-                    <h3 class="title">شاي</h3>
-                    <p class="subtitle">استرداد من 2 مشارك</p>
-                    <p class="note">حصتك: SDG 1,666.7</p>
-                </div>
-                <div class="amount-section">
-                    <span class="amount positive-text">+ 3,333.33</span>
-                    <div class="status-circle positive-border">
-                        <span class="currency">ج.س</span>
-                        <span class="arrow">↓</span>
-                    </div>
-                </div>
-            </div>
-            <hr class="divider">
-            <div class="card-footer">
-                <span class="info-item">AM 10:30 🕒</span>
-                <span class="info-item">Nov-2025-29 📅</span>
-            </div>
+        <div class="divider"></div>
+        <div class="footer-row">
+            <span>🕒 AM 11:25</span>
+            <span>📅 Nov-2025-26</span>
         </div>
-
     </div>
 
-    <script>
-        function showInfo(title, amount) {
-            alert("تفاصيل المعاملة:\nالنوع: " + title + "\nالمبلغ: " + amount);
-        }
-    </script>
+    <div class="transaction-card" onclick="alert('تفاصيل الاسترداد')">
+        <div class="top-row">
+            <div class="main-info">
+                <h3>شاي</h3>
+                <p>استرداد من 2 مشارك</p>
+                <p style="font-size: 0.75rem; color: #b0b0b0;">حصتك: SDG 1,666.7</p>
+            </div>
+            <div class="amount-group">
+                <span class="amount-text income">+ 3,333.33</span>
+                <div class="indicator-circle income">
+                    <span class="currency">ج.س</span>
+                    <span class="icon">↓</span>
+                </div>
+            </div>
+        </div>
+        <div class="divider"></div>
+        <div class="footer-row">
+            <span>🕒 AM 10:30</span>
+            <span>📅 Nov-2025-29</span>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // يمكن إضافة منطق برمجي هنا لاحقاً لجلب البيانات من API
+    console.log("تم تحميل واجهة البطاقات بنجاح.");
+</script>
 
 </body>
 </html>
