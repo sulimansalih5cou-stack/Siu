@@ -1,189 +1,329 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>كشف الحساب - Smart Dorm</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>كشف الحساب - تصميم مشابه للصورة</title>
 
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet" />
     <style>
+        * {
+            font-family: 'Tajawal', sans-serif;
+            box-sizing: border-box;
+        }
         body {
-            background-color: #F3F4F6;
-            font-family: 'Cairo', sans-serif;
-            padding-bottom: 60px;
+            margin: 0;
+            background: #f8f8f8;
+            direction: rtl;
+            -webkit-user-select: none;
+            user-select: none;
         }
-
-        /* --- 1. بطاقة المستخدم (الهيدر) --- */
-        .user-profile-card {
-            background: linear-gradient(135deg, #B91C1C 0%, #991B1B 100%);
+        /* الرأس الأحمر */
+        header {
+            background-color: #b91c1c;
+            border-radius: 0 0 30px 30px;
+            padding: 30px 20px 40px;
             color: white;
-            padding: 25px 20px;
-            border-bottom-left-radius: 25px;
-            border-bottom-right-radius: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 25px -5px rgba(185, 28, 28, 0.4);
+            text-align: center;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(185,28,28,0.3);
         }
-
-        .back-btn {
-            background: rgba(255,255,255,0.2);
-            padding: 6px 14px;
-            border-radius: 8px;
+        header h1 {
+            margin: 0 0 6px;
+            font-size: 28px;
+            font-weight: 900;
+        }
+        header p {
+            margin: 0;
+            font-weight: 500;
+            font-size: 15px;
+            opacity: 0.85;
+        }
+        /* زر الرجوع */
+        button.back-btn {
+            position: absolute;
+            top: 50%;
+            left: 20px;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.25);
+            border: none;
+            border-radius: 10px;
             color: white;
-            text-decoration: none;
-            font-size: 0.9rem;
+            padding: 10px 14px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
             transition: background 0.3s;
         }
-        .back-btn:hover { background: rgba(255,255,255,0.3); }
+        button.back-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+        button.back-btn i {
+            font-size: 14px;
+        }
 
-        /* --- 2. بطاقة المعاملة (التصميم المعدل) --- */
-        .bankak-card {
+        /* فلاتر */
+        .filters-container {
+            margin: 20px;
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+        .filter-chip {
+            flex-shrink: 0;
+            padding: 8px 18px;
+            border-radius: 30px;
             background: white;
-            border: 1px solid #F3F4F6;
+            border: 1.5px solid #ccc;
+            font-weight: 700;
+            font-size: 15px;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        .filter-chip.active {
+            background: #fff0f0;
+            border-color: #b91c1c;
+            color: #b91c1c;
+            font-weight: 900;
+            box-shadow: 0 0 10px rgba(185,28,28,0.15);
+        }
+
+        /* حاوية المعاملات */
+        #expensesContainer {
+            margin: 0 20px 40px;
+        }
+
+        /* بطاقة المعاملة */
+        .transaction-card {
+            background: white;
             border-radius: 12px;
-            margin-bottom: 15px; /* مسافة بين البطاقات */
-            padding: 15px 18px;
-            position: relative;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 18px 20px 20px;
+            margin-bottom: 15px;
             display: flex;
             flex-direction: column;
-            transition: transform 0.2s ease;
-        }
-        .bankak-card:hover { transform: translateY(-2px); }
-
-        /* الجزء العلوي (المحتوى الرئيسي) */
-        .card-main-content {
-            display: flex;
-            justify-content: space-between; /* توزيع: المبلغ يسار، التفاصيل يمين */
-            align-items: center;
-            margin-bottom: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px dashed #E5E7EB; /* الخط الفاصل */
+            gap: 10px;
         }
 
-        /* تنسيق المبلغ (يسار) */
-        .amount-display {
-            font-size: 1.4rem;
-            font-weight: 800;
-            direction: ltr; 
-            font-family: sans-serif;
-            order: 2; /* يضمن ظهوره في اليسار في وضع RTL عبر Flexbox adjustment */
-            margin-right: auto; /* يدفعه لأقصى اليسار */
-        }
-        .amount-pos { color: #059669; }
-        .amount-neg { color: #DC2626; }
-
-        /* حاوية التفاصيل والأيقونة (يمين) */
-        .details-wrapper {
-            display: flex;
-            align-items: center;
-            order: 1;
-            flex-grow: 1;
-        }
-
-        .details-text {
-            margin-right: 10px; /* مسافة بين الأيقونة والنص */
-        }
-
-        .transaction-title {
-            font-weight: 700;
-            color: #1F2937;
-            font-size: 1rem;
-        }
-
-        .transaction-sub {
-            font-size: 0.85rem;
-            color: #6B7280;
-        }
-
-        /* الأيقونة */
-        .bank-icon-container {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid;
-            position: relative;
-            background-color: #FAFAFA;
-            flex-shrink: 0;
-        }
-        .icon-success { border-color: #059669; color: #059669; }
-        .icon-danger { border-color: #DC2626; color: #DC2626; }
-
-        .arrow-badge {
-            position: absolute;
-            bottom: -2px; right: -2px;
-            background: white; border-radius: 50%;
-            padding: 2px; font-size: 0.7rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        /* --- الجزء السفلي (التاريخ والوقت) --- */
-        .card-footer-date {
-            text-align: right;
-            font-size: 0.75rem;
-            color: #9CA3AF;
-            font-weight: 600;
+        /* محتوى البطاقة العلوي */
+        .transaction-header {
             display: flex;
             justify-content: space-between;
+            align-items: flex-start;
+        }
+        /* معلومات المعاملة */
+        .transaction-info {
+            text-align: right;
+            flex: 1;
+        }
+        .transaction-title {
+            font-size: 20px;
+            font-weight: 900;
+            color: #1f2937;
+            margin-bottom: 6px;
+        }
+        .transaction-subtitle {
+            font-size: 14px;
+            font-weight: 500;
+            color: #666666;
+            line-height: 1.4;
+            white-space: pre-line; /* لدعم تعدد أسطر */
+        }
+
+        /* المبلغ */
+        .transaction-amount {
+            color: #b91c1c;
+            font-size: 28px;
+            font-weight: 900;
+            direction: ltr;
+            white-space: nowrap;
+            margin-left: 15px;
+            display: flex;
             align-items: center;
+            gap: 6px;
+            min-width: 120px;
+            justify-content: flex-start;
+        }
+        .transaction-amount.no-amount {
+            color: #999;
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .currency-symbol {
+            font-weight: 700;
+            font-size: 22px;
+            user-select: none;
+        }
+        .amount-prefix {
+            font-weight: 700;
+            user-select: none;
+            font-size: 26px;
         }
 
-        /* الفلاتر */
-        .filter-scroll {
-            display: flex; gap: 10px; overflow-x: auto;
-            padding-bottom: 10px; margin-bottom: 10px;
-            scrollbar-width: none;
+        /* رمز العملة الدائري الجانبي */
+        .currency-circle {
+            border: 2.5px solid #b91c1c;
+            color: #b91c1c;
+            font-weight: 900;
+            font-size: 16px;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            cursor: default;
+            user-select: none;
         }
-        .filter-scroll::-webkit-scrollbar { display: none; }
+        .currency-circle::after {
+            content: '↑';
+            background: #b91c1c;
+            color: white;
+            width: 18px;
+            height: 18px;
+            font-size: 14px;
+            font-weight: 900;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            bottom: -5px;
+            right: -5px;
+        }
 
-        .filter-pill {
-            white-space: nowrap; padding: 6px 16px;
-            border-radius: 20px; background: white;
-            color: #6B7280; font-size: 0.85rem; font-weight: 600;
-            border: 1px solid #E5E7EB; cursor: pointer; transition: 0.2s;
+        /* فوتر البطاقة - الوقت والتاريخ */
+        .card-footer {
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+            font-size: 13px;
+            color: #999999;
+            display: flex;
+            justify-content: flex-start;
+            gap: 14px;
+            font-weight: 600;
+            user-select: none;
         }
-        .filter-pill.active {
-            background: #FEF2F2; color: #B91C1C; border-color: #B91C1C;
+        .card-footer .icon {
+            margin-left: 6px;
+            color: #bbb;
+            font-size: 14px;
+            display: inline-block;
+            vertical-align: middle;
         }
 
+        /* أيقونات الفونت أوسم */
+        @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
     </style>
 </head>
 <body>
 
-    <div class="user-profile-card">
-        <div class="flex justify-between items-center">
-            <div>
-                <h2 class="text-xl font-bold mb-1">مرحباً، <span id="displayHeaderName">...</span></h2>
-                <p class="text-sm opacity-80 dir-ltr" id="displayHeaderEmail">...</p>
-            </div>
-            <a href="index.html" class="back-btn">
-                <i class="fas fa-arrow-right ml-1"></i> رجوع
-            </a>
-        </div>
-        </div>
+    <header>
+        <button class="back-btn" onclick="history.back()">
+            رجوع
+            <i class="fas fa-arrow-right"></i>
+        </button>
+        <h1>مرحباً، سليمان <strong>صلاح الدين محمد</strong></h1>
+        <p>sulimansalaheldeinmohammed@gmail.com</p>
+    </header>
 
-    <div class="max-w-3xl mx-auto px-4">
-
-        <div class="filter-scroll" id="filtersContainer">
-            <div class="filter-pill active" onclick="setFilter('30days', this)">آخر 30 يوم</div>
-            <div class="filter-pill" onclick="setFilter('3months', this)">آخر 3 شهور</div>
-            <div class="filter-pill" onclick="setFilter('incoming', this)">الواردة (لك)</div>
-            <div class="filter-pill" onclick="setFilter('outgoing', this)">الصادرة (عليك)</div>
-            <div class="filter-pill" onclick="setFilter('all', this)">الكل</div>
-        </div>
-
-        <div id="expensesContainer">
-            <p class="text-center text-gray-400 mt-12">
-                <i class="fas fa-spinner fa-spin fa-2x mb-4"></i><br>
-                جاري التحميل...
-            </p>
-        </div>
+    <div class="filters-container" role="group" aria-label="فلاتر التاريخ">
+        <div class="filter-chip active" tabindex="0" role="button" aria-pressed="true">آخر 30 يوم</div>
+        <div class="filter-chip" tabindex="0" role="button" aria-pressed="false">آخر 3 شهور</div>
+        <div class="filter-chip" tabindex="0" role="button" aria-pressed="false">الواردة (لك)</div>
+        <div class="filter-chip" tabindex="0" role="button" aria-pressed="false">الصادرة (عليك)</div>
+        <div class="filter-chip" tabindex="0" role="button" aria-pressed="false">الكل</div>
     </div>
 
-    <script src="script.js" type="module"></script> 
+    <main id="expensesContainer" aria-live="polite" aria-label="قائمة المعاملات">
+
+        <!-- بطاقة نموذجية للمعاملة -->
+        <article class="transaction-card" tabindex="0" role="article" aria-label="معاملة اندومي بتاريخ 29 نوفمبر 2025">
+            <div class="transaction-header">
+                <div class="transaction-info">
+                    <h2 class="transaction-title">اندومي</h2>
+                    <p class="transaction-subtitle">مشاركة في مصروف: سوار الذهب
+حصتك المطلوبة</p>
+                </div>
+                <div class="transaction-amount">
+                    <span class="amount-prefix">-</span> 2,666.67
+                    <span class="currency-symbol">ج.س</span>
+                </div>
+                <div class="currency-circle" aria-label="العملة: جنيه سوداني">ج.س</div>
+            </div>
+            <footer class="card-footer">
+                <time datetime="2025-11-29T10:36" aria-label="الوقت">AM 10:36 <i class="fas fa-clock icon"></i></time>
+                <time datetime="2025-11-29" aria-label="التاريخ">Nov-2025-29 <i class="fas fa-calendar icon"></i></time>
+            </footer>
+        </article>
+
+        <!-- أمثلة أخرى يمكن تكرارها -->
+        <article class="transaction-card" tabindex="0" role="article" aria-label="معاملة التمرين بتاريخ 29 نوفمبر 2025">
+            <div class="transaction-header">
+                <div class="transaction-info">
+                    <h2 class="transaction-title">التمرين</h2>
+                    <p class="transaction-subtitle">مشاركة في مصروف: سوار الذهب
+حصتك المطلوبة</p>
+                </div>
+                <div class="transaction-amount">
+                    <span class="amount-prefix">-</span> 4,333.33
+                    <span class="currency-symbol">ج.س</span>
+                </div>
+                <div class="currency-circle" aria-label="العملة: جنيه سوداني">ج.س</div>
+            </div>
+            <footer class="card-footer">
+                <time datetime="2025-11-29T10:35" aria-label="الوقت">AM 10:35 <i class="fas fa-clock icon"></i></time>
+                <time datetime="2025-11-29" aria-label="التاريخ">Nov-2025-29 <i class="fas fa-calendar icon"></i></time>
+            </footer>
+        </article>
+
+        <article class="transaction-card" tabindex="0" role="article" aria-label="معاملة ركشة بتاريخ 29 نوفمبر 2025">
+            <div class="transaction-header">
+                <div class="transaction-info">
+                    <h2 class="transaction-title">ركشة</h2>
+                    <p class="transaction-subtitle">مشاركة في مصروف: سوار الذهب
+حصتك المطلوبة</p>
+                </div>
+                <div class="transaction-amount">
+                    <span class="amount-prefix">-</span> 2,500.0
+                    <span class="currency-symbol">ج.س</span>
+                </div>
+                <div class="currency-circle" aria-label="العملة: جنيه سوداني">ج.س</div>
+            </div>
+            <footer class="card-footer">
+                <time datetime="2025-11-29T10:35" aria-label="الوقت">AM 10:35 <i class="fas fa-clock icon"></i></time>
+                <time datetime="2025-11-29" aria-label="التاريخ">Nov-2025-29 <i class="fas fa-calendar icon"></i></time>
+            </footer>
+        </article>
+
+        <article class="transaction-card" tabindex="0" role="article" aria-label="معاملة بلح شام بتاريخ 29 نوفمبر 2025">
+            <div class="transaction-header">
+                <div class="transaction-info">
+                    <h2 class="transaction-title">بلح شام</h2>
+                    <p class="transaction-subtitle">مشاركة في مصروف: سوار الذهب
+حصتك المطلوبة</p>
+                </div>
+                <div class="transaction-amount">
+                    <span class="amount-prefix">-</span> 1,666.67
+                    <span class="currency-symbol">ج.س</span>
+                </div>
+                <div class="currency-circle" aria-label="العملة: جنيه سوداني">ج.س</div>
+            </div>
+            <footer class="card-footer">
+                <time datetime="2025-11-29T10:35" aria-label="الوقت">AM 10:35 <i class="fas fa-clock icon"></i></time>
+                <time datetime="2025-11-29" aria-label="التاريخ">Nov-2025-29 <i class="fas fa-calendar icon"></i></time>
+            </footer>
+        </article>
+
+    </main>
+
 </body>
 </html>
