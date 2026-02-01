@@ -6,113 +6,73 @@
     <title>كشف الحساب - Smart Dorm</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 
     <style>
         * {
-            font-family: 'Outfit', sans-serif;
+            font-family: 'Tajawal', sans-serif;
         }
 
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f5f5f5;
             min-height: 100vh;
-            padding-bottom: 100px;
+            padding-bottom: 80px;
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
             user-select: none;
         }
 
-        /* خلفية متحركة */
-        .bg-animation {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            z-index: -1;
-        }
-        .bg-animation .circle {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.1);
-            animation: float 20s infinite;
-        }
-        @keyframes float {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-100px) rotate(180deg); }
-        }
-
-        /* شريط التنقل */
+        /* شريط التنقل العلوي */
         .navbar {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 900;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-            height: 70px;
+            background: #b91c1c;
+            height: 60px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
-        /* القائمة الجانبية */
-        .sidebar {
-            position: fixed;
-            top: 0;
-            right: 0;
-            height: 100%;
-            width: 300px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(30px);
-            z-index: 1000;
-            box-shadow: -10px 0 40px rgba(0,0,0,0.2);
-            transform: translateX(100%);
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .sidebar.open { transform: translateX(0); }
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(5px);
-            z-index: 999;
-        }
-        .sidebar.open + .sidebar-overlay { display: block; }
-
-        /* الهيدر الرئيسي */
+        /* الهيدر الأحمر */
         .main-header {
-            margin-top: 90px;
-            padding: 0 20px;
-            text-align: center;
+            background: linear-gradient(180deg, #b91c1c 0%, #991b1b 100%);
+            margin-top: 60px;
+            padding: 25px 20px 40px;
+            position: relative;
+            border-radius: 0 0 30px 30px;
+            box-shadow: 0 10px 30px rgba(185, 28, 28, 0.3);
         }
-        .user-avatar-large {
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 40px;
-            color: white;
-            box-shadow: 0 20px 60px rgba(245, 87, 108, 0.4);
-            border: 4px solid rgba(255,255,255,0.3);
-        }
+
         .user-name {
-            font-size: 32px;
+            font-size: 24px;
             font-weight: 800;
             color: white;
-            text-shadow: 0 4px 10px rgba(0,0,0,0.2);
             margin-bottom: 5px;
         }
+
         .user-email {
             color: rgba(255,255,255,0.8);
             font-size: 14px;
-            font-weight: 500;
+        }
+
+        .back-btn {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         /* الفلاتر */
@@ -121,206 +81,224 @@
             gap: 10px;
             overflow-x: auto;
             padding: 20px;
-            margin: 20px 0;
+            margin-top: -20px;
+            position: relative;
+            z-index: 10;
             scrollbar-width: none;
         }
         .filters-container::-webkit-scrollbar { display: none; }
-        
+
         .filter-chip {
             flex-shrink: 0;
             padding: 12px 24px;
-            border-radius: 50px;
-            background: rgba(255,255,255,0.2);
-            backdrop-filter: blur(10px);
-            color: white;
-            font-weight: 600;
+            border-radius: 25px;
+            background: white;
+            color: #666;
             font-size: 14px;
-            border: 2px solid rgba(255,255,255,0.3);
+            font-weight: 700;
+            border: 2px solid #e0e0e0;
             cursor: pointer;
             transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            white-space: nowrap;
         }
-        .filter-chip:hover {
-            background: rgba(255,255,255,0.3);
-            transform: translateY(-2px);
-        }
+
         .filter-chip.active {
-            background: white;
-            color: #764ba2;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-
-        /* بطاقات المعاملات - التصميم الزجاجي */
-        .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 28px;
-            margin-bottom: 20px;
-            overflow: hidden;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-            border: 1px solid rgba(255,255,255,0.5);
-            transition: all 0.3s;
-        }
-        .glass-card:hover {
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 35px 60px -12px rgba(0,0,0,0.3);
-        }
-
-        /* رأس البطاقة الملون */
-        .card-header-gradient {
-            padding: 25px;
+            background: #b91c1c;
             color: white;
+            border-color: #b91c1c;
+            box-shadow: 0 5px 15px rgba(185, 28, 28, 0.3);
+        }
+
+        /* بطاقة المعاملة */
+        .transaction-card {
+            background: white;
+            border-radius: 20px;
+            margin: 15px 20px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
             position: relative;
             overflow: hidden;
         }
-        .card-header-gradient::before {
+
+        .transaction-card::before {
             content: '';
             position: absolute;
-            top: -50%;
-            right: -20%;
-            width: 200px;
-            height: 200px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 50%;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
         }
 
-        /* أنواع التدرجات */
-        .gradient-income { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
-        .gradient-expense { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); }
-        .gradient-messenger { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-        .gradient-settlement-in { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-        .gradient-settlement-out { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); }
+        .card-income::before { background: #10b981; }
+        .card-expense::before { background: #ef4444; }
+        .card-messenger::before { background: #f59e0b; }
 
-        /* المبلغ الرئيسي */
-        .main-amount {
-            font-size: 42px;
-            font-weight: 900;
-            direction: ltr;
-            display: block;
-            text-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        }
-        .amount-label {
-            font-size: 16px;
-            font-weight: 600;
-            opacity: 0.95;
-            margin-top: 5px;
-        }
-
-        /* تفاصيل البطاقة */
-        .card-details {
-            padding: 25px;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-        }
-        .detail-box {
-            background: #f8fafc;
-            padding: 18px;
-            border-radius: 20px;
+        /* رأس البطاقة */
+        .card-header {
             display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .transaction-title {
+            font-size: 22px;
+            font-weight: 900;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+
+        .transaction-subtitle {
+            font-size: 14px;
+            color: #6b7280;
+            line-height: 1.6;
+        }
+
+        .transaction-subtitle .payer-name {
+            color: #b91c1c;
+            font-weight: 700;
+        }
+
+        /* الدائرة الجانبية */
+        .currency-circle {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 15px;
-            transition: all 0.2s;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            position: relative;
+            flex-shrink: 0;
         }
-        .detail-box:hover {
-            background: #f1f5f9;
-            transform: scale(1.05);
+
+        .currency-circle.income {
+            border: 3px solid #10b981;
+            color: #10b981;
         }
-        .detail-icon-box {
-            width: 48px;
-            height: 48px;
-            border-radius: 16px;
+
+        .currency-circle.expense {
+            border: 3px solid #ef4444;
+            color: #ef4444;
+        }
+
+        .currency-circle::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            right: -5px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 22px;
-            background: white;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        }
-        .detail-info h4 {
             font-size: 12px;
-            color: #94a3b8;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
+            font-weight: 900;
         }
-        .detail-info p {
-            font-size: 16px;
-            color: #1e293b;
-            font-weight: 800;
+
+        .currency-circle.income::after {
+            content: '↓';
+            background: #10b981;
+            color: white;
+        }
+
+        .currency-circle.expense::after {
+            content: '↑';
+            background: #ef4444;
+            color: white;
+        }
+
+        /* المبلغ الرئيسي */
+        .main-amount {
+            font-size: 36px;
+            font-weight: 900;
+            direction: ltr;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .amount-income { color: #10b981; }
+        .amount-expense { color: #ef4444; }
+
+        .amount-sign {
+            font-size: 24px;
+            margin-left: 5px;
         }
 
         /* تذييل البطاقة */
         .card-footer {
-            padding: 20px 25px;
-            background: #f8fafc;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-top: 1px solid #e2e8f0;
+            padding-top: 15px;
+            border-top: 1px dashed #e5e7eb;
+            margin-top: 15px;
         }
-        .time-badge {
+
+        .datetime {
             display: flex;
             align-items: center;
-            gap: 8px;
-            color: #64748b;
+            gap: 15px;
+            color: #9ca3af;
             font-size: 14px;
             font-weight: 600;
         }
-        .status-badge {
-            padding: 8px 16px;
-            border-radius: 50px;
-            font-size: 12px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+
+        .datetime-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
+
+        /* القائمة الجانبية */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            height: 100%;
+            width: 280px;
+            background: white;
+            z-index: 1000;
+            box-shadow: -5px 0 30px rgba(0,0,0,0.2);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        .sidebar.open { transform: translateX(0); }
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+        .sidebar.open + .sidebar-overlay { display: block; }
 
         /* زر عرض المزيد */
         .load-more-btn {
-            background: white;
-            color: #764ba2;
-            padding: 20px 40px;
-            border-radius: 50px;
-            font-size: 18px;
-            font-weight: 800;
+            background: #1f2937;
+            color: white;
+            padding: 18px;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: 700;
             border: none;
             cursor: pointer;
             width: calc(100% - 40px);
-            margin: 30px 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-            transition: all 0.3s;
+            margin: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-        }
-        .load-more-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+            gap: 10px;
         }
 
         /* حالة فارغة */
         .empty-state {
             text-align: center;
-            padding: 80px 20px;
-            color: white;
-        }
-        .empty-icon-glass {
-            width: 150px;
-            height: 150px;
-            background: rgba(255,255,255,0.2);
-            backdrop-filter: blur(20px);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 30px;
-            font-size: 60px;
-            border: 2px solid rgba(255,255,255,0.3);
+            padding: 60px 20px;
+            color: #9ca3af;
         }
 
         /* مودال */
@@ -328,146 +306,94 @@
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(10px);
+            background: rgba(0,0,0,0.5);
             align-items: center;
             justify-content: center;
             z-index: 1000;
             padding: 20px;
         }
         .modal.show { display: flex; }
-        .modal-glass {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(40px);
-            border-radius: 40px;
+        .modal-content {
+            background: white;
+            border-radius: 25px;
             width: 100%;
-            max-width: 450px;
+            max-width: 400px;
             overflow: hidden;
-            box-shadow: 0 50px 100px rgba(0,0,0,0.3);
         }
     </style>
 </head>
 <body>
 
-    <!-- خلفية متحركة -->
-    <div class="bg-animation">
-        <div class="circle" style="width: 300px; height: 300px; top: 10%; left: -5%; animation-delay: 0s;"></div>
-        <div class="circle" style="width: 200px; height: 200px; top: 60%; right: -5%; animation-delay: 5s;"></div>
-        <div class="circle" style="width: 400px; height: 400px; bottom: -10%; left: 30%; animation-delay: 10s;"></div>
-    </div>
-
     <!-- شريط التنقل -->
     <nav class="navbar">
         <div class="max-w-6xl mx-auto px-4 h-full flex justify-between items-center">
-            <button id="menuButton" class="text-2xl text-white hover:text-pink-200 transition p-2">
+            <button id="menuButton" class="text-2xl text-white p-2">
                 <i class="fas fa-bars"></i>
             </button>
-            <div class="text-2xl font-black text-white hidden sm:block">
-                <i class="fas fa-wallet mr-2"></i>Smart Dorm
-            </div>
-            <button id="notificationButton" class="relative text-white hover:text-pink-200 transition p-2" onclick="showNotifications()">
-                <i class="fas fa-bell text-2xl"></i>
-                <span id="notificationBadge" class="absolute top-0 right-0 w-6 h-6 bg-pink-500 text-white text-xs font-bold rounded-full flex items-center justify-center hidden">
-                    0
-                </span>
+            <div class="text-xl font-bold text-white">كشف الحساب</div>
+            <button id="notificationButton" class="relative text-white p-2" onclick="showNotifications()">
+                <i class="fas fa-bell text-xl"></i>
+                <span id="notificationBadge" class="absolute top-0 right-0 w-5 h-5 bg-yellow-400 text-red-800 text-xs font-bold rounded-full flex items-center justify-center hidden">0</span>
             </button>
         </div>
     </nav>
 
-    <!-- القائمة الجانبية -->
-    <div id="sidebar" class="sidebar">
-        <div class="p-6 border-b border-gray-200">
-            <div class="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center text-white text-3xl font-bold mb-4 shadow-xl">
-                <i class="fas fa-user"></i>
-            </div>
-            <h3 class="text-xl font-bold text-gray-800" id="sidebarUserName">جاري التحميل...</h3>
-            <p class="text-sm text-gray-500 mt-1" id="sidebarUserEmail">...</p>
-        </div>
-        <div class="p-4 space-y-2">
-            <a href="index.html" class="flex items-center gap-4 p-4 rounded-2xl hover:bg-gray-100 transition text-gray-700 font-semibold">
-                <i class="fas fa-plus-circle text-xl text-purple-500"></i>
-                <span>إضافة مصروف</span>
-            </a>
-            <a href="my_expenses.html" class="flex items-center gap-4 p-4 rounded-2xl hover:bg-gray-100 transition text-gray-700 font-semibold">
-                <i class="fas fa-file-invoice-dollar text-xl text-blue-500"></i>
-                <span>مصروفاتي</span>
-            </a>
-            <a href="history.html" class="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 font-bold border-r-4 border-purple-500">
-                <i class="fas fa-history text-xl"></i>
-                <span>السجل</span>
-            </a>
-            <a href="summary.html" class="flex items-center gap-4 p-4 rounded-2xl hover:bg-gray-100 transition text-gray-700 font-semibold">
-                <i class="fas fa-handshake text-xl text-green-500"></i>
-                <span>تسوية الأرصدة</span>
-            </a>
-        </div>
-        <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
-            <a href="auth.html" id="logoutSidebarButton" class="flex items-center gap-4 p-4 rounded-2xl hover:bg-red-50 text-red-600 font-bold transition">
-                <i class="fas fa-sign-out-alt text-xl"></i>
-                <span>تسجيل الخروج</span>
-            </a>
-        </div>
-    </div>
-    <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
-
-    <!-- الهيدر الرئيسي -->
+    <!-- الهيدر الأحمر -->
     <div class="main-header">
-        <div class="user-avatar-large">
-            <i class="fas fa-user"></i>
+        <button class="back-btn" onclick="history.back()">
+            <span>رجوع</span>
+            <i class="fas fa-arrow-right"></i>
+        </button>
+        <div class="text-center">
+            <h1 class="user-name">مرحباً، <span id="displayHeaderName">...</span></h1>
+            <p class="user-email" id="displayHeaderEmail">...</p>
         </div>
-        <h1 class="user-name" id="displayHeaderName">...</h1>
-        <p class="user-email" id="displayHeaderEmail">...</p>
     </div>
 
     <!-- الفلاتر -->
-    <div class="max-w-3xl mx-auto">
-        <div class="filters-container">
-            <div class="filter-chip active" onclick="setFilterWithProtection('30days', this)">
-                <i class="fas fa-calendar-day"></i>
-                <span>آخر 30 يوم</span>
-            </div>
-            <div class="filter-chip" onclick="setFilterWithProtection('3months', this)">
-                <i class="fas fa-calendar-alt"></i>
-                <span>آخر 3 شهور</span>
-            </div>
-            <div class="filter-chip" onclick="setFilterWithProtection('incoming', this)">
-                <i class="fas fa-arrow-down"></i>
-                <span>الواردة</span>
-            </div>
-            <div class="filter-chip" onclick="setFilterWithProtection('outgoing', this)">
-                <i class="fas fa-arrow-up"></i>
-                <span>الصادرة</span>
-            </div>
-            <div class="filter-chip" onclick="setFilterWithProtection('all', this)">
-                <i class="fas fa-list"></i>
-                <span>الكل</span>
-            </div>
-        </div>
+    <div class="filters-container">
+        <div class="filter-chip active" onclick="setFilterWithProtection('30days', this)">آخر 30 يوم</div>
+        <div class="filter-chip" onclick="setFilterWithProtection('3months', this)">آخر 3 شهور</div>
+        <div class="filter-chip" onclick="setFilterWithProtection('incoming', this)">الواردة (لك)</div>
+        <div class="filter-chip" onclick="setFilterWithProtection('outgoing', this)">الصادرة (عليك)</div>
+        <div class="filter-chip" onclick="setFilterWithProtection('all', this)">الكل</div>
     </div>
 
     <!-- حاوية المعاملات -->
-    <div class="max-w-3xl mx-auto px-5" id="expensesContainer">
+    <div id="expensesContainer">
         <div class="flex justify-center items-center py-20">
-            <div class="animate-spin rounded-full h-16 w-16 border-4 border-white/30 border-t-white"></div>
+            <div class="animate-spin rounded-full h-12 w-12 border-4 border-red-200 border-t-red-600"></div>
         </div>
     </div>
 
     <!-- زر عرض المزيد -->
     <button id="loadMoreButton" onclick="loadMoreHistoryWithProtection()" class="load-more-btn hidden">
-        <i class="fas fa-chevron-down"></i>
-        <span>عرض المزيد</span>
+        <i class="fas fa-redo"></i>
+        <span>عرض المزيد من السجلات</span>
     </button>
+
+    <!-- القائمة الجانبية -->
+    <div id="sidebar" class="sidebar">
+        <div class="p-6 border-b">
+            <h3 class="text-lg font-bold" id="sidebarUserName">جاري التحميل...</h3>
+            <p class="text-sm text-gray-500" id="sidebarUserEmail">...</p>
+        </div>
+        <a href="index.html" class="block p-4 hover:bg-gray-100 font-semibold">إضافة مصروف</a>
+        <a href="my_expenses.html" class="block p-4 hover:bg-gray-100 font-semibold">مصروفاتي</a>
+        <a href="history.html" class="block p-4 bg-red-50 text-red-700 font-bold border-r-4 border-red-600">السجل</a>
+        <a href="summary.html" class="block p-4 hover:bg-gray-100 font-semibold">تسوية الأرصدة</a>
+        <a href="auth.html" id="logoutSidebarButton" class="block p-4 text-red-600 font-bold mt-4">خروج</a>
+    </div>
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
 
     <!-- مودال الإشعارات -->
     <div id="notificationModal" class="modal">
-        <div class="modal-glass">
-            <div class="p-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white flex justify-between items-center">
-                <h2 class="text-xl font-bold"><i class="fas fa-bell ml-2"></i>الإشعارات</h2>
-                <button onclick="hideNotificationModal()" class="text-white/70 hover:text-white text-2xl">
-                    <i class="fas fa-times"></i>
-                </button>
+        <div class="modal-content">
+            <div class="p-4 bg-red-600 text-white flex justify-between items-center">
+                <h2 class="font-bold">الإشعارات</h2>
+                <button onclick="hideNotificationModal()"><i class="fas fa-times"></i></button>
             </div>
-            <div class="p-6 max-h-[60vh] overflow-y-auto" id="notificationsList"></div>
+            <div class="p-4 max-h-[60vh] overflow-y-auto" id="notificationsList"></div>
         </div>
     </div>
 
@@ -515,7 +441,7 @@
                 isLoadingMore = false;
                 if (btn) {
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-chevron-down"></i><span>عرض المزيد</span>';
+                    btn.innerHTML = '<i class="fas fa-redo"></i><span>عرض المزيد من السجلات</span>';
                 }
             }, 1000);
         };
