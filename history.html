@@ -11,471 +11,335 @@
     <style>
         * {
             font-family: 'Tajawal', sans-serif;
+            box-sizing: border-box;
         }
 
         body {
-            background: #f5f5f5;
+            background: #f3f4f6; /* لون خلفية فاتح جداً */
             min-height: 100vh;
             padding-bottom: 80px;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* شريط التنقل العلوي */
+        /* --- Header Styles --- */
         .navbar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 900;
             background: #b91c1c;
             height: 60px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 50;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
-        /* الهيدر الأحمر */
         .main-header {
-            background: linear-gradient(180deg, #b91c1c 0%, #991b1b 100%);
-            margin-top: 60px;
-            padding: 25px 20px 40px;
-            position: relative;
-            border-radius: 0 0 30px 30px;
-            box-shadow: 0 10px 30px rgba(185, 28, 28, 0.3);
-        }
-
-        .user-name {
-            font-size: 24px;
-            font-weight: 800;
+            background: #b91c1c;
+            padding: 80px 20px 30px; /* مساحة من الأعلى عشان الناف بار */
+            border-bottom-left-radius: 30px;
+            border-bottom-right-radius: 30px;
             color: white;
-            margin-bottom: 5px;
-        }
-
-        .user-email {
-            color: rgba(255,255,255,0.8);
-            font-size: 14px;
+            box-shadow: 0 10px 25px -5px rgba(185, 28, 28, 0.3);
+            margin-bottom: 25px;
         }
 
         .back-btn {
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
             background: rgba(255,255,255,0.2);
-            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
             color: white;
-            padding: 10px 20px;
-            border-radius: 25px;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 8px;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 15px;
+            cursor: pointer;
         }
 
-        /* الفلاتر */
-        .filters-container {
+        /* --- Filters --- */
+        .filters-scroll {
             display: flex;
             gap: 10px;
             overflow-x: auto;
-            padding: 20px;
-            margin-top: -20px;
-            position: relative;
-            z-index: 10;
-            scrollbar-width: none;
+            padding: 0 20px;
+            margin-top: -20px; /* تداخل مع الهيدر */
+            scrollbar-width: none; /* Firefox */
         }
-        .filters-container::-webkit-scrollbar { display: none; }
+        .filters-scroll::-webkit-scrollbar { display: none; }
 
         .filter-chip {
-            flex-shrink: 0;
-            padding: 12px 24px;
-            border-radius: 25px;
             background: white;
-            color: #666;
-            font-size: 14px;
+            padding: 10px 20px;
+            border-radius: 25px;
             font-weight: 700;
-            border: 2px solid #e0e0e0;
-            cursor: pointer;
-            transition: all 0.3s;
+            color: #6b7280;
             white-space: nowrap;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s ease;
+            cursor: pointer;
         }
-
         .filter-chip.active {
-            background: #b91c1c;
-            color: white;
+            color: #b91c1c;
             border-color: #b91c1c;
-            box-shadow: 0 5px 15px rgba(185, 28, 28, 0.3);
+            background: #fff1f2;
         }
 
-        /* بطاقة المعاملة */
+        /* --- New Card Design (مطابق للصورة) --- */
         .transaction-card {
             background: white;
-            border-radius: 20px;
+            border-radius: 16px;
             margin: 15px 20px;
-            padding: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            position: relative;
-            overflow: hidden;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
 
-        .transaction-card::before {
-            content: '';
-            position: absolute;
-            right: 0;
-            top: 0;
-            bottom: 0;
-            width: 5px;
-        }
-
-        .card-income::before { background: #10b981; }
-        .card-expense::before { background: #ef4444; }
-        .card-messenger::before { background: #f59e0b; }
-
-        /* رأس البطاقة */
-        .card-header {
+        /* القسم العلوي: أيقونة - نص - مبلغ */
+        .card-top {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 15px;
         }
 
-        .transaction-title {
-            font-size: 22px;
-            font-weight: 900;
-            color: #1f2937;
-            margin-bottom: 8px;
+        /* الحاوية اليمنى: الأيقونة + النصوص */
+        .card-right-side {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            flex: 1; /* تأخذ المساحة المتبقية */
         }
 
-        .transaction-subtitle {
-            font-size: 14px;
-            color: #6b7280;
-            line-height: 1.6;
-        }
-
-        .transaction-subtitle .payer-name {
-            color: #b91c1c;
-            font-weight: 700;
-        }
-
-        /* الدائرة الجانبية */
+        /* دائرة العملة */
         .currency-circle {
-            width: 70px;
-            height: 70px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
-            font-weight: 700;
-            position: relative;
+            font-size: 11px;
+            font-weight: 800;
             flex-shrink: 0;
+            position: relative;
+            background: white;
         }
 
-        .currency-circle.income {
-            border: 3px solid #10b981;
-            color: #10b981;
-        }
-
+        /* ستايل المصروف (أحمر) */
         .currency-circle.expense {
-            border: 3px solid #ef4444;
+            border: 2px solid #ef4444; /* أحمر فاتح */
+            color: #b91c1c;
+        }
+        .currency-circle.expense .arrow-icon {
             color: #ef4444;
-        }
-
-        .currency-circle::after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            right: -5px;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             font-size: 12px;
+            margin-top: -2px;
+        }
+
+        /* ستايل الوارد (أخضر) */
+        .currency-circle.income {
+            border: 2px solid #10b981; /* أخضر */
+            color: #047857;
+        }
+        .currency-circle.income .arrow-icon {
+            color: #10b981;
+            margin-top: -2px;
+            transform: rotate(180deg); /* سهم لأسفل */
+        }
+
+        /* النصوص */
+        .card-texts h3 {
+            font-size: 18px;
+            font-weight: 800;
+            color: #1f2937;
+            margin: 0;
+            line-height: 1.2;
+        }
+        .card-texts p {
+            font-size: 13px;
+            color: #6b7280;
+            margin: 4px 0 0 0;
+            font-weight: 500;
+        }
+        .share-info {
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        /* المبلغ (على اليسار) */
+        .card-amount {
+            text-align: left;
+            direction: ltr; /* عشان الأرقام تظهر صح */
             font-weight: 900;
+            font-size: 20px;
+            white-space: nowrap;
+            margin-top: 5px; /* محاذاة بصرية */
         }
+        .amount-red { color: #b91c1c; } /* أحمر غامق */
+        .amount-green { color: #059669; } /* أخضر غامق */
+        .minus-sign { margin-right: 2px; }
 
-        .currency-circle.income::after {
-            content: '↓';
-            background: #10b981;
-            color: white;
-        }
-
-        .currency-circle.expense::after {
-            content: '↑';
-            background: #ef4444;
-            color: white;
-        }
-
-        /* المبلغ الرئيسي */
-        .main-amount {
-            font-size: 36px;
-            font-weight: 900;
-            direction: ltr;
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .amount-income { color: #10b981; }
-        .amount-expense { color: #ef4444; }
-
-        .amount-sign {
-            font-size: 24px;
-            margin-left: 5px;
-        }
-
-        /* تذييل البطاقة */
-        .card-footer {
+        /* القسم السفلي: الوقت والتاريخ */
+        .card-bottom {
+            border-top: 1px dashed #e5e7eb;
+            padding-top: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-top: 15px;
-            border-top: 1px dashed #e5e7eb;
-            margin-top: 15px;
-        }
-
-        .datetime {
-            display: flex;
-            align-items: center;
-            gap: 15px;
             color: #9ca3af;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 600;
         }
 
-        .datetime-item {
+        .date-item {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
         }
 
-        /* القائمة الجانبية */
+        /* --- Sidebar & Others --- */
         .sidebar {
             position: fixed;
-            top: 0;
-            right: 0;
-            height: 100%;
+            top: 0; right: 0; bottom: 0;
             width: 280px;
             background: white;
-            z-index: 1000;
-            box-shadow: -5px 0 30px rgba(0,0,0,0.2);
+            z-index: 100;
             transform: translateX(100%);
-            transition: transform 0.3s ease;
+            transition: 0.3s;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
         }
         .sidebar.open { transform: translateX(0); }
-        .sidebar-overlay {
-            display: none;
+        .overlay {
             position: fixed;
             inset: 0;
             background: rgba(0,0,0,0.5);
-            z-index: 999;
-        }
-        .sidebar.open + .sidebar-overlay { display: block; }
-
-        /* زر عرض المزيد */
-        .load-more-btn {
-            background: #1f2937;
-            color: white;
-            padding: 18px;
-            border-radius: 15px;
-            font-size: 16px;
-            font-weight: 700;
-            border: none;
-            cursor: pointer;
-            width: calc(100% - 40px);
-            margin: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        /* حالة فارغة */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #9ca3af;
-        }
-
-        /* مودال */
-        .modal {
+            z-index: 90;
             display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.5);
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            padding: 20px;
         }
-        .modal.show { display: flex; }
-        .modal-content {
-            background: white;
-            border-radius: 25px;
-            width: 100%;
-            max-width: 400px;
-            overflow: hidden;
-        }
+        .overlay.show { display: block; }
+
     </style>
 </head>
 <body>
 
-    <!-- شريط التنقل -->
-    <nav class="navbar">
-        <div class="max-w-6xl mx-auto px-4 h-full flex justify-between items-center">
-            <button id="menuButton" class="text-2xl text-white p-2">
-                <i class="fas fa-bars"></i>
-            </button>
-            <div class="text-xl font-bold text-white">كشف الحساب</div>
-            <button id="notificationButton" class="relative text-white p-2" onclick="showNotifications()">
-                <i class="fas fa-bell text-xl"></i>
-                <span id="notificationBadge" class="absolute top-0 right-0 w-5 h-5 bg-yellow-400 text-red-800 text-xs font-bold rounded-full flex items-center justify-center hidden">0</span>
-            </button>
-        </div>
+    <nav class="navbar flex justify-between items-center px-4">
+        <button onclick="toggleSidebar()" class="text-white text-xl"><i class="fas fa-bars"></i></button>
+        <div class="text-white font-bold text-lg">كشف الحساب</div>
+        <button class="text-white text-xl"><i class="fas fa-bell"></i></button>
     </nav>
 
-    <!-- الهيدر الأحمر -->
     <div class="main-header">
         <button class="back-btn" onclick="history.back()">
-            <span>رجوع</span>
-            <i class="fas fa-arrow-right"></i>
+            <i class="fas fa-arrow-right"></i> رجوع
         </button>
         <div class="text-center">
-            <h1 class="user-name">مرحباً، <span id="displayHeaderName">...</span></h1>
-            <p class="user-email" id="displayHeaderEmail">...</p>
+            <h1 class="text-2xl font-bold mb-1">مرحباً، سليمان صلاح الدين</h1>
+            <p class="text-sm opacity-80">sulimansalaheldeinmohammed@gmail.com</p>
         </div>
     </div>
 
-    <!-- الفلاتر -->
-    <div class="filters-container">
-        <div class="filter-chip active" onclick="setFilterWithProtection('30days', this)">آخر 30 يوم</div>
-        <div class="filter-chip" onclick="setFilterWithProtection('3months', this)">آخر 3 شهور</div>
-        <div class="filter-chip" onclick="setFilterWithProtection('incoming', this)">الواردة (لك)</div>
-        <div class="filter-chip" onclick="setFilterWithProtection('outgoing', this)">الصادرة (عليك)</div>
-        <div class="filter-chip" onclick="setFilterWithProtection('all', this)">الكل</div>
+    <div class="filters-scroll">
+        <div class="filter-chip active">آخر 30 يوم</div>
+        <div class="filter-chip">آخر 3 شهور</div>
+        <div class="filter-chip">الواردة (لك)</div>
+        <div class="filter-chip">الصادرة (عليك)</div>
     </div>
 
-    <!-- حاوية المعاملات -->
-    <div id="expensesContainer">
-        <div class="flex justify-center items-center py-20">
-            <div class="animate-spin rounded-full h-12 w-12 border-4 border-red-200 border-t-red-600"></div>
-        </div>
-    </div>
-
-    <!-- زر عرض المزيد -->
-    <button id="loadMoreButton" onclick="loadMoreHistoryWithProtection()" class="load-more-btn hidden">
-        <i class="fas fa-redo"></i>
-        <span>عرض المزيد من السجلات</span>
-    </button>
-
-    <!-- القائمة الجانبية -->
-    <div id="sidebar" class="sidebar">
-        <div class="p-6 border-b">
-            <h3 class="text-lg font-bold" id="sidebarUserName">جاري التحميل...</h3>
-            <p class="text-sm text-gray-500" id="sidebarUserEmail">...</p>
-        </div>
-        <a href="index.html" class="block p-4 hover:bg-gray-100 font-semibold">إضافة مصروف</a>
-        <a href="my_expenses.html" class="block p-4 hover:bg-gray-100 font-semibold">مصروفاتي</a>
-        <a href="history.html" class="block p-4 bg-red-50 text-red-700 font-bold border-r-4 border-red-600">السجل</a>
-        <a href="summary.html" class="block p-4 hover:bg-gray-100 font-semibold">تسوية الأرصدة</a>
-        <a href="auth.html" id="logoutSidebarButton" class="block p-4 text-red-600 font-bold mt-4">خروج</a>
-    </div>
-    <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
-
-    <!-- مودال الإشعارات -->
-    <div id="notificationModal" class="modal">
-        <div class="modal-content">
-            <div class="p-4 bg-red-600 text-white flex justify-between items-center">
-                <h2 class="font-bold">الإشعارات</h2>
-                <button onclick="hideNotificationModal()"><i class="fas fa-times"></i></button>
+    <div id="expensesContainer" class="pb-20 pt-4">
+        
+        <div class="transaction-card">
+            <div class="card-top">
+                <div class="card-right-side">
+                    <div class="currency-circle expense">
+                        <span>ج.س</span>
+                        <i class="fas fa-arrow-up arrow-icon"></i>
+                    </div>
+                    <div class="card-texts">
+                        <h3>اندومي</h3>
+                        <p>مشاركة في مصروف: سوار الذهب</p>
+                        <p class="text-xs text-gray-400 mt-1">حصتك المطلوبة</p>
+                    </div>
+                </div>
+                <div class="card-amount amount-red">
+                    <span class="minus-sign">-</span>2,666.67
+                </div>
             </div>
-            <div class="p-4 max-h-[60vh] overflow-y-auto" id="notificationsList"></div>
+            <div class="card-bottom">
+                <div class="date-item">AM 10:36 <i class="far fa-clock"></i></div>
+                <div class="date-item">Nov-2025-29 <i class="far fa-calendar-alt"></i></div>
+            </div>
         </div>
+
+        <div class="transaction-card">
+            <div class="card-top">
+                <div class="card-right-side">
+                    <div class="currency-circle income">
+                        <span>ج.س</span>
+                        <i class="fas fa-arrow-up arrow-icon"></i> </div>
+                    <div class="card-texts">
+                        <h3>شاي</h3>
+                        <p>استرداد من 2 مشارك</p>
+                        <p class="text-xs text-gray-400 mt-1">SDG 1,666.7 :حصتك</p>
+                    </div>
+                </div>
+                <div class="card-amount amount-green">
+                    <span class="minus-sign">+</span>3,333.33
+                </div>
+            </div>
+            <div class="card-bottom">
+                <div class="date-item">AM 10:30 <i class="far fa-clock"></i></div>
+                <div class="date-item">Nov-2025-29 <i class="far fa-calendar-alt"></i></div>
+            </div>
+        </div>
+
+         <div class="transaction-card">
+            <div class="card-top">
+                <div class="card-right-side">
+                    <div class="currency-circle expense">
+                        <span>ج.س</span>
+                        <i class="fas fa-arrow-up arrow-icon"></i>
+                    </div>
+                    <div class="card-texts">
+                        <h3>التمرين</h3>
+                        <p>مشاركة في مصروف: سوار الذهب</p>
+                        <p class="text-xs text-gray-400 mt-1">حصتك المطلوبة</p>
+                    </div>
+                </div>
+                <div class="card-amount amount-red">
+                    <span class="minus-sign">-</span>4,333.33
+                </div>
+            </div>
+            <div class="card-bottom">
+                <div class="date-item">AM 10:35 <i class="far fa-clock"></i></div>
+                <div class="date-item">Nov-2025-29 <i class="far fa-calendar-alt"></i></div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="px-5 mb-10">
+        <button class="w-full bg-gray-800 text-white py-4 rounded-xl font-bold flex justify-center items-center gap-2">
+            <i class="fas fa-redo"></i> عرض المزيد من السجلات
+        </button>
+    </div>
+
+    <div class="overlay" onclick="toggleSidebar()"></div>
+    <div class="sidebar p-5" id="sidebar">
+        <h2 class="text-xl font-bold mb-5">القائمة</h2>
+        <a href="#" class="block py-3 border-b">الرئيسية</a>
+        <a href="#" class="block py-3 border-b">مصروفاتي</a>
+        <a href="#" class="block py-3 border-b text-red-600">تسجيل خروج</a>
     </div>
 
     <script>
-        let isFiltering = false;
-        let isLoadingMore = false;
-
-        window.setFilterWithProtection = function(filterType, element) {
-            if (isFiltering) return;
-            isFiltering = true;
-            
-            document.querySelectorAll('.filter-chip').forEach(el => el.classList.remove('active'));
-            if (element) element.classList.add('active');
-            
-            if (typeof window.setFilter === 'function') {
-                try {
-                    window.setFilter(filterType, element);
-                } catch (error) {
-                    console.error('خطأ:', error);
-                }
-            }
-            
-            setTimeout(() => isFiltering = false, 500);
-        };
-
-        window.loadMoreHistoryWithProtection = function() {
-            if (isLoadingMore) return;
-            isLoadingMore = true;
-            
-            const btn = document.getElementById('loadMoreButton');
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>جاري التحميل...</span>';
-            }
-            
-            if (typeof window.loadMoreHistory === 'function') {
-                try {
-                    window.loadMoreHistory();
-                } catch (error) {
-                    console.error('خطأ:', error);
-                }
-            }
-            
-            setTimeout(() => {
-                isLoadingMore = false;
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-redo"></i><span>عرض المزيد من السجلات</span>';
-                }
-            }, 1000);
-        };
-
-        window.toggleSidebar = function() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('open');
-            document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : 'auto';
-        };
-
-        window.closeSidebar = function() {
-            document.getElementById('sidebar').classList.remove('open');
-            document.body.style.overflow = 'auto';
-        };
-
-        document.addEventListener('contextmenu', e => e.preventDefault());
-        document.addEventListener('keydown', function(e) {
-            if ((e.key === 'c' || e.key === 'C') && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault();
-            }
-        });
-
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('menuButton').addEventListener('click', window.toggleSidebar);
-            
-            const logoutBtn = document.getElementById('logoutSidebarButton');
-            if (logoutBtn) {
-                logoutBtn.onclick = (e) => {
-                    e.preventDefault();
-                    window.location.href = 'auth.html';
-                };
-            }
-        });
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.querySelector('.overlay').classList.toggle('show');
+        }
     </script>
-    <script src="script.js" type="module"></script>
+    <script src="script.js" type="module"></script> 
 </body>
 </html>
