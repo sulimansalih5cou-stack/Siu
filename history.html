@@ -1,3 +1,6 @@
+مرحبا ،
+لا يعجبني تصميم البطاقات اجعل التصميم  للبطاقات جميلا واحترافيا ولا تغير اي شي ا خر خصوصا  الجزء الخاص ب script
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -17,7 +20,7 @@
         }
 
         body {
-            background: #f3f4f6; /* لون خلفية أهدأ قليلاً */
+            background: #f5f5f5;
             min-height: 100vh;
             padding-top: 60px;
             padding-bottom: 20px;
@@ -36,7 +39,7 @@
             z-index: 900;
             background: #b91c1c;
             height: 60px;
-            box-shadow: 0 4px 15px rgba(185, 28, 28, 0.2);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -72,50 +75,27 @@
 
         /* حاوية المعاملات */
         .transactions-container {
-            padding: 24px;
-            max-width: 800px; /* تحديد عرض أقصى لترتيب البطاقات */
-            margin: 0 auto;
+            padding: 20px;
         }
 
-        /* --- بداية تصميم البطاقة الجديد --- */
+        /* بطاقة المعاملة */
         .transaction-card {
             background: white;
-            border-radius: 24px; /* زوايا أكثر استدارة */
-            margin-bottom: 20px;
-            padding: 24px;
-            /* ظل ناعم جداً واحترافي */
-            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08); 
+            border-radius: 16px;
+            margin-bottom: 16px;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
             position: relative;
             overflow: hidden;
-            border: 1px solid rgba(0,0,0,0.02);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border-right: 5px solid;
         }
 
-        /* تأثير عند تحويم الماوس */
-        .transaction-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 40px -5px rgba(0,0,0,0.12);
+        .transaction-card.expense {
+            border-right-color: #ef4444;
         }
 
-        /* المؤشر الجانبي الملون (شريط صغير وأنيق) */
-        .transaction-card::before {
-            content: '';
-            position: absolute;
-            top: 20px;
-            right: 0;
-            width: 4px;
-            height: calc(100% - 40px);
-            border-radius: 4px 0 0 4px;
-        }
-
-        .transaction-card.expense::before {
-            background: #ef4444;
-            box-shadow: -2px 0 8px rgba(239, 68, 68, 0.4);
-        }
-
-        .transaction-card.income::before {
-            background: #10b981;
-            box-shadow: -2px 0 8px rgba(16, 185, 129, 0.4);
+        .transaction-card.income {
+            border-right-color: #10b981;
         }
 
         /* رأس البطاقة */
@@ -123,48 +103,36 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 16px;
+            margin-bottom: 15px;
         }
 
         .transaction-title {
-            font-size: 19px;
-            font-weight: 800;
-            color: #111827;
-            margin-bottom: 6px;
-            letter-spacing: -0.5px;
+            font-size: 20px;
+            font-weight: 900;
+            color: #1f2937;
+            margin-bottom: 4px;
         }
 
         .transaction-subtitle {
-            font-size: 13.5px;
+            font-size: 14px;
             color: #6b7280;
-            line-height: 1.6;
-            font-weight: 500;
+            line-height: 1.5;
         }
 
-        /* تصميم المبلغ (Badge Style) */
+        /* المبلغ */
         .transaction-amount {
-            font-size: 18px;
+            font-size: 24px;
             font-weight: 900;
             direction: ltr;
             text-align: left;
-            padding: 8px 14px;
-            border-radius: 14px;
-            white-space: nowrap;
-            margin-right: 10px;
-            display: flex;
-            align-items: center;
         }
 
         .amount-expense {
-            color: #b91c1c;
-            background: #fef2f2; /* خلفية حمراء فاتحة جداً */
-            border: 1px solid #fee2e2;
+            color: #ef4444;
         }
 
         .amount-income {
-            color: #047857;
-            background: #ecfdf5; /* خلفية خضراء فاتحة جداً */
-            border: 1px solid #d1fae5;
+            color: #10b981;
         }
 
         /* تذييل البطاقة */
@@ -172,29 +140,24 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-top: 16px;
-            margin-top: 16px;
-            border-top: 1px dashed #e5e7eb; /* خط متقطع بدلاً من متصل */
+            padding-top: 15px;
+            margin-top: 15px;
+            border-top: 1px solid #f0f0f0;
         }
 
         .transaction-time {
             color: #9ca3af;
-            font-size: 13px;
-            font-weight: 600;
+            font-size: 14px;
+            font-weight: 500;
             display: flex;
             align-items: center;
             gap: 8px;
-            background: #f9fafb;
-            padding: 6px 12px;
-            border-radius: 20px;
         }
 
         .time-icon {
-            color: #ef4444; /* توحيد لون الأيقونة */
-            font-size: 11px;
+            color: #b91c1c;
+            font-size: 12px;
         }
-        /* --- نهاية تصميم البطاقة الجديد --- */
-
 
         /* حالة فارغة */
         .empty-state {
@@ -225,7 +188,7 @@
             width: 280px;
             background: white;
             z-index: 1001;
-            box-shadow: -5px 0 30px rgba(0,0,0,0.15);
+            box-shadow: -5px 0 30px rgba(0,0,0,0.2);
             transition: right 0.3s ease;
             padding-top: 20px;
         }
@@ -241,8 +204,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.4);
-            backdrop-filter: blur(2px);
+            background: rgba(0,0,0,0.5);
             z-index: 1000;
         }
 
@@ -251,8 +213,8 @@
         }
 
         .sidebar-header {
-            padding: 25px;
-            border-bottom: 1px solid #f3f4f6;
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
             margin-bottom: 10px;
         }
 
@@ -269,7 +231,7 @@
         }
 
         .sidebar-menu {
-            padding: 10px 15px;
+            padding: 10px 0;
         }
 
         .sidebar-item {
@@ -279,19 +241,17 @@
             color: #4b5563;
             text-decoration: none;
             font-weight: 600;
-            transition: all 0.3s;
-            border-radius: 12px;
-            margin-bottom: 5px;
+            transition: background 0.3s;
         }
 
         .sidebar-item:hover {
             background: #f9fafb;
-            transform: translateX(-5px);
         }
 
         .sidebar-item.active {
-            background: #fef2f2;
+            background: #fee2e2;
             color: #b91c1c;
+            border-right: 4px solid #b91c1c;
         }
 
         .sidebar-icon {
@@ -314,7 +274,6 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
-            backdrop-filter: blur(3px);
         }
 
         .modal.open {
@@ -323,11 +282,10 @@
 
         .modal-content {
             background: white;
-            border-radius: 24px;
+            border-radius: 20px;
             width: 100%;
             max-width: 400px;
             overflow: hidden;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
         }
 
         .modal-header {
@@ -375,6 +333,7 @@
 </head>
 <body>
 
+    <!-- شريط التنقل -->
     <nav class="navbar">
         <button class="nav-icon" id="menuButton">
             <i class="fas fa-bars"></i>
@@ -385,7 +344,11 @@
         </button>
     </nav>
 
+    <!-- حاوية المعاملات -->
     <div class="transactions-container" id="transactionsContainer">
+        <!-- سيتم إضافة البطاقات هنا ديناميكيًا -->
+
+        <!-- مثال على بطاقة معاملة (مصروف) -->
         <div class="transaction-card expense">
             <div class="transaction-header">
                 <div>
@@ -402,6 +365,7 @@
             </div>
         </div>
 
+        <!-- بطاقة ثانية -->
         <div class="transaction-card expense">
             <div class="transaction-header">
                 <div>
@@ -418,6 +382,7 @@
             </div>
         </div>
 
+        <!-- بطاقة ثالثة (استرداد) -->
         <div class="transaction-card income">
             <div class="transaction-header">
                 <div>
@@ -434,6 +399,7 @@
             </div>
         </div>
 
+        <!-- بطاقة رابعة -->
         <div class="transaction-card expense">
             <div class="transaction-header">
                 <div>
@@ -450,6 +416,7 @@
             </div>
         </div>
 
+        <!-- بطاقة خامسة -->
         <div class="transaction-card income">
             <div class="transaction-header">
                 <div>
@@ -467,6 +434,7 @@
         </div>
     </div>
 
+    <!-- القائمة الجانبية -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
@@ -497,6 +465,7 @@
         </div>
     </div>
 
+    <!-- مودال الإشعارات -->
     <div class="modal" id="notificationModal">
         <div class="modal-content">
             <div class="modal-header">
