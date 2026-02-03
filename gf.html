@@ -3,190 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>واجهة المعاملات الاحترافية</title>
+    <title>تصميم بطاقات المعاملات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-body: #f4f7f6;
-            --card-bg: #ffffff;
-            --primary-red: #ff4757;
-            --primary-green: #2ed573;
-            --text-main: #2f3542;
-            --text-muted: #a4b0be;
-            --shadow: 0 10px 20px rgba(0,0,0,0.05);
-        }
-
         body {
-            background-color: var(--bg-body);
-            font-family: 'Segoe UI', Tahoma, sans-serif;
+            font-family: 'Cairo', sans-serif;
+            background-color: #f5f5f5;
             display: flex;
-            justify-content: center;
-            padding: 30px 15px;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
             margin: 0;
         }
 
-        .container {
-            width: 100%;
-            max-width: 450px;
-        }
-
-        /* تصميم البطاقة الجديد */
+        /* حاوية البطاقة */
         .card {
-            background: var(--card-bg);
-            border-radius: 24px; /* حواف دائرية أكثر نعومة */
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: var(--shadow);
-            border: 1px solid rgba(255,255,255,0.8);
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            background-color: #ffffff;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 400px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eee;
         }
 
-        .card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
-        }
-
-        /* شريط جانبي ملون للتميز السريع */
-        .card::before {
-            content: '';
-            position: absolute;
-            right: 0;
-            top: 20%;
-            height: 60%;
-            width: 5px;
-            border-radius: 10px 0 0 10px;
-        }
-
-        .card.expense::before { background: var(--primary-red); }
-        .card.income::before { background: var(--primary-green); }
-
-        .header {
+        /* الجزء العلوي: المبلغ والعنوان */
+        .card-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
         }
 
-        .title-group h3 {
-            margin: 0;
-            color: var(--text-main);
-            font-size: 1.3rem;
-            letter-spacing: -0.5px;
-        }
-
-        .title-group p {
-            margin: 5px 0 0 0;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-        }
-
-        /* تنسيق المبلغ بصورة بارزة */
-        .amount-box {
-            text-align: left;
+        .amount-section {
+            color: #d32f2f; /* اللون الأحمر للمبلغ */
+            font-weight: 700;
+            font-size: 1.2rem;
             display: flex;
             align-items: center;
-            gap: 12px;
         }
 
-        .val {
+        .amount-section span {
+            margin-left: 5px;
             font-size: 1.5rem;
-            font-weight: 800;
-            font-family: 'Courier New', Courier, monospace; /* خط رقمي مميز */
         }
 
-        .expense-text { color: var(--primary-red); }
-        .income-text { color: var(--primary-green); }
+        .title-section {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
 
-        /* الدائرة بشكل حديث */
-        .circle {
+        .text-content {
+            text-align: right;
+        }
+
+        .title-content {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #333;
+            margin: 0;
+        }
+
+        .description {
+            color: #757575;
+            font-size: 0.85rem;
+            margin: 4px 0;
+        }
+
+        .sub-description {
+            color: #9e9e9e;
+            font-size: 0.75rem;
+        }
+
+        /* الأيقونة الدائرية (ج.س) */
+        .currency-icon {
+            border: 2px solid #d32f2f;
+            color: #d32f2f;
+            border-radius: 50%;
             width: 45px;
             height: 45px;
-            border-radius: 15px; /* شكل مربع دائري Modern Squircle */
             display: flex;
-            align-items: center;
+            flex-direction: column;
             justify-content: center;
-            font-size: 0.8rem;
+            align-items: center;
+            font-size: 0.7rem;
             font-weight: bold;
-            border: 2px solid;
+            position: relative;
         }
 
+        .currency-icon::after {
+            content: '↑'; /* سهم بسيط لمحاكاة التصميم */
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 0.6rem;
+        }
+
+        /* الخط الفاصل المنقط */
         .divider {
-            margin: 18px 0;
-            border: 0;
-            border-top: 1px solid #f1f2f6;
+            border-top: 1px dotted #e0e0e0;
+            margin: 15px 0 10px 0;
         }
 
-        .footer {
+        /* الجزء السفلي: التاريخ والوقت */
+        .card-footer {
             display: flex;
             justify-content: space-between;
+            color: #9e9e9e;
             font-size: 0.8rem;
-            color: var(--text-muted);
-            font-weight: 600;
         }
 
-        .badge {
-            background: #f1f2f6;
-            padding: 4px 10px;
-            border-radius: 8px;
-            color: #747d8c;
+        .footer-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
+
+        /* أيقونات بسيطة باستخدام CSS */
+        .icon-clock::before { content: '🕒'; }
+        .icon-calendar::before { content: '📅'; }
+
     </style>
 </head>
 <body>
 
-<div class="container">
-
-    <div class="card expense">
-        <div class="header">
-            <div class="title-group">
-                <h3>الفطور</h3>
-                <p>مشاركة مصروف: سوار الذهب</p>
+    <div class="card">
+        <div class="card-header">
+            <div class="amount-section">
+                <span>-</span> 2,666.67
             </div>
-            <div class="amount-box">
-                <span class="val expense-text">-3,333.33</span>
-                <div class="circle" style="color: var(--primary-red); border-color: var(--primary-red);">
-                    ↑
+            
+            <div class="title-section">
+                <div class="text-content">
+                    <h3 class="title-content">اندومي</h3>
+                    <p class="description">مشاركة في مصروف: سوار الذهب</p>
+                    <p class="sub-description">حصتك المطلوبة</p>
+                </div>
+                <div class="currency-icon">
+                    ج.س
                 </div>
             </div>
         </div>
-        <hr class="divider">
-        <div class="footer">
-            <span><span class="badge">الوقت</span> 11:25 AM</span>
-            <span>26-Nov-2025 📅</span>
+
+        <div class="divider"></div>
+
+        <div class="card-footer">
+            <div class="footer-item">
+                <span class="icon-clock"></span>
+                AM 10:36
+            </div>
+            <div class="footer-item">
+                Nov-2025-29
+                <span class="icon-calendar"></span>
+            </div>
         </div>
     </div>
 
-    <div class="card income">
-        <div class="header">
-            <div class="title-group">
-                <h3>استرداد شاي</h3>
-                <p>من 2 مشاركين في المجموعة</p>
+    <div class="card">
+        <div class="card-header">
+            <div class="amount-section">
+                <span>-</span> 4,333.33
             </div>
-            <div class="amount-box">
-                <span class="val income-text">+1,666.67</span>
-                <div class="circle" style="color: var(--primary-green); border-color: var(--primary-green);">
-                    ↓
+            <div class="title-section">
+                <div class="text-content">
+                    <h3 class="title-content">التمرين</h3>
+                    <p class="description">مشاركة في مصروف: سوار الذهب</p>
+                    <p class="sub-description">حصتك المطلوبة</p>
+                </div>
+                <div class="currency-icon">
+                    ج.س
                 </div>
             </div>
         </div>
-        <hr class="divider">
-        <div class="footer">
-            <span><span class="badge">الوقت</span> 10:30 AM</span>
-            <span>29-Nov-2025 📅</span>
+        <div class="divider"></div>
+        <div class="card-footer">
+            <div class="footer-item">
+                <span class="icon-clock"></span>
+                AM 10:35
+            </div>
+            <div class="footer-item">
+                Nov-2025-29
+                <span class="icon-calendar"></span>
+            </div>
         </div>
     </div>
-
-</div>
-
-<script>
-    // لمسة تفاعلية بسيطة: تغيير خلفية البطاقة عند النقر
-    document.querySelectorAll('.card').forEach(card => {
-        card.addEventListener('click', () => {
-            card.style.background = '#f9f9f9';
-            setTimeout(() => card.style.background = '#ffffff', 200);
-        });
-    });
-</script>
 
 </body>
 </html>
