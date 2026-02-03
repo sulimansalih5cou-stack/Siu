@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>كشف الحساب</title>
+    <title>كشف الحساب - Smart Dorm Expenses</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -12,21 +12,83 @@
         body {
             background-color: #F3F4F6;
             font-family: 'Cairo', sans-serif;
-            padding-bottom: 80px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding-top: 64px;
+            overflow-x: hidden;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
         }
 
-        /* --- الهيدر (كما هو) --- */
-        .user-profile-card {
-            background: linear-gradient(135deg, #B91C1C 0%, #7F1D1D 100%);
-            color: white;
-            padding: 25px 20px;
-            border-bottom-left-radius: 30px;
-            border-bottom-right-radius: 30px;
-            margin-bottom: 25px;
-            box-shadow: 0 10px 20px -5px rgba(185, 28, 28, 0.3);
+        /* شريط التنقل */
+        .navbar {
+            position: fixed; top: 0; left: 0; right: 0;
+            z-index: 900; background-color: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            height: 64px;
+            padding: 0 16px;
         }
 
-        /* --- تصميم الكارت الجديد (مطابق للصورة) --- */
+        /* القائمة الجانبية */
+        .sidebar {
+            position: fixed; top: 0; right: 0; height: 100%; width: 250px;
+            background: white; z-index: 1000; box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+            transform: translateX(100%); transition: transform 0.3s ease-out;
+            padding-top: 64px;
+        }
+        .sidebar.open { transform: translateX(0); }
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 999; }
+        .sidebar.open + .sidebar-overlay { display: block; }
+        .sidebar-link {
+            display: block; padding: 15px 20px; font-weight: 600; color: #4B5563;
+            transition: background-color 0.3s, color 0.3s; border-right: 4px solid transparent;
+        }
+        .sidebar-link:hover { background-color: #F3F4F6; color: #3B82F6; }
+        .sidebar-link.active-history {
+            color: #B91C1C;
+            background-color: #FEF2F2;
+            border-right-color: #B91C1C;
+        }
+        .sidebar-profile-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        /* المحتوى الرئيسي */
+        .content-wrapper {
+            flex-grow: 1;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* الفلاتر */
+        .filter-scroll {
+            display: flex; gap: 8px; overflow-x: auto;
+            padding: 5px 0 20px 0;
+            scrollbar-width: none;
+        }
+        .filter-scroll::-webkit-scrollbar { display: none; }
+        .filter-pill {
+            white-space: nowrap; padding: 8px 18px;
+            border-radius: 25px; background: white;
+            color: #4B5563; font-size: 0.85rem; font-weight: 600;
+            border: 1px solid #E5E7EB; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-pill:hover { background-color: #F9FAFB; }
+        .filter-pill.active {
+            background: #FEF2F2; color: #B91C1C; border-color: #B91C1C;
+        }
+
+        /* تصميم كارت المعاملة الجديد */
         .transaction-card {
             background: white;
             border-radius: 16px;
@@ -34,9 +96,14 @@
             margin-bottom: 12px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.03);
             display: flex;
-            justify-content: space-between; /* يباعد بين اليمين واليسار */
+            justify-content: space-between;
             align-items: flex-start;
             position: relative;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .transaction-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
 
         /* الجزء الأيمن: الأيقونة + النصوص */
@@ -52,7 +119,7 @@
             width: 48px;
             height: 48px;
             border-radius: 50%;
-            border: 2px solid #DC2626; /* أحمر */
+            border: 2px solid #DC2626;
             color: #DC2626;
             display: flex;
             align-items: center;
@@ -63,8 +130,12 @@
             flex-shrink: 0;
             background: #fff;
         }
+        .bank-icon.income {
+            border-color: #059669;
+            color: #059669;
+        }
 
-        /* السهم الصغير فوق الأيقونة */
+        /* السهم الصغير */
         .icon-badge {
             position: absolute;
             bottom: -2px;
@@ -80,8 +151,9 @@
             font-size: 0.7rem;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
+        .bank-icon.income .icon-badge { color: #059669; }
 
-        /* النصوص (العنوان والوصف) */
+        /* النصوص */
         .card-info h3 {
             font-weight: 700;
             color: #1F2937;
@@ -103,21 +175,22 @@
         .card-left-section {
             display: flex;
             flex-direction: column;
-            align-items: flex-end; /* محاذاة لليسار بالنسبة للشاشة (لأننا في RTL الـ end هو اليسار) */
+            align-items: flex-end;
             text-align: left;
             min-width: 100px;
         }
 
         /* المبلغ */
         .amount-text {
-            font-family: sans-serif; /* للأرقام الإنجليزية */
+            font-family: 'Cairo', sans-serif;
             font-weight: 800;
             font-size: 1.25rem;
-            direction: ltr; /* ليظهر السالب يسار الرقم */
-            color: #DC2626; /* لون الخصم الأحمر */
+            direction: ltr;
+            color: #DC2626;
             margin-bottom: 8px;
         }
-        .amount-text.green { color: #059669; }
+        .amount-text.income { color: #059669; }
+        .amount-text.messenger { color: #6B7280; }
 
         /* التاريخ والوقت */
         .date-row {
@@ -126,141 +199,215 @@
             gap: 5px;
             color: #9CA3AF;
             font-size: 0.7rem;
-            direction: ltr; /* التنسيق يظهر إنجليزي في الصورة */
+            direction: ltr;
         }
 
-        /* الفلاتر */
-        .filter-scroll {
-            display: flex; gap: 8px; overflow-x: auto;
-            padding: 5px 0 15px 0;
-            scrollbar-width: none;
+        /* شارة التعديل */
+        .edited-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #FEF3C7;
+            color: #B45309;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-top: 4px;
         }
-        .filter-pill {
-            white-space: nowrap; padding: 8px 18px;
-            border-radius: 25px; background: white;
-            color: #4B5563; font-size: 0.85rem; font-weight: 600;
-            border: 1px solid #E5E7EB; cursor: pointer;
+
+        /* شارة التسوية */
+        .settlement-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #DBEAFE;
+            color: #1D4ED8;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-top: 4px;
         }
-        .filter-pill.active {
-            background: #FEF2F2; color: #B91C1C; border-color: #B91C1C;
+
+        /* حالة فارغة */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #9CA3AF;
         }
+        .empty-state i { font-size: 4rem; margin-bottom: 16px; color: #D1D5DB; }
+
+        /* زر تحميل المزيد */
+        .load-more-btn {
+            width: 100%;
+            padding: 12px;
+            background: white;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            color: #4B5563;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 16px;
+        }
+        .load-more-btn:hover { background: #F9FAFB; }
+
+        /* مودال الإشعارات */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 450px;
+            text-align: right; max-height: 90vh; overflow-y: auto;
+        }
+        .btn-secondary-action {
+            background: #E5E7EB;
+            color: #4B5563;
+            border: 1px solid #D1D5DB;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            width: 100%;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .btn-secondary-action:hover { background: #D1D5DB; }
     </style>
 </head>
 <body>
 
-    <div class="user-profile-card">
-        <div class="flex justify-between items-center">
-            <div>
-                <h2 class="text-xl font-bold">مرحباً، سليمان صلاح الدين</h2>
-                <p class="text-xs opacity-90 font-sans mt-1">sulimansalaheldeinmohammed@gmail.com</p>
+    <nav class="navbar">
+        <div class="max-w-6xl mx-auto px-4 h-full">
+            <div class="flex justify-between items-center h-full">
+                <button id="menuButton" class="text-2xl text-gray-600 hover:text-blue-500 p-2 focus:outline-none">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="text-2xl font-extrabold text-blue-600 absolute right-1/2 transform translate-x-1/2 hidden sm:block">
+                    <i class="fas fa-history"></i> Smart Dorm
+                </div>
+                <div class="flex items-center">
+                    <button id="notificationButton" class="relative text-gray-500 hover:text-red-500 p-2 focus:outline-none" onclick="showNotifications()">
+                        <i class="fas fa-bell text-2xl"></i>
+                        <span id="notificationBadge" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full hidden">0</span>
+                    </button>
+                </div>
             </div>
-            <a href="#" class="bg-white bg-opacity-20 px-3 py-1 rounded-lg text-sm hover:bg-opacity-30 transition">
-                رجوع <i class="fas fa-arrow-left mr-1"></i>
-            </a>
+        </div>
+    </nav>
+
+    <div id="sidebar" class="sidebar">
+        <div class="p-4 border-b">
+            <h3 class="text-lg font-bold text-gray-800 sidebar-profile-text" id="sidebarUserName">جاري التحميل...</h3>
+            <p class="text-sm text-gray-500 sidebar-profile-text" id="sidebarUserEmail">...</p>
+        </div>
+        <a href="index.html" class="sidebar-link"><i class="fas fa-plus-circle ml-2"></i> إضافة مصروف</a>
+        <a href="my_expenses.html" class="sidebar-link"><i class="fas fa-file-invoice-dollar ml-2"></i> مصروفاتي</a>
+        <a href="history.html" class="sidebar-link active-history"><i class="fas fa-history ml-2"></i> السجل</a>
+        <a href="summary.html" class="sidebar-link"><i class="fas fa-handshake ml-2"></i> تسوية الأرصدة</a>
+        <a href="auth.html" id="logoutSidebarButton" class="sidebar-link text-red-600 hover:text-red-800 mt-4">
+            <i class="fas fa-sign-out-alt ml-2"></i> خروج
+        </a>
+    </div>
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <div class="content-wrapper">
+        <div class="container">
+            <h1 class="text-2xl font-extrabold text-gray-800 mb-6 text-center">
+                <i class="fas fa-file-invoice ml-2 text-red-600"></i> كشف الحساب
+            </h1>
+
+            <!-- الفلاتر -->
+            <div class="filter-scroll">
+                <div class="filter-pill active" onclick="setFilter('30days', this)">آخر 30 يوم</div>
+                <div class="filter-pill" onclick="setFilter('3months', this)">آخر 3 شهور</div>
+                <div class="filter-pill" onclick="setFilter('incoming', this)">الواردة (لك)</div>
+                <div class="filter-pill" onclick="setFilter('outgoing', this)">الصادرة (عليك)</div>
+            </div>
+
+            <!-- حاوية المعاملات -->
+            <div id="expensesContainer">
+                <!-- سيتم ملؤها بواسطة JavaScript -->
+            </div>
+
+            <!-- زر تحميل المزيد -->
+            <button id="loadMoreButton" class="load-more-btn hidden" onclick="loadMoreHistory()">
+                <i class="fas fa-chevron-down ml-2"></i> تحميل المزيد
+            </button>
+
+            <!-- حالة فارغة -->
+            <div id="emptyState" class="empty-state hidden">
+                <i class="fas fa-inbox"></i>
+                <h3 class="text-xl font-bold text-gray-700 mb-2">لا توجد معاملات</h3>
+                <p>لم يتم العثور على أي سجلات في هذا النطاق الزمني</p>
+            </div>
         </div>
     </div>
 
-    <div class="max-w-3xl mx-auto px-4">
-
-        <div class="filter-scroll">
-            <div class="filter-pill active">آخر 30 يوم</div>
-            <div class="filter-pill">آخر 3 شهور</div>
-            <div class="filter-pill">الواردة (لك)</div>
-            <div class="filter-pill">الصادرة (عليك)</div>
-        </div>
-
-        <div id="expensesContainer" class="mt-4">
-
-            <div class="transaction-card">
-                <div class="card-right-section">
-                    <div class="bank-icon">
-                        2.س
-                        <div class="icon-badge"><i class="fas fa-arrow-up"></i></div>
-                    </div>
-                    <div class="card-info">
-                        <h3>اندومي</h3>
-                        <p>مشاركة في مصروف: سوار الذهب</p>
-                        <p class="share-text">حصتك المطلوبة</p>
-                    </div>
-                </div>
-                <div class="card-left-section">
-                    <div class="amount-text">- 2,666.67</div>
-                    <div class="date-row">
-                        <span>AM 10:36</span>
-                        <i class="far fa-clock text-xs"></i>
-                        <span>Nov-2025-29</span>
-                    </div>
-                </div>
+    <!-- مودال الإشعارات -->
+    <div id="notificationModal" class="modal">
+        <div class="modal-content max-w-md text-right">
+            <h2 class="text-xl font-bold mb-4 border-b pb-2"><i class="fas fa-bell ml-1"></i> الإشعارات</h2>
+            <div id="notificationsList" class="space-y-3 text-sm max-h-96 overflow-y-auto">
+                <!-- سيتم ملؤها بواسطة JavaScript -->
             </div>
-
-            <div class="transaction-card">
-                <div class="card-right-section">
-                    <div class="bank-icon">
-                        2.س
-                        <div class="icon-badge"><i class="fas fa-arrow-up"></i></div>
-                    </div>
-                    <div class="card-info">
-                        <h3>التمرين</h3>
-                        <p>مشاركة في مصروف: سوار الذهب</p>
-                        <p class="share-text">حصتك المطلوبة</p>
-                    </div>
-                </div>
-                <div class="card-left-section">
-                    <div class="amount-text">- 4,333.33</div>
-                    <div class="date-row">
-                        <span>AM 10:35</span>
-                        <i class="far fa-clock text-xs"></i>
-                        <span>Nov-2025-29</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="transaction-card">
-                <div class="card-right-section">
-                    <div class="bank-icon">
-                        2.س
-                        <div class="icon-badge"><i class="fas fa-arrow-up"></i></div>
-                    </div>
-                    <div class="card-info">
-                        <h3>ركشة</h3>
-                        <p>مشاركة في مصروف: سوار الذهب</p>
-                        <p class="share-text">حصتك المطلوبة</p>
-                    </div>
-                </div>
-                <div class="card-left-section">
-                    <div class="amount-text">- 2,500.0</div>
-                    <div class="date-row">
-                        <span>AM 10:35</span>
-                        <i class="far fa-clock text-xs"></i>
-                        <span>Nov-2025-29</span>
-                    </div>
-                </div>
-            </div>
-
-             <div class="transaction-card">
-                <div class="card-right-section">
-                    <div class="bank-icon">
-                        2.س
-                        <div class="icon-badge"><i class="fas fa-arrow-up"></i></div>
-                    </div>
-                    <div class="card-info">
-                        <h3>بلح شام</h3>
-                        <p>مشاركة في مصروف: سوار الذهب</p>
-                        <p class="share-text">حصتك المطلوبة</p>
-                    </div>
-                </div>
-                <div class="card-left-section">
-                    <div class="amount-text">- 1,666.67</div>
-                    <div class="date-row">
-                        <span>AM 10:35</span>
-                        <i class="far fa-clock text-xs"></i>
-                        <span>Nov-2025-29</span>
-                    </div>
-                </div>
-            </div>
-
+            <button onclick="hideNotificationModal()" class="btn-secondary-action w-full mt-6">إغلاق</button>
         </div>
     </div>
 
+    <script>
+        // وظائف المودال والقائمة الجانبية
+        window.toggleSidebar = function() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('open');
+            document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : 'auto';
+        }
+
+        window.closeSidebar = function() {
+            document.getElementById('sidebar').classList.remove('open');
+            document.body.style.overflow = 'auto';
+        }
+
+        window.showNotifications = function() {
+            document.getElementById('notificationModal').classList.add('show');
+        };
+
+        window.hideNotificationModal = function() {
+            document.getElementById('notificationModal').classList.remove('show');
+        }
+
+        window.setFilter = function(filterType, element) {
+            document.querySelectorAll('.filter-pill').forEach(el => el.classList.remove('active'));
+            if (element) element.classList.add('active');
+            // سيتم استدعاء filterHistory من script.js
+            if (typeof filterHistory === 'function') {
+                filterHistory(filterType);
+            }
+        };
+
+        window.loadMoreHistory = function() {
+            // سيتم تنفيذه من script.js
+            if (typeof loadMoreHistoryImpl === 'function') {
+                loadMoreHistoryImpl();
+            }
+        };
+
+        // إغلاق المودال عند الضغط خارج المحتوى
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('show');
+                }
+            });
+        });
+
+        // منع النسخ
+        document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('menuButton').addEventListener('click', window.toggleSidebar);
+        });
+    </script>
+    <script src="script.js" type="module"></script>
 </body>
 </html>
