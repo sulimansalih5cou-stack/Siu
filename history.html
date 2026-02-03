@@ -5,603 +5,185 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>كشف الحساب - Smart Dorm</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 
     <style>
-        * {
-            font-family: 'Tajawal', sans-serif;
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            background: #f5f5f5;
-            min-height: 100vh;
-            padding-top: 60px;
-            padding-bottom: 20px;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
+            background-color: #F3F4F6;
+            font-family: 'Cairo', sans-serif;
+            padding-bottom: 60px;
         }
 
-        /* شريط التنقل العلوي */
-        .navbar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 900;
-            background: #b91c1c;
-            height: 60px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-        }
-
-        .navbar-title {
+        /* --- 1. بطاقة المستخدم (الهيدر) --- */
+        .user-profile-card {
+            background: linear-gradient(135deg, #B91C1C 0%, #991B1B 100%);
             color: white;
-            font-size: 20px;
-            font-weight: 800;
-            text-align: center;
-            flex: 1;
+            padding: 25px 20px;
+            border-bottom-left-radius: 25px;
+            border-bottom-right-radius: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 25px -5px rgba(185, 28, 28, 0.4);
         }
 
-        .nav-icon {
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            padding: 6px 14px;
+            border-radius: 8px;
             color: white;
-            font-size: 22px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
+            text-decoration: none;
+            font-size: 0.9rem;
             transition: background 0.3s;
         }
+        .back-btn:hover { background: rgba(255,255,255,0.3); }
 
-        .nav-icon:hover {
-            background: rgba(255,255,255,0.1);
-        }
-
-        /* حاوية المعاملات */
-        .transactions-container {
-            padding: 20px;
-        }
-
-        /* بطاقة المعاملة */
-        .transaction-card {
+        /* --- 2. بطاقة المعاملة (التصميم المعدل) --- */
+        .bankak-card {
             background: white;
-            border-radius: 16px;
-            margin-bottom: 16px;
-            padding: 20px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            border: 1px solid #F3F4F6;
+            border-radius: 12px;
+            margin-bottom: 15px; /* مسافة بين البطاقات */
+            padding: 15px 18px;
             position: relative;
-            overflow: hidden;
-            border-right: 5px solid;
-        }
-
-        .transaction-card.expense {
-            border-right-color: #ef4444;
-        }
-
-        .transaction-card.income {
-            border-right-color: #10b981;
-        }
-
-        /* رأس البطاقة */
-        .transaction-header {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 15px;
+            flex-direction: column;
+            transition: transform 0.2s ease;
+        }
+        .bankak-card:hover { transform: translateY(-2px); }
+
+        /* الجزء العلوي (المحتوى الرئيسي) */
+        .card-main-content {
+            display: flex;
+            justify-content: space-between; /* توزيع: المبلغ يسار، التفاصيل يمين */
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #E5E7EB; /* الخط الفاصل */
+        }
+
+        /* تنسيق المبلغ (يسار) */
+        .amount-display {
+            font-size: 1.4rem;
+            font-weight: 800;
+            direction: ltr; 
+            font-family: sans-serif;
+            order: 2; /* يضمن ظهوره في اليسار في وضع RTL عبر Flexbox adjustment */
+            margin-right: auto; /* يدفعه لأقصى اليسار */
+        }
+        .amount-pos { color: #059669; }
+        .amount-neg { color: #DC2626; }
+
+        /* حاوية التفاصيل والأيقونة (يمين) */
+        .details-wrapper {
+            display: flex;
+            align-items: center;
+            order: 1;
+            flex-grow: 1;
+        }
+
+        .details-text {
+            margin-right: 10px; /* مسافة بين الأيقونة والنص */
         }
 
         .transaction-title {
-            font-size: 20px;
-            font-weight: 900;
-            color: #1f2937;
-            margin-bottom: 4px;
-        }
-
-        .transaction-subtitle {
-            font-size: 14px;
-            color: #6b7280;
-            line-height: 1.5;
-        }
-
-        /* المبلغ */
-        .transaction-amount {
-            font-size: 24px;
-            font-weight: 900;
-            direction: ltr;
-            text-align: left;
-        }
-
-        .amount-expense {
-            color: #ef4444;
-        }
-
-        .amount-income {
-            color: #10b981;
-        }
-
-        /* تذييل البطاقة */
-        .transaction-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 15px;
-            margin-top: 15px;
-            border-top: 1px solid #f0f0f0;
-        }
-
-        .transaction-time {
-            color: #9ca3af;
-            font-size: 14px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .time-icon {
-            color: #b91c1c;
-            font-size: 12px;
-        }
-
-        /* حالة فارغة */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #9ca3af;
-        }
-
-        .empty-state i {
-            font-size: 60px;
-            margin-bottom: 20px;
-            color: #d1d5db;
-        }
-
-        .empty-state h3 {
-            font-size: 20px;
             font-weight: 700;
-            margin-bottom: 10px;
-            color: #6b7280;
+            color: #1F2937;
+            font-size: 1rem;
         }
 
-        /* القائمة الجانبية */
-        .sidebar {
-            position: fixed;
-            top: 0;
-            right: -280px;
-            height: 100%;
-            width: 280px;
-            background: white;
-            z-index: 1001;
-            box-shadow: -5px 0 30px rgba(0,0,0,0.2);
-            transition: right 0.3s ease;
-            padding-top: 20px;
+        .transaction-sub {
+            font-size: 0.85rem;
+            color: #6B7280;
         }
 
-        .sidebar.open {
-            right: 0;
-        }
-
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-        }
-
-        .sidebar-overlay.open {
-            display: block;
-        }
-
-        .sidebar-header {
-            padding: 20px;
-            border-bottom: 1px solid #f0f0f0;
-            margin-bottom: 10px;
-        }
-
-        .sidebar-user-name {
-            font-size: 20px;
-            font-weight: 800;
-            color: #1f2937;
-            margin-bottom: 5px;
-        }
-
-        .sidebar-user-email {
-            color: #6b7280;
-            font-size: 14px;
-        }
-
-        .sidebar-menu {
-            padding: 10px 0;
-        }
-
-        .sidebar-item {
+        /* الأيقونة */
+        .bank-icon-container {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
             display: flex;
-            align-items: center;
-            padding: 15px 20px;
-            color: #4b5563;
-            text-decoration: none;
-            font-weight: 600;
-            transition: background 0.3s;
-        }
-
-        .sidebar-item:hover {
-            background: #f9fafb;
-        }
-
-        .sidebar-item.active {
-            background: #fee2e2;
-            color: #b91c1c;
-            border-right: 4px solid #b91c1c;
-        }
-
-        .sidebar-icon {
-            margin-left: 15px;
-            font-size: 18px;
-            width: 24px;
-            text-align: center;
-        }
-
-        /* مودال الإشعارات */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 1002;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            border: 2px solid;
+            position: relative;
+            background-color: #FAFAFA;
+            flex-shrink: 0;
+        }
+        .icon-success { border-color: #059669; color: #059669; }
+        .icon-danger { border-color: #DC2626; color: #DC2626; }
+
+        .arrow-badge {
+            position: absolute;
+            bottom: -2px; right: -2px;
+            background: white; border-radius: 50%;
+            padding: 2px; font-size: 0.7rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        .modal.open {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 20px;
-            width: 100%;
-            max-width: 400px;
-            overflow: hidden;
-        }
-
-        .modal-header {
-            background: #b91c1c;
-            color: white;
-            padding: 20px;
+        /* --- الجزء السفلي (التاريخ والوقت) --- */
+        .card-footer-date {
+            text-align: right;
+            font-size: 0.75rem;
+            color: #9CA3AF;
+            font-weight: 600;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .modal-title {
-            font-size: 18px;
-            font-weight: 800;
+        /* الفلاتر */
+        .filter-scroll {
+            display: flex; gap: 10px; overflow-x: auto;
+            padding-bottom: 10px; margin-bottom: 10px;
+            scrollbar-width: none;
+        }
+        .filter-scroll::-webkit-scrollbar { display: none; }
+
+        .filter-pill {
+            white-space: nowrap; padding: 6px 16px;
+            border-radius: 20px; background: white;
+            color: #6B7280; font-size: 0.85rem; font-weight: 600;
+            border: 1px solid #E5E7EB; cursor: pointer; transition: 0.2s;
+        }
+        .filter-pill.active {
+            background: #FEF2F2; color: #B91C1C; border-color: #B91C1C;
         }
 
-        .modal-body {
-            padding: 20px;
-            max-height: 60vh;
-            overflow-y: auto;
-        }
-
-        /* تحميل */
-        .loading {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 40px;
-        }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #b91c1c;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
     </style>
 </head>
 <body>
 
-    <!-- شريط التنقل -->
-    <nav class="navbar">
-        <button class="nav-icon" id="menuButton">
-            <i class="fas fa-bars"></i>
-        </button>
-        <div class="navbar-title">كشف الحساب</div>
-        <button class="nav-icon" id="notificationButton">
-            <i class="fas fa-bell"></i>
-        </button>
-    </nav>
-
-    <!-- حاوية المعاملات -->
-    <div class="transactions-container" id="transactionsContainer">
-        <!-- سيتم إضافة البطاقات هنا ديناميكيًا -->
-
-        <!-- مثال على بطاقة معاملة (مصروف) -->
-        <div class="transaction-card expense">
-            <div class="transaction-header">
-                <div>
-                    <div class="transaction-title">ركشة</div>
-                    <div class="transaction-subtitle">مشاركة في مصروف: سوار الذهب<br>حملت المطلوبة</div>
-                </div>
-                <div class="transaction-amount amount-expense">2,500.0</div>
+    <div class="user-profile-card">
+        <div class="flex justify-between items-center">
+            <div>
+                <h2 class="text-xl font-bold mb-1">مرحباً، <span id="displayHeaderName">...</span></h2>
+                <p class="text-sm opacity-80 dir-ltr" id="displayHeaderEmail">...</p>
             </div>
-            <div class="transaction-footer">
-                <div class="transaction-time">
-                    <i class="fas fa-clock time-icon"></i>
-                    <span>AM 10:35 - Nov-2025-29</span>
-                </div>
-            </div>
+            <a href="index.html" class="back-btn">
+                <i class="fas fa-arrow-right ml-1"></i> رجوع
+            </a>
+        </div>
         </div>
 
-        <!-- بطاقة ثانية -->
-        <div class="transaction-card expense">
-            <div class="transaction-header">
-                <div>
-                    <div class="transaction-title">بلح شام</div>
-                    <div class="transaction-subtitle">مشاركة في مصروف: سوار الذهب<br>حملت المطلوبة</div>
-                </div>
-                <div class="transaction-amount amount-expense">1,666.67</div>
-            </div>
-            <div class="transaction-footer">
-                <div class="transaction-time">
-                    <i class="fas fa-clock time-icon"></i>
-                    <span>AM 10:35 - Nov-2025-29</span>
-                </div>
-            </div>
+    <div class="max-w-3xl mx-auto px-4">
+
+        <div class="filter-scroll" id="filtersContainer">
+            <div class="filter-pill active" onclick="setFilter('30days', this)">آخر 30 يوم</div>
+            <div class="filter-pill" onclick="setFilter('3months', this)">آخر 3 شهور</div>
+            <div class="filter-pill" onclick="setFilter('incoming', this)">الواردة (لك)</div>
+            <div class="filter-pill" onclick="setFilter('outgoing', this)">الصادرة (عليك)</div>
+            <div class="filter-pill" onclick="setFilter('all', this)">الكل</div>
         </div>
 
-        <!-- بطاقة ثالثة (استرداد) -->
-        <div class="transaction-card income">
-            <div class="transaction-header">
-                <div>
-                    <div class="transaction-title">شاي</div>
-                    <div class="transaction-subtitle">استرداد من 2 مشارك<br>HDG 1,666.7</div>
-                </div>
-                <div class="transaction-amount amount-income">+ 3,333.33</div>
-            </div>
-            <div class="transaction-footer">
-                <div class="transaction-time">
-                    <i class="fas fa-clock time-icon"></i>
-                    <span>AM 10:35 - Nov-2025-29</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- بطاقة رابعة -->
-        <div class="transaction-card expense">
-            <div class="transaction-header">
-                <div>
-                    <div class="transaction-title">الفطور</div>
-                    <div class="transaction-subtitle">مشاركة في مصروف: سوار الذهب<br>حملت المطلوبة</div>
-                </div>
-                <div class="transaction-amount amount-expense">3,333.33</div>
-            </div>
-            <div class="transaction-footer">
-                <div class="transaction-time">
-                    <i class="fas fa-clock time-icon"></i>
-                    <span>AM 10:30 - Nov-2025-26</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- بطاقة خامسة -->
-        <div class="transaction-card income">
-            <div class="transaction-header">
-                <div>
-                    <div class="transaction-title">الفطور</div>
-                    <div class="transaction-subtitle">استرداد من 2 مشارك<br>HDG 6,666.67</div>
-                </div>
-                <div class="transaction-amount amount-income">+ 6,666.67</div>
-            </div>
-            <div class="transaction-footer">
-                <div class="transaction-time">
-                    <i class="fas fa-clock time-icon"></i>
-                    <span>AM 11:25 - Nov-2025-26</span>
-                </div>
-            </div>
+        <div id="expensesContainer">
+            <p class="text-center text-gray-400 mt-12">
+                <i class="fas fa-spinner fa-spin fa-2x mb-4"></i><br>
+                جاري التحميل...
+            </p>
         </div>
     </div>
 
-    <!-- القائمة الجانبية -->
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-user-name">عمر أحمد</div>
-            <div class="sidebar-user-email">omar@example.com</div>
-        </div>
-        <div class="sidebar-menu">
-            <a href="index.html" class="sidebar-item">
-                <i class="fas fa-plus-circle sidebar-icon"></i>
-                <span>إضافة مصروف</span>
-            </a>
-            <a href="my_expenses.html" class="sidebar-item">
-                <i class="fas fa-receipt sidebar-icon"></i>
-                <span>مصروفاتي</span>
-            </a>
-            <a href="history.html" class="sidebar-item active">
-                <i class="fas fa-history sidebar-icon"></i>
-                <span>السجل</span>
-            </a>
-            <a href="summary.html" class="sidebar-item">
-                <i class="fas fa-calculator sidebar-icon"></i>
-                <span>تسوية الأرصدة</span>
-            </a>
-            <a href="auth.html" class="sidebar-item" style="color: #ef4444; margin-top: 20px;">
-                <i class="fas fa-sign-out-alt sidebar-icon"></i>
-                <span>خروج</span>
-            </a>
-        </div>
-    </div>
-
-    <!-- مودال الإشعارات -->
-    <div class="modal" id="notificationModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">الإشعارات</div>
-                <button class="nav-icon" style="background: transparent;" id="closeModalButton">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div style="text-align: center; padding: 40px 20px; color: #6b7280;">
-                    <i class="fas fa-bell-slash" style="font-size: 50px; margin-bottom: 20px; color: #d1d5db;"></i>
-                    <div style="font-weight: 700; margin-bottom: 10px;">لا توجد إشعارات</div>
-                    <div style="font-size: 14px;">لا توجد إشعارات جديدة حالياً</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // البيانات من الصورة
-        const transactionsData = [
-            {
-                title: "ركشة",
-                subtitle: "مشاركة في مصروف: سوار الذهب<br>حملت المطلوبة",
-                amount: "2,500.0",
-                time: "AM 10:35 - Nov-2025-29",
-                type: "expense"
-            },
-            {
-                title: "بلح شام",
-                subtitle: "مشاركة في مصروف: سوار الذهب<br>حملت المطلوبة",
-                amount: "1,666.67",
-                time: "AM 10:35 - Nov-2025-29",
-                type: "expense"
-            },
-            {
-                title: "شاي",
-                subtitle: "استرداد من 2 مشارك<br>HDG 1,666.7",
-                amount: "+ 3,333.33",
-                time: "AM 10:35 - Nov-2025-29",
-                type: "income"
-            },
-            {
-                title: "الفطور",
-                subtitle: "مشاركة في مصروف: سوار الذهب<br>حملت المطلوبة",
-                amount: "3,333.33",
-                time: "AM 10:30 - Nov-2025-26",
-                type: "expense"
-            },
-            {
-                title: "الفطور",
-                subtitle: "استرداد من 2 مشارك<br>HDG 6,666.67",
-                amount: "+ 6,666.67",
-                time: "AM 11:25 - Nov-2025-26",
-                type: "income"
-            }
-        ];
-
-        // تهيئة المتغيرات
-        const menuButton = document.getElementById('menuButton');
-        const sidebar = document.getElementById('sidebar');
-        const sidebarOverlay = document.getElementById('sidebarOverlay');
-        const notificationButton = document.getElementById('notificationButton');
-        const notificationModal = document.getElementById('notificationModal');
-        const closeModalButton = document.getElementById('closeModalButton');
-        const transactionsContainer = document.getElementById('transactionsContainer');
-
-        // فتح/إغلاق القائمة الجانبية
-        menuButton.addEventListener('click', () => {
-            sidebar.classList.add('open');
-            sidebarOverlay.classList.add('open');
-        });
-
-        sidebarOverlay.addEventListener('click', () => {
-            sidebar.classList.remove('open');
-            sidebarOverlay.classList.remove('open');
-        });
-
-        // فتح/إغلاق مودال الإشعارات
-        notificationButton.addEventListener('click', () => {
-            notificationModal.classList.add('open');
-        });
-
-        closeModalButton.addEventListener('click', () => {
-            notificationModal.classList.remove('open');
-        });
-
-        notificationModal.addEventListener('click', (e) => {
-            if (e.target === notificationModal) {
-                notificationModal.classList.remove('open');
-            }
-        });
-
-        // إنشاء بطاقات المعاملات ديناميكياً
-        function renderTransactions() {
-            transactionsContainer.innerHTML = '';
-
-            transactionsData.forEach(transaction => {
-                const transactionCard = document.createElement('div');
-                transactionCard.className = `transaction-card ${transaction.type}`;
-
-                const amountClass = transaction.type === 'income' ? 'amount-income' : 'amount-expense';
-                const amountDisplay = transaction.type === 'income' ? transaction.amount : transaction.amount;
-
-                transactionCard.innerHTML = `
-                    <div class="transaction-header">
-                        <div>
-                            <div class="transaction-title">${transaction.title}</div>
-                            <div class="transaction-subtitle">${transaction.subtitle}</div>
-                        </div>
-                        <div class="transaction-amount ${amountClass}">${amountDisplay}</div>
-                    </div>
-                    <div class="transaction-footer">
-                        <div class="transaction-time">
-                            <i class="fas fa-clock time-icon"></i>
-                            <span>${transaction.time}</span>
-                        </div>
-                    </div>
-                `;
-
-                transactionsContainer.appendChild(transactionCard);
-            });
-        }
-
-        // تهيئة الصفحة عند التحميل
-        document.addEventListener('DOMContentLoaded', () => {
-            renderTransactions();
-
-            // تعطيل النسخ واللصق
-            document.addEventListener('contextmenu', e => e.preventDefault());
-            document.addEventListener('keydown', function(e) {
-                if ((e.key === 'c' || e.key === 'C') && (e.ctrlKey || e.metaKey)) {
-                    e.preventDefault();
-                }
-                if ((e.key === 'v' || e.key === 'V') && (e.ctrlKey || e.metaKey)) {
-                    e.preventDefault();
-                }
-            });
-        });
-    </script>
+    <script src="script.js" type="module"></script> 
 </body>
 </html>
