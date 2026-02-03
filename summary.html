@@ -1,6 +1,3 @@
-summary.html
-
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -94,7 +91,6 @@ summary.html
 
 
         /* --- تصميم بطاقة الرصيد الفردية (للدفع فقط) --- */
-        /* ملاحظة: سيتم إضافة data-user-id و data-amount عبر JavaScript */
         .balance-card {
             display: flex; justify-content: space-between; align-items: center;
             padding: 15px 20px; border-radius: 12px; margin-bottom: 12px;
@@ -106,21 +102,24 @@ summary.html
         .action-button {
             padding: 8px 18px; background: #3B82F6; color: white;
             border-radius: 8px; font-size: 0.9rem; font-weight: 600;
+            cursor: pointer; border: none;
         }
+        .action-button:hover { background: #2563EB; }
 
         /* --- أنماط مودال التسوية والمطالبة --- */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; }
         .modal.show { display: flex; }
         .modal-content { 
             background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 450px; 
-            text-align: right;
+            text-align: right; max-height: 90vh; overflow-y: auto;
         }
         .form-group label { display: block; font-weight: 600; color: #374151; margin-bottom: 8px; }
         .form-group input {
-            padding: 15px; border: 3px solid #E5E7EB; border-radius: 12px; background: #F9FAFB; font-size: 18px; font-weight: 600; direction: ltr; text-align: right;
+            width: 100%; padding: 15px; border: 3px solid #E5E7EB; border-radius: 12px; 
+            background: #F9FAFB; font-size: 18px; font-weight: 600; direction: ltr; text-align: right;
         }
 
-        /* زر التأكيد الأساسي المُعدَّل */
+        /* زر التأكيد الأساسي المُعدَّل */
         .btn-submit {
             background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
             color: white; 
@@ -134,12 +133,13 @@ summary.html
             align-items: center; 
             gap: 10px;
             transition: background 0.3s;
+            border: none; cursor: pointer;
         }
         .btn-submit:hover {
             background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%);
         }
 
-        /* نمط الأزرار الثانوية (إلغاء/إغلاق) المُعدَّل */
+        /* نمط الأزرار الثانوية (إلغاء/إغلاق) المُعدَّل */
         .btn-secondary-action {
              background: #E5E7EB; 
              color: #4B5563; 
@@ -154,6 +154,7 @@ summary.html
              align-items: center; 
              gap: 10px;
              transition: background 0.3s, color 0.3s;
+             cursor: pointer;
         }
         .btn-secondary-action:hover {
             background: #D1D5DB; 
@@ -162,12 +163,16 @@ summary.html
 
         /* تعديل أنماط المطالبة */
         .nudge-button-individual {
-            background-color: #FBBF24; color: #92400E; padding: 6px 14px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; border: 1px solid #F59E0B;
+            background-color: #FBBF24; color: #92400E; padding: 6px 14px; 
+            border-radius: 6px; font-size: 0.9rem; font-weight: 600; border: 1px solid #F59E0B;
+            cursor: pointer;
         }
+        .nudge-button-individual:hover { background-color: #F59E0B; }
         .claim-item {
             display: flex; justify-content: space-between; align-items: center;
             padding: 10px 0; border-bottom: 1px dashed #E5E7EB;
         }
+        .claim-item:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
@@ -236,7 +241,8 @@ summary.html
             <h2 class="text-xl font-bold text-gray-700 mb-4"><i class="fas fa-money-bill-wave ml-1 text-red-500"></i> الديون التي تحتاج إلى تسوية منك</h2>
 
             <div id="debtContainer" class="space-y-3">
-                </div>
+                <!-- سيتم ملؤها بواسطة JavaScript -->
+            </div>
 
              <div id="noDebts" class="hidden text-center text-gray-500 mt-10 p-6 border-2 border-dashed border-green-300 rounded-lg">
                 <i class="fas fa-check-circle text-6xl mb-4 text-green-500"></i>
@@ -247,6 +253,7 @@ summary.html
         </div>
     </div>
 
+    <!-- مودال المطالبات -->
     <div id="claimModal" class="modal">
         <div class="modal-content">
             <h2 class="text-2xl font-bold mb-4 border-b pb-2 text-green-700"><i class="fas fa-money-check-dollar ml-1"></i> مستحقاتك من الآخرين</h2>
@@ -256,14 +263,14 @@ summary.html
                  <p class="text-center text-gray-400 py-4">جاري تحميل المستحقات...</p>
             </div>
 
-            <button onclick="sendClaimNotification()" class="btn-submit w-full bg-green-600 hover:bg-green-700">
+            <button onclick="sendClaimNotification()" class="btn-submit w-full bg-green-600 hover:bg-green-700" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
                  <i class="fas fa-bullhorn ml-2"></i> إرسال مطالبة عامة "ادفعوا لي"
             </button>
             <button type="button" onclick="hideClaimModal()" class="btn-secondary-action mt-2">إغلاق</button>
         </div>
     </div>
 
-
+    <!-- مودال التسوية -->
     <div id="settleModal" class="modal">
         <div class="modal-content">
             <h2 class="text-2xl font-bold mb-4 border-b pb-2 text-blue-700"><i class="fas fa-money-bill-transfer ml-1"></i> دفع التسوية</h2>
@@ -282,7 +289,7 @@ summary.html
 
                 <div class="form-group mb-6">
                     <label for="settleAmount">المبلغ الذي تدفعه الآن (SDG)</label>
-                    <input type="number" id="settleAmount" placeholder="0.00" min="1" step="any" required>
+                    <input type="number" id="settleAmount" placeholder="0.00" min="0.01" step="0.01" required>
                 </div>
 
                 <div id="remainingBalance" class="text-center p-3 my-4 rounded-lg font-bold hidden transition-all">
@@ -300,68 +307,120 @@ summary.html
         </div>
     </div>
 
+    <!-- مودال الإشعارات -->
     <div id="notificationModal" class="modal">
         <div class="modal-content max-w-md text-right">
             <h2 class="text-xl font-bold mb-4 border-b pb-2"><i class="fas fa-bell ml-1"></i> الإشعارات</h2>
             <div id="notificationsList" class="space-y-3 text-sm max-h-96 overflow-y-auto">
-                </div>
+                <!-- سيتم ملؤها بواسطة JavaScript -->
+            </div>
             <button onclick="hideNotificationModal()" class="btn-secondary-action w-full mt-6">إغلاق</button>
         </div>
     </div>
 
     <script>
-        // --- وظائف المودال (للتفاعل مع الـ HTML قبل تحميل Firebase) ---
-        // يتم تعريف هذه الدوال هنا لأنها تُستخدم مباشرة في الـ HTML
-
+        // --- وظائف المودال الأساسية ---
+        
         window.toggleSidebar = function() {
             const sidebar = document.getElementById('sidebar');
             sidebar.classList.toggle('open');
             document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : 'auto';
         }
+        
         window.closeSidebar = function() {
             document.getElementById('sidebar').classList.remove('open');
             document.body.style.overflow = 'auto';
         }
+        
         window.showNotifications = function() {
              document.getElementById('notificationModal').classList.add('show');
         };
-         window.hideNotificationModal = function() {
+        
+        window.hideNotificationModal = function() {
             document.getElementById('notificationModal').classList.remove('show');
         }
+        
         window.showClaimModal = function() {
             document.getElementById('claimModal').classList.add('show');
         }
+        
         window.hideClaimModal = function() {
             document.getElementById('claimModal').classList.remove('show');
         }
 
-        // --- وظائف الـ Modal الخاصة بالتسوية ---
-        // سيتم إعادة تعريف وظائف showSettleModal, nudgeUser, sendClaimNotification 
-        // وتعيين مُستمع حدث submit داخل 'script.js' لربطها بـ Firebase.
+        // دالة إظهار مودال التسوية - سيتم استدعاؤها من script.js
+        window.showSettleModal = function(userName, amount, uid) {
+            const modal = document.getElementById('settleModal');
+            const relationEl = document.getElementById('settleRelation');
+            const maxAmountEl = document.getElementById('maxSettleAmountDisplay');
+            const amountInput = document.getElementById('settleAmount');
+            const remainingDisplay = document.getElementById('remainingBalance');
 
-        // دالة مؤقتة لتحديث الرصيد المتبقي (المنطق الرئيسي في script.js)
+            if (relationEl) relationEl.textContent = `تسوية الدين المستحق لـ ${userName}`;
+            if (maxAmountEl) maxAmountEl.textContent = amount.toLocaleString(undefined, {minimumFractionDigits: 2});
+            
+            if (amountInput) {
+                amountInput.value = amount;
+                amountInput.max = amount;
+                amountInput.setAttribute('max', amount);
+                // تحديث الرصيد المتبقي مباشرة
+                amountInput.dispatchEvent(new Event('input'));
+            }
+
+            if (modal) modal.classList.add('show');
+        };
+
+        window.hideSettleModal = function() {
+            const modal = document.getElementById('settleModal');
+            const form = document.getElementById('settleForm');
+            
+            if (modal) modal.classList.remove('show');
+            if (form) form.reset();
+            
+            // إخفاء عرض الرصيد المتبقي
+            const remainingDisplay = document.getElementById('remainingBalance');
+            if (remainingDisplay) remainingDisplay.classList.add('hidden');
+        };
+
+        // تحديث الرصيد المتبقي عند إدخال المبلغ
         document.getElementById('settleAmount').addEventListener('input', function() {
-            // هذا المنطق يُعاد تنفيذه بشكل كامل في script.js ليعتمد على currentSettleMaxAmount
             const amountPaid = parseFloat(this.value) || 0;
             const maxAmount = parseFloat(this.getAttribute('max')) || 0;
             const remaining = maxAmount - amountPaid;
+            
             const remainingDisplay = document.getElementById('remainingBalance');
             const remainingValue = document.getElementById('remainingValue');
 
-            if (amountPaid > 0 && remaining >= 0) {
+            if (amountPaid > 0 && remaining >= -0.01) { // السماح بخطأ بسيط في الحسابات العشرية
                 remainingValue.textContent = remaining.toLocaleString(undefined, { minimumFractionDigits: 2 }) + ' SDG';
                 remainingDisplay.classList.remove('hidden');
 
-                remainingDisplay.style.backgroundColor = remaining > 0 ? '#FEF3C7' : '#D1FAE5'; 
-                remainingDisplay.style.color = remaining > 0 ? '#B45309' : '#059669';
-                remainingValue.style.color = remaining > 0 ? '#9A3412' : '#047857';
+                if (remaining <= 0.01) {
+                    remainingDisplay.style.backgroundColor = '#D1FAE5'; 
+                    remainingDisplay.style.color = '#059669';
+                    remainingValue.style.color = '#047857';
+                } else {
+                    remainingDisplay.style.backgroundColor = '#FEF3C7'; 
+                    remainingDisplay.style.color = '#B45309';
+                    remainingValue.style.color = '#9A3412';
+                }
             } else {
                 remainingDisplay.classList.add('hidden');
             }
         });
 
+        // إغلاق المودال عند الضغط خارج المحتوى
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('show');
+                }
+            });
+        });
+
         // منع النسخ والأحداث
         document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+        
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('menuButton').addEventListener('click', window.toggleSidebar);
         });
