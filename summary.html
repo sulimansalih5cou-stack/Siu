@@ -348,7 +348,7 @@
             document.getElementById('claimModal').classList.remove('show');
         }
 
-        // دالة إظهار مودال التسوية - سيتم استدعاؤها من script.js
+        // دالة إظهار مودال التسوية - الحقل فارغ الآن!
         window.showSettleModal = function(userName, amount, uid) {
             const modal = document.getElementById('settleModal');
             const relationEl = document.getElementById('settleRelation');
@@ -360,14 +360,20 @@
             if (maxAmountEl) maxAmountEl.textContent = amount.toLocaleString(undefined, {minimumFractionDigits: 2});
             
             if (amountInput) {
-                amountInput.value = amount;
+                amountInput.value = ''; // ← الحقل فارغ!
                 amountInput.max = amount;
                 amountInput.setAttribute('max', amount);
-                // تحديث الرصيد المتبقي مباشرة
-                amountInput.dispatchEvent(new Event('input'));
+                amountInput.placeholder = `أقصى مبلغ: ${amount.toLocaleString()}`;
             }
 
+            if (remainingDisplay) remainingDisplay.classList.add('hidden');
+
+            // تخزين القيم للاستخدام في النموذج
+            window.currentSettleMaxAmount = amount;
+            window.currentSettleRecipientUID = uid;
+
             if (modal) modal.classList.add('show');
+            if (amountInput) setTimeout(() => amountInput.focus(), 100);
         };
 
         window.hideSettleModal = function() {
@@ -377,7 +383,6 @@
             if (modal) modal.classList.remove('show');
             if (form) form.reset();
             
-            // إخفاء عرض الرصيد المتبقي
             const remainingDisplay = document.getElementById('remainingBalance');
             if (remainingDisplay) remainingDisplay.classList.add('hidden');
         };
@@ -385,13 +390,13 @@
         // تحديث الرصيد المتبقي عند إدخال المبلغ
         document.getElementById('settleAmount').addEventListener('input', function() {
             const amountPaid = parseFloat(this.value) || 0;
-            const maxAmount = parseFloat(this.getAttribute('max')) || 0;
+            const maxAmount = parseFloat(this.getAttribute('max')) || window.currentSettleMaxAmount || 0;
             const remaining = maxAmount - amountPaid;
             
             const remainingDisplay = document.getElementById('remainingBalance');
             const remainingValue = document.getElementById('remainingValue');
 
-            if (amountPaid > 0 && remaining >= -0.01) { // السماح بخطأ بسيط في الحسابات العشرية
+            if (amountPaid > 0 && remaining >= -0.01) {
                 remainingValue.textContent = remaining.toLocaleString(undefined, { minimumFractionDigits: 2 }) + ' SDG';
                 remainingDisplay.classList.remove('hidden');
 
