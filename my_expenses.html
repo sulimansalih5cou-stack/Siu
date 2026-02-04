@@ -48,6 +48,48 @@
             border-right-color: #059669;
         }
 
+        /* بطاقات الإحصائيات الجديدة */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: white;
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid #E2E8F0;
+            text-align: center;
+        }
+        .stat-card.personal {
+            border-top: 4px solid #10B981;
+        }
+        .stat-card.messenger {
+            border-top: 4px solid #8B5CF6;
+        }
+        .stat-card.shared {
+            border-top: 4px solid #3B82F6;
+        }
+        .stat-card.total {
+            border-top: 4px solid #1E293B;
+            background: #1E293B;
+            color: white;
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            color: #64748B;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .stat-card.total .stat-label {
+            color: #94A3B8;
+        }
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: 900;
+        }
+
         .expense-card {
             background: white;
             border-radius: 20px;
@@ -60,6 +102,15 @@
         .expense-card:hover {
             box-shadow: 0 8px 16px rgba(0,0,0,0.05);
             transform: translateY(-2px);
+        }
+        .expense-card.personal {
+            border-right: 4px solid #10B981;
+        }
+        .expense-card.messenger {
+            border-right: 4px solid #8B5CF6;
+        }
+        .expense-card.shared {
+            border-right: 4px solid #3B82F6;
         }
 
         .expense-header {
@@ -75,10 +126,20 @@
             color: #1E293B;
         }
 
+        .expense-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        .badge-personal { background: #D1FAE5; color: #059669; }
+        .badge-messenger { background: #F5F3FF; color: #7C3AED; }
+        .badge-shared { background: #DBEAFE; color: #1D4ED8; }
+
         .expense-amount {
             font-weight: 900;
             font-size: 1.3rem;
-            color: #3B82F6;
+            color: #1E293B;
         }
 
         .participants-preview {
@@ -195,17 +256,6 @@
             accent-color: #3B82F6;
         }
 
-        .stats-card {
-            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 20px;
-            margin-bottom: 24px;
-            text-align: center;
-        }
-        .stats-label { font-size: 0.9rem; opacity: 0.9; }
-        .stats-value { font-size: 2rem; font-weight: 900; margin-top: 4px; }
-
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -220,6 +270,29 @@
             margin-bottom: 20px;
             color: #92400E;
             font-size: 0.9rem;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+        .filter-tab {
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.875rem;
+            cursor: pointer;
+            white-space: nowrap;
+            background: white;
+            border: 1px solid #E2E8F0;
+            color: #64748B;
+        }
+        .filter-tab.active {
+            background: #1E293B;
+            color: white;
+            border-color: #1E293B;
         }
     </style>
 </head>
@@ -256,12 +329,35 @@
             
             <div class="info-box">
                 <i class="fas fa-info-circle ml-2"></i>
-                يمكنك تعديل المشاركين أو حذف المصروفات من هنا. سيتم إعلام جميع الأطراف بالتغييرات.
+                إدارة مصروفاتك: شخصية (لك وحدك)، مراسيل (دفعت للآخرين)، أو مشتركة (تقاسمتها).
             </div>
 
-            <div class="stats-card">
-                <div class="stats-label">إجمالي ما دفعته</div>
-                <div class="stats-value" id="totalPaid">0 SDG</div>
+            <!-- إحصائيات منفصلة -->
+            <div class="stats-grid">
+                <div class="stat-card personal">
+                    <div class="stat-label">💰 نفقاتك الشخصية</div>
+                    <div class="stat-value" id="statPersonal">0</div>
+                </div>
+                <div class="stat-card messenger">
+                    <div class="stat-label">🔥 دفعات للآخرين</div>
+                    <div class="stat-value" id="statMessenger">0</div>
+                </div>
+                <div class="stat-card shared">
+                    <div class="stat-label">👥 حصتك في المشترك</div>
+                    <div class="stat-value" id="statShared">0</div>
+                </div>
+                <div class="stat-card total">
+                    <div class="stat-label">📊 المجموع الكلي</div>
+                    <div class="stat-value" id="statTotal">0</div>
+                </div>
+            </div>
+
+            <!-- فلاتر -->
+            <div class="filter-tabs">
+                <div class="filter-tab active" onclick="setFilter('all', this)">الكل</div>
+                <div class="filter-tab" onclick="setFilter('personal', this)">شخصي</div>
+                <div class="filter-tab" onclick="setFilter('messenger', this)">مرسال</div>
+                <div class="filter-tab" onclick="setFilter('shared', this)">مشترك</div>
             </div>
 
             <div id="expensesList"></div>
@@ -278,6 +374,8 @@
     </div>
 
     <script>
+        let currentFilter = 'all';
+
         window.toggleSidebar = function() {
             document.getElementById('sidebar').classList.toggle('open');
         }
@@ -286,96 +384,143 @@
             document.getElementById('sidebar').classList.remove('open');
         }
 
+        window.setFilter = function(filter, element) {
+            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+            element.classList.add('active');
+            currentFilter = filter;
+            if (window.renderMyExpensesImpl) {
+                window.renderMyExpensesImpl();
+            }
+        }
+
         window.renderMyExpenses = function(expenses, currentUserID, allUsers, getUserNameById) {
+            window.myExpensesData = { expenses, currentUserID, allUsers, getUserNameById };
+            window.renderMyExpensesImpl();
+        }
+
+        window.renderMyExpensesImpl = function() {
+            const { expenses, currentUserID, allUsers, getUserNameById } = window.myExpensesData;
             const container = document.getElementById('expensesList');
             const emptyState = document.getElementById('emptyState');
-            const totalPaidEl = document.getElementById('totalPaid');
             
             container.innerHTML = '';
-            
+
+            // حساب الإحصائيات
+            let personalTotal = 0;
+            let messengerTotal = 0;
+            let sharedTotal = 0;
+
             const myExpenses = expenses.filter(e => 
                 e.payer_id === currentUserID && !e.is_deleted
             ).sort((a, b) => b.timestamp - a.timestamp);
-            
-            if (myExpenses.length === 0) {
+
+            // حساب المبالغ
+            myExpenses.forEach(e => {
+                if (e.type === 'personal' || (e.participants_ids && e.participants_ids.length === 1 && e.participants_ids[0] === currentUserID)) {
+                    personalTotal += (e.total_amount || 0);
+                } else if (e.is_messenger) {
+                    messengerTotal += (e.total_amount || 0);
+                } else {
+                    sharedTotal += (e.share || 0);
+                }
+            });
+
+            // تحديث الإحصائيات
+            document.getElementById('statPersonal').textContent = personalTotal.toLocaleString() + ' SDG';
+            document.getElementById('statMessenger').textContent = messengerTotal.toLocaleString() + ' SDG';
+            document.getElementById('statShared').textContent = sharedTotal.toLocaleString() + ' SDG';
+            document.getElementById('statTotal').textContent = (personalTotal + messengerTotal + sharedTotal).toLocaleString() + ' SDG';
+
+            // فلترة العرض
+            let filtered = myExpenses;
+            if (currentFilter !== 'all') {
+                filtered = myExpenses.filter(e => {
+                    if (currentFilter === 'personal') {
+                        return e.type === 'personal' || (e.participants_ids && e.participants_ids.length === 1 && e.participants_ids[0] === currentUserID);
+                    } else if (currentFilter === 'messenger') {
+                        return e.is_messenger;
+                    } else if (currentFilter === 'shared') {
+                        return !e.is_messenger && e.participants_ids && e.participants_ids.length > 1;
+                    }
+                    return true;
+                });
+            }
+
+            if (filtered.length === 0) {
                 emptyState.classList.remove('hidden');
-                totalPaidEl.textContent = '0 SDG';
                 return;
             }
-            
             emptyState.classList.add('hidden');
-            
-            let total = 0;
-            myExpenses.forEach(e => {
-                total += (e.total_amount || 0);
-            });
-            totalPaidEl.textContent = total.toLocaleString() + ' SDG';
-            
-            myExpenses.forEach(expense => {
+
+            filtered.forEach(expense => {
                 const share = expense.share || 0;
                 const totalAmount = expense.total_amount || 0;
                 const isMessenger = expense.is_messenger || false;
+                const isPersonal = expense.type === 'personal' || (expense.participants_ids && expense.participants_ids.length === 1 && expense.participants_ids[0] === currentUserID);
+                
+                let cardClass, badgeClass, badgeText, amountText, subtitle;
+
+                if (isPersonal) {
+                    cardClass = 'personal';
+                    badgeClass = 'badge-personal';
+                    badgeText = 'شخصي';
+                    amountText = totalAmount.toLocaleString() + ' SDG';
+                    subtitle = 'مصروف لك وحدك';
+                } else if (isMessenger) {
+                    cardClass = 'messenger';
+                    badgeClass = 'badge-messenger';
+                    badgeText = 'مرسال';
+                    amountText = totalAmount.toLocaleString() + ' SDG';
+                    subtitle = `أرسلت ${totalAmount.toLocaleString()} SDG للآخرين`;
+                } else {
+                    cardClass = 'shared';
+                    badgeClass = 'badge-shared';
+                    badgeText = 'مشترك';
+                    amountText = share.toLocaleString() + ' SDG';
+                    subtitle = `حصتك من ${totalAmount.toLocaleString()} SDG`;
+                }
+
                 const participantsCount = expense.participants_ids ? expense.participants_ids.length : 0;
                 
                 let participantsPreview = '';
-                if (expense.participants_ids) {
+                if (expense.participants_ids && !isPersonal) {
                     const previewNames = expense.participants_ids
+                        .filter(uid => uid !== currentUserID)
                         .slice(0, 3)
-                        .map(uid => uid === currentUserID ? 'أنت' : getUserNameById(uid))
+                        .map(uid => getUserNameById(uid))
                         .join('، ');
                     
-                    const remaining = expense.participants_ids.length - 3;
+                    const remaining = expense.participants_ids.filter(uid => uid !== currentUserID).length - 3;
                     participantsPreview = previewNames + (remaining > 0 ? ` و${remaining} آخرين` : '');
                 }
-                
+
                 const card = document.createElement('div');
-                card.className = 'expense-card';
+                card.className = `expense-card ${cardClass}`;
                 card.innerHTML = `
                     <div class="expense-header">
                         <div>
                             <div class="expense-title">
                                 ${expense.title || 'بدون عنوان'}
-                                ${expense.edited ? '<span style="color:#F59E0B; font-size:0.8rem; margin-right:8px;"><i class="fas fa-edit"></i> معدل</span>' : ''}
+                                ${expense.edited ? '<span style="color:#F59E0B; font-size:0.8rem; margin-right:8px;"><i class="fas fa-edit"></i></span>' : ''}
                             </div>
-                            <div style="color:#64748B; font-size:0.85rem; margin-top:4px;">
-                                ${new Date(expense.timestamp).toLocaleDateString('ar-EG')}
-                            </div>
+                            <span class="expense-badge ${badgeClass}">${badgeText}</span>
                         </div>
-                        <div class="expense-amount">
-                            ${totalAmount.toLocaleString()} SDG
-                        </div>
+                        <div class="expense-amount">${amountText}</div>
                     </div>
                     
-                    <div style="background:#F1F5F9; padding:12px; border-radius:12px; margin:12px 0;">
-                        <div style="display:flex; justify-content:space-between; font-size:0.9rem;">
-                            <span style="color:#64748B;">نوع المصروف:</span>
-                            <span style="font-weight:700; color:${isMessenger ? '#8B5CF6' : '#3B82F6'};">
-                                ${isMessenger ? '🔥 مرسال' : '💰 عادي'}
-                            </span>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; font-size:0.9rem; margin-top:8px;">
-                            <span style="color:#64748B;">عدد المشاركين:</span>
-                            <span style="font-weight:700;">${participantsCount} أشخاص</span>
-                        </div>
-                        ${!isMessenger ? `
-                        <div style="display:flex; justify-content:space-between; font-size:0.9rem; margin-top:8px;">
-                            <span style="color:#64748B;">حصة كل شخص:</span>
-                            <span style="font-weight:700;">${share.toLocaleString()} SDG</span>
-                        </div>
-                        ` : ''}
+                    <div style="color:#64748B; font-size:0.9rem; margin:8px 0;">
+                        ${subtitle}
                     </div>
                     
+                    ${!isPersonal ? `
                     <div style="color:#64748B; font-size:0.85rem; margin-bottom:8px;">
-                        <i class="fas fa-users ml-2"></i> المشاركون:
+                        <i class="fas fa-users ml-2"></i> 
+                        ${isMessenger ? 'أرسلت لـ: ' : 'المشاركون: '}
+                        ${isPersonal ? 'أنت فقط' : participantsPreview}
                     </div>
-                    <div class="participants-preview">
-                        ${expense.participants_ids ? expense.participants_ids.map(uid => `
-                            <span class="participant-tag">
-                                ${uid === currentUserID ? '👤 أنت' : getUserNameById(uid)}
-                            </span>
-                        `).join('') : ''}
-                    </div>
+                    ` : ''}
                     
+                    ${!isPersonal ? `
                     <div class="action-buttons">
                         <button class="btn-action btn-edit" onclick="window.editExpense('${expense.firebaseId}')">
                             <i class="fas fa-user-edit ml-1"></i> تعديل المشاركين
@@ -392,45 +537,43 @@
                         </div>
                         <div style="display:flex; gap:8px; margin-top:12px;">
                             <button class="btn-action btn-save" onclick="window.saveExpenseEdit('${expense.firebaseId}')">
-                                <i class="fas fa-check ml-1"></i> حفظ التغييرات
+                                <i class="fas fa-check ml-1"></i> حفظ
                             </button>
                             <button class="btn-action btn-cancel" onclick="window.cancelEdit('${expense.firebaseId}')">
                                 إلغاء
                             </button>
                         </div>
                     </div>
+                    ` : `
+                    <div class="action-buttons">
+                        <button class="btn-action btn-delete" onclick="window.deleteExpense('${expense.firebaseId}')">
+                            <i class="fas fa-trash ml-1"></i> حذف
+                        </button>
+                    </div>
+                    `}
                 `;
                 
                 container.appendChild(card);
             });
-        };
+        }
 
         window.editExpense = function(expenseId) {
-            document.querySelectorAll('.edit-form').forEach(form => {
-                form.classList.remove('show');
-            });
-            
+            document.querySelectorAll('.edit-form').forEach(form => form.classList.remove('show'));
             const form = document.getElementById(`edit-form-${expenseId}`);
             if (form) {
                 form.classList.add('show');
-                if (window.populateEditSelector) {
-                    window.populateEditSelector(expenseId);
-                }
+                if (window.populateEditSelector) window.populateEditSelector(expenseId);
             }
-        };
+        }
 
         window.cancelEdit = function(expenseId) {
             const form = document.getElementById(`edit-form-${expenseId}`);
-            if (form) {
-                form.classList.remove('show');
-            }
-        };
+            if (form) form.classList.remove('show');
+        }
 
         window.saveExpenseEdit = function(expenseId) {
-            if (window.saveExpenseEditImpl) {
-                window.saveExpenseEditImpl(expenseId);
-            }
-        };
+            if (window.saveExpenseEditImpl) window.saveExpenseEditImpl(expenseId);
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('menuButton').addEventListener('click', window.toggleSidebar);
