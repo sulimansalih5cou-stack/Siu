@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
     <style>
+        /* ... نفس CSS السابق مع تعديلات بسيطة ... */
         body {
             background-color: #F8FAFC;
             font-family: 'Cairo', sans-serif;
@@ -53,10 +54,6 @@
             color: #B91C1C; background-color: #FEF2F2;
             border-right-color: #B91C1C;
         }
-        .sidebar-profile-text {
-            white-space: nowrap; overflow: hidden;
-            text-overflow: ellipsis; max-width: 100%;
-        }
 
         .transaction-card {
             background: white;
@@ -76,6 +73,7 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
+            cursor: pointer;
         }
 
         .bank-icon-container {
@@ -101,6 +99,10 @@
         .bank-icon.messenger {
             border-color: #8B5CF6;
             color: #8B5CF6;
+        }
+        .bank-icon.personal {
+            border-color: #10B981;
+            color: #10B981;
         }
         .bank-icon.settlement-out {
             border-color: #3B82F6;
@@ -143,19 +145,6 @@
             font-weight: 600;
             line-height: 1.4;
         }
-        .sub-detail {
-            display: inline-block;
-            margin-top: 6px;
-            padding: 2px 8px;
-            background: #F8FAFC;
-            border-radius: 6px;
-            color: #94A3B8;
-            font-size: 0.7rem;
-            font-weight: 700;
-        }
-        .sub-detail.expense { color: #EF4444; background: #FEF2F2; }
-        .sub-detail.income { color: #10B981; background: #ECFDF5; }
-        .sub-detail.messenger { color: #8B5CF6; background: #F5F3FF; }
 
         .amount-section {
             text-align: left;
@@ -165,12 +154,21 @@
             font-weight: 900;
             font-size: 1.3rem;
             direction: ltr;
-            color: #EF4444;
         }
+        .amount-text.expense { color: #EF4444; }
         .amount-text.income { color: #10B981; }
         .amount-text.messenger { color: #8B5CF6; }
+        .amount-text.personal { color: #059669; }
         .amount-text.settlement-out { color: #3B82F6; }
         .amount-text.settlement-in { color: #10B981; }
+
+        /* المرسال بدون إشارة سالب */
+        .messenger-amount {
+            font-weight: 900;
+            font-size: 1.3rem;
+            color: #8B5CF6;
+            direction: ltr;
+        }
 
         .dashed-separator {
             margin: 16px 0;
@@ -260,7 +258,6 @@
             margin-top: 16px; cursor: pointer;
         }
 
-        /* أنماط المشاركين الجديدة */
         .participants-section {
             margin-top: 12px;
             animation: slideDown 0.3s ease;
@@ -323,13 +320,6 @@
         .status-badge.deleted {
             background: #FEE2E2;
             color: #DC2626;
-        }
-        .edit-history {
-            margin-top: 8px;
-            padding-top: 8px;
-            border-top: 1px dashed #CBD5E1;
-            color: #94A3B8;
-            font-size: 0.75rem;
         }
         .opacity-60 {
             opacity: 0.6;
@@ -420,6 +410,7 @@
             if (record.type === 'expense') {
                 const isPayer = record.payer_id === currentUserID;
                 const isMessenger = record.is_messenger || false;
+                const isPersonal = record.type === 'personal' || (record.participants_ids && record.participants_ids.length === 1 && record.participants_ids[0] === currentUserID);
                 const payerName = getUserNameById(record.payer_id);
                 const share = record.share || 0;
                 const totalAmount = record.total_amount || 0;
@@ -438,45 +429,50 @@
                     }).join('');
                 }
 
-                let iconClass, amountClass, amountValue, title, subtitle, subDetailClass, subDetailText, amountSign;
+                let iconClass, amountClass, amountDisplay, title, subtitle, iconBadge;
+                let statusBadge = '';
 
                 if (record.is_deleted) {
                     statusBadge = '<span class="status-badge deleted"><i class="fas fa-trash ml-1"></i> تم الحذف</span>';
                 } else if (record.edited) {
                     statusBadge = '<span class="status-badge edited"><i class="fas fa-edit ml-1"></i> تم التعديل</span>';
-                } else {
-                    statusBadge = '';
                 }
 
-                if (isPayer && isMessenger) {
+                if (isPersonal) {
+                    // 💚 مصروف شخصي
+                    iconClass = 'personal';
+                    amountClass = 'personal';
+                    amountDisplay = `<div class="amount-text personal">${totalAmount.toLocaleString()}</div>`;
+                    title = record.title || 'بدون عنوان';
+                    subtitle = 'مصروف شخصي (لك وحدك)';
+                    iconBadge = '<i class="fas fa-user" style="color:#10B981;font-size:0.6rem;"></i>';
+
+                } else if (isPayer && isMessenger) {
+                    // 🔥 مرسال - بدون سالب!
                     iconClass = 'messenger';
                     amountClass = 'messenger';
-                    amountValue = totalAmount.toLocaleString();
-                    amountSign = '-';
+                    amountDisplay = `<div class="messenger-amount">${totalAmount.toLocaleString()} <small style="font-size:0.7rem;">SDG</small></div>`;
                     title = record.title || 'بدون عنوان';
-                    subtitle = `دفعت كمرسال: ${totalAmount.toLocaleString()} SDG<br>لست مشاركاً في التقسيم`;
-                    subDetailClass = 'messenger';
-                    subDetailText = 'مرسال';
+                    subtitle = `أرسلت ${totalAmount.toLocaleString()} SDG للآخرين`;
+                    iconBadge = '<i class="fas fa-paper-plane" style="color:#8B5CF6;font-size:0.6rem;"></i>';
 
                 } else if (isPayer && !isMessenger) {
+                    // 💚 دافع عادي (دخل)
                     iconClass = 'income';
                     amountClass = 'income';
-                    amountValue = (totalAmount - share).toLocaleString();
-                    amountSign = '+';
+                    amountDisplay = `<div class="amount-text income">+${(totalAmount - share).toLocaleString()}</div>`;
                     title = record.title || 'بدون عنوان';
                     subtitle = `مشاركة في مصروف<br><span style="color:#94A3B8">الدافع: ${payerName}</span>`;
-                    subDetailClass = 'income';
-                    subDetailText = 'حصتك: ' + share.toLocaleString();
+                    iconBadge = '<i class="fas fa-arrow-up" style="color:#10B981;font-size:0.6rem;"></i>';
 
                 } else {
+                    // ❤️ مشارك (خرج)
                     iconClass = '';
-                    amountClass = '';
-                    amountValue = share.toLocaleString();
-                    amountSign = '-';
+                    amountClass = 'expense';
+                    amountDisplay = `<div class="amount-text expense">-${share.toLocaleString()}</div>`;
                     title = record.title || 'بدون عنوان';
                     subtitle = `مشاركة في مصروف<br><span style="color:#94A3B8">الدافع: ${payerName}</span>`;
-                    subDetailClass = 'expense';
-                    subDetailText = 'مطلوب: ' + share.toLocaleString();
+                    iconBadge = '<i class="fas fa-arrow-down" style="color:#EF4444;font-size:0.6rem;"></i>';
                 }
 
                 const editBadge = record.edited && !record.is_deleted ? 
@@ -485,17 +481,12 @@
                 const deletedBadge = record.is_deleted ? 
                     `<span style="background:#FEE2E2;color:#DC2626;padding:2px 8px;border-radius:6px;font-size:0.7rem;font-weight:700;margin-right:8px;"><i class="fas fa-trash ml-1"></i>محذوف</span>` : '';
 
-                const iconBadge = isPayer ? 
-                    (isMessenger ? '<i class="fas fa-paper-plane" style="color:#8B5CF6;font-size:0.6rem;"></i>' : 
-                                  '<i class="fas fa-arrow-up" style="color:#10B981;font-size:0.6rem;"></i>') : 
-                    '<i class="fas fa-arrow-down" style="color:#EF4444;font-size:0.6rem;"></i>';
-
                 const cardOpacity = record.is_deleted ? 'opacity-60' : '';
                 const strikeThrough = record.is_deleted ? 'text-decoration: line-through; color: #9CA3AF;' : '';
 
                 cardHTML = `
                     <div class="transaction-card ${cardOpacity}" data-id="${record.firebaseId}" id="${uniqueId}">
-                        <div class="card-main-row" onclick="toggleParticipants('${uniqueId}')" style="cursor: pointer;">
+                        <div class="card-main-row" onclick="toggleParticipants('${uniqueId}')">
                             <div class="bank-icon-container">
                                 <div class="bank-icon ${iconClass}" style="${record.is_deleted ? 'border-color:#9CA3AF; color:#9CA3AF;' : ''}">
                                     ج.س
@@ -508,36 +499,33 @@
                             <div class="card-info">
                                 <h3 style="${strikeThrough}">${deletedBadge}${editBadge}${title}</h3>
                                 <p style="${strikeThrough}">${subtitle}</p>
-                                <span class="sub-detail ${subDetailClass}" style="${record.is_deleted ? 'background:#F3F4F6; color:#9CA3AF;' : ''}">
-                                    ${subDetailText} SDG
-                                </span>
                                 ${statusBadge}
                             </div>
                             
                             <div class="amount-section">
-                                <div class="amount-text ${amountClass}" style="${record.is_deleted ? 'color:#9CA3AF;' : ''}">
-                                    ${amountSign}${amountValue}
-                                </div>
+                                ${amountDisplay}
                             </div>
                         </div>
                         
+                        ${!isPersonal ? `
                         <div class="participants-section" id="participants-${uniqueId}" style="display: none;">
                             <div class="dashed-separator"></div>
                             <div class="participants-header">
                                 <i class="fas fa-users"></i>
-                                المشاركون (${record.participants_ids ? record.participants_ids.length : 0})
+                                ${isMessenger ? 'أرسلت لـ' : 'المشاركون'} (${record.participants_ids ? record.participants_ids.length : 0})
                             </div>
                             <div class="participants-list">
                                 ${participantsHTML}
                             </div>
-                            ${record.edited && record.edit_history ? `
+                            ${record.edited && record.edit_timestamp ? `
                                 <div class="edit-history">
                                     <i class="fas fa-history"></i> 
                                     آخر تعديل: ${formatBankDate(record.edit_timestamp).date}
                                 </div>
                             ` : ''}
-                            <i class="fas fa-chevron-up expand-icon" onclick="toggleParticipants('${uniqueId}')" style="cursor: pointer;"></i>
+                            <i class="fas fa-chevron-up expand-icon" onclick="toggleParticipants('${uniqueId}')"></i>
                         </div>
+                        ` : ''}
                         
                         <div class="dashed-separator"></div>
                         
@@ -555,32 +543,36 @@
                                     <i class="fas fa-trash"></i>
                                     <span>محذوف</span>
                                 </div>
+                            ` : isPersonal ? `
+                                <div class="footer-item" style="background:#D1FAE5;color:#059669;">
+                                    <i class="fas fa-user"></i>
+                                    <span>شخصي</span>
+                                </div>
                             ` : ''}
                         </div>
                     </div>
                 `;
 
             } else {
+                // 💙 تسوية
                 const isPayer = record.payer_id === currentUserID;
                 const otherName = isPayer ? getUserNameById(record.recipient_id) : getUserNameById(record.payer_id);
                 const amount = record.amount || 0;
                 
-                let iconClass, amountClass, title, subtitle, subDetailClass, amountSign;
+                let iconClass, amountClass, title, subtitle, amountSign;
 
                 if (isPayer) {
                     iconClass = 'settlement-out';
                     amountClass = 'settlement-out';
                     amountSign = '-';
                     title = 'تسوية';
-                    subtitle = `دفعت لـ: <span style="color:#3B82F6;font-weight:700">${otherName}</span><br>سداد دين`;
-                    subDetailClass = 'expense';
+                    subtitle = `دفعت لـ: <span style="color:#3B82F6;font-weight:700">${otherName}</span>`;
                 } else {
                     iconClass = 'settlement-in';
                     amountClass = 'settlement-in';
                     amountSign = '+';
                     title = 'تسوية';
-                    subtitle = `استلمت من: <span style="color:#10B981;font-weight:700">${otherName}</span><br>استرداد مبلغ`;
-                    subDetailClass = 'income';
+                    subtitle = `استلمت من: <span style="color:#10B981;font-weight:700">${otherName}</span>`;
                 }
 
                 const cardOpacity = record.is_deleted ? 'opacity-60' : '';
@@ -601,9 +593,6 @@
                             <div class="card-info">
                                 <h3 style="${strikeThrough}">${title}</h3>
                                 <p style="${strikeThrough}">${subtitle}</p>
-                                <span class="sub-detail ${subDetailClass}" style="${record.is_deleted ? 'background:#F3F4F6; color:#9CA3AF;' : ''}">
-                                    ${isPayer ? 'سداد' : 'استلام'} ${amount.toLocaleString()} SDG
-                                </span>
                                 ${record.is_deleted ? '<span class="status-badge deleted"><i class="fas fa-trash ml-1"></i> تم الحذف</span>' : ''}
                             </div>
                             
