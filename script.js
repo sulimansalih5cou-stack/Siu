@@ -153,7 +153,7 @@ window.selectAllParticipants = function() {
 };
 
 // ============================================================
-// ✏️ تعديل/حذف المصروف (النسخة القديمة - للتوافق)
+// ✏️ تعديل/حذف المصروف (النسخة القديمة للتوافق)
 // ============================================================
 
 window.showEditExpenseModal = function(expenseId) {
@@ -312,14 +312,26 @@ window.previewExpense = function(isEdit = false) {
     const amountStr = document.getElementById('expenseAmount').value.replace(/,/g, '');
     const amount = parseFloat(amountStr);
     const isMessenger = document.getElementById('isMessenger').checked;
+    const isPersonal = document.getElementById('isPersonal')?.checked || false;
     const checkboxes = document.querySelectorAll('.participant-checkbox:checked');
 
     let selectedParticipantsUids = Array.from(checkboxes).map(cb => cb.dataset.uid);
-    selectedParticipantsUids.push(currentUserID);
-    selectedParticipantsUids = [...new Set(selectedParticipantsUids)];
+    
+    // المصروف الشخصي: فقط أنت
+    if (isPersonal) {
+        selectedParticipantsUids = [currentUserID];
+    } else {
+        selectedParticipantsUids.push(currentUserID);
+        selectedParticipantsUids = [...new Set(selectedParticipantsUids)];
+    }
 
-    if (!title || isNaN(amount) || amount <= 0 || selectedParticipantsUids.length < 2) {
-        alert("يرجى إدخال اسم المصروف والمبلغ، وتحديد مشارك واحد على الأقل.");
+    if (!title || isNaN(amount) || amount <= 0) {
+        alert("يرجى إدخال اسم المصروف والمبلغ.");
+        return;
+    }
+
+    if (!isPersonal && selectedParticipantsUids.length < 2) {
+        alert("يرجى تحديد مشارك واحد على الأقل.");
         return;
     }
 
@@ -334,6 +346,8 @@ window.previewExpense = function(isEdit = false) {
             alert("يجب تحديد مشاركين في وضع المرسال!");
             return;
         }
+    } else if (isPersonal) {
+        finalShare = amount; // الحصة الكاملة لك
     } else {
         finalShare = calculateShare(amount, finalParticipantsUids.length);
     }
@@ -343,11 +357,9 @@ window.previewExpense = function(isEdit = false) {
     let previewHTML = `
         <p><strong>اسم المصروف:</strong> ${title}</p>
         <p><strong>المبلغ:</strong> ${amount.toLocaleString('en-US')} SDG</p>
-        <p><strong>المشاركون:</strong> ${participantsNames}</p>
-        <p><strong>الحصة:</strong> ${finalShare.toLocaleString('en-US', {minimumFractionDigits: 2})} SDG</p>
-        <p class="mt-4 font-bold text-lg ${isMessenger ? 'text-red-600' : 'text-blue-600'}">
-            ${isMessenger ? '🔥' : '💰'} حصتك: ${isMessenger ? '0.00' : finalShare.toLocaleString('en-US', {minimumFractionDigits: 2})} SDG
-        </p>
+        <p><strong>النوع:</strong> ${isPersonal ? 'شخصي (لك وحدك)' : (isMessenger ? 'مرسال' : 'مشترك')}</p>
+        ${!isPersonal ? `<p><strong>المشاركون:</strong> ${participantsNames}</p>` : ''}
+        ${!isPersonal && !isMessenger ? `<p><strong>الحصة:</strong> ${finalShare.toLocaleString('en-US', {minimumFractionDigits: 2})} SDG</p>` : ''}
     `;
 
     if (isEdit) {
@@ -362,6 +374,7 @@ window.previewExpense = function(isEdit = false) {
         share: finalShare,
         participants: finalParticipantsUids,
         isMessenger: isMessenger,
+        isPersonal: isPersonal,
         isEdit: isEdit
     };
 
@@ -419,42 +432,55 @@ window.saveExpense = async function() {
             let payerContribution;
             if (data.isMessenger) {
                 payerContribution = data.amount;
+            } else if (data.isPersonal) {
+                payerContribution = 0; // لا تأثير على الرصيد (لك وحدك)
             } else {
                 payerContribution = roundToTwo(data.amount - data.share);
             }
 
-            const oldBalance = currentUserDB?.balance || 0;
-            updates[`users/${currentUserID}/balance`] = roundToTwo(oldBalance + payerContribution);
+            // تحديث الرصيد فقط إذا لم يكن شخصي
+            if (!data.isPersonal) {
+                const oldBalance = currentUserDB?.balance || 0;
+                updates[`users/${currentUserID}/balance`] = roundToTwo(oldBalance + payerContribution);
 
-            const participantsToDebit = data.participants.filter(uid => uid !== currentUserID);
-            for (const uid of participantsToDebit) {
-                const user = allUsers.find(u => u.uid === uid);
-                if (user) {
-                    const newBalance = roundToTwo((user.balance || 0) - data.share);
-                    updates[`users/${uid}/balance`] = newBalance;
+                const participantsToDebit = data.participants.filter(uid => uid !== currentUserID);
+                for (const uid of participantsToDebit) {
+                    const user = allUsers.find(u => u.uid === uid);
+                    if (user) {
+                        const newBalance = roundToTwo((user.balance || 0) - data.share);
+                        updates[`users/${uid}/balance`] = newBalance;
 
-                    const newNotifKey = push(ref(db, 'notifications')).key;
-                    updates[`notifications/${newNotifKey}`] = {
-                        uid: uid,
-                        message: `دين جديد: ${data.title}. مطلوب منك ${data.share.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG لـ ${getUserNameById(currentUserID)}.`,
-                        timestamp: Date.now(),
-                        is_read: false,
-                        type: 'debit'
-                    };
+                        const newNotifKey = push(ref(db, 'notifications')).key;
+                        updates[`notifications/${newNotifKey}`] = {
+                            uid: uid,
+                            message: `دين جديد: ${data.title}. مطلوب منك ${data.share.toLocaleString(undefined, {minimumFractionDigits: 2})} SDG لـ ${getUserNameById(currentUserID)}.`,
+                            timestamp: Date.now(),
+                            is_read: false,
+                            type: 'debit'
+                        };
+                    }
                 }
             }
 
             const newExpenseKey = push(ref(db, 'expenses')).key;
-            updates[`expenses/${newExpenseKey}`] = {
+            const expenseData = {
                 title: data.title,
                 total_amount: data.amount,
                 share: data.share,
                 payer_id: currentUserID,
                 participants_ids: data.participants,
                 is_messenger: data.isMessenger,
+                is_personal: data.isPersonal,
                 timestamp: Date.now(),
                 edited: false
             };
+
+            // إذا كان شخصي، نضيف العلامة
+            if (data.isPersonal) {
+                expenseData.type = 'personal';
+            }
+
+            updates[`expenses/${newExpenseKey}`] = expenseData;
 
             await update(ref(db), updates);
 
@@ -521,6 +547,12 @@ window.saveExpenseEditImpl = async function(expenseId) {
     const expense = allExpenses.find(e => e.firebaseId === expenseId);
     if (!expense || expense.payer_id !== currentUserID) {
         alert('لا يمكنك تعديل هذا المصروف!');
+        return;
+    }
+    
+    // لا يمكن تعديل المصروف الشخصي (ليس له مشاركين)
+    if (expense.type === 'personal' || (expense.participants_ids && expense.participants_ids.length === 1)) {
+        alert('المصروفات الشخصية لا تحتاج لتعديل!');
         return;
     }
     
@@ -648,31 +680,34 @@ window.deleteExpense = async function(expenseId) {
         const isMessenger = expense.is_messenger || false;
         const totalAmount = expense.total_amount || 0;
         
-        const payer = allUsers.find(u => u.uid === expense.payer_id);
-        if (payer) {
-            let refund;
-            if (isMessenger) {
-                refund = totalAmount;
-            } else {
-                refund = roundToTwo(totalAmount - share);
+        // إعادة الأرصدة فقط إذا لم يكن شخصي
+        if (expense.type !== 'personal') {
+            const payer = allUsers.find(u => u.uid === expense.payer_id);
+            if (payer) {
+                let refund;
+                if (isMessenger) {
+                    refund = totalAmount;
+                } else {
+                    refund = roundToTwo(totalAmount - share);
+                }
+                updates[`users/${expense.payer_id}/balance`] = roundToTwo(payer.balance - refund);
             }
-            updates[`users/${expense.payer_id}/balance`] = roundToTwo(payer.balance - refund);
-        }
-        
-        const participants = (expense.participants_ids || []).filter(id => id !== expense.payer_id);
-        for (const uid of participants) {
-            const user = allUsers.find(u => u.uid === uid);
-            if (user) {
-                updates[`users/${uid}/balance`] = roundToTwo(user.balance + share);
-                
-                const notifKey = push(ref(db, 'notifications')).key;
-                updates[`notifications/${notifKey}`] = {
-                    uid: uid,
-                    message: `تم حذف مصروف: ${expense.title} من قبل الدافع`,
-                    timestamp: Date.now(),
-                    is_read: false,
-                    type: 'expense_deleted'
-                };
+            
+            const participants = (expense.participants_ids || []).filter(id => id !== expense.payer_id);
+            for (const uid of participants) {
+                const user = allUsers.find(u => u.uid === uid);
+                if (user) {
+                    updates[`users/${uid}/balance`] = roundToTwo(user.balance + share);
+                    
+                    const notifKey = push(ref(db, 'notifications')).key;
+                    updates[`notifications/${notifKey}`] = {
+                        uid: uid,
+                        message: `تم حذف مصروف: ${expense.title} من قبل الدافع`,
+                        timestamp: Date.now(),
+                        is_read: false,
+                        type: 'expense_deleted'
+                    };
+                }
             }
         }
         
@@ -708,6 +743,7 @@ function calculateNetBalances() {
 
     allExpenses.forEach(expense => {
         if (expense.is_deleted) return;
+        if (expense.type === 'personal') return; // لا تُحسب المصروفات الشخصية
         
         const payerId = expense.payer_id;
         const share = expense.share || 0;
@@ -839,6 +875,9 @@ function combineAndSortHistory() {
         const isParticipant = Array.isArray(expense.participants_ids) && 
                               expense.participants_ids.includes(currentUserID);
 
+        // المصروف الشخصي يظهر فقط للدافع
+        if (expense.type === 'personal' && !isPayer) return;
+
         if (isPayer || isParticipant) {
             combined.push({
                 type: 'expense',
@@ -878,7 +917,7 @@ function displayHistoryNew() {
             return recordTime >= now - (90 * 24 * 60 * 60 * 1000);
         } else if (currentHistoryFilter === 'incoming') {
             if (record.type === 'settlement' && record.recipient_id === currentUserID) return true;
-            if (record.type === 'expense' && record.payer_id === currentUserID) return true;
+            if (record.type === 'expense' && record.payer_id === currentUserID && record.type !== 'personal') return true;
             return false;
         } else if (currentHistoryFilter === 'outgoing') {
             if (record.type === 'settlement' && record.payer_id === currentUserID) return true;
