@@ -48,7 +48,6 @@
             border-right-color: #059669;
         }
 
-        /* بطاقة المصروف */
         .expense-card {
             background: white;
             border-radius: 20px;
@@ -141,7 +140,6 @@
         }
         .btn-cancel:hover { background: #E5E7EB; }
 
-        /* نموذج التعديل */
         .edit-form {
             background: #F8FAFC;
             border-radius: 16px;
@@ -149,7 +147,12 @@
             margin-top: 16px;
             display: none;
         }
-        .edit-form.show { display: block; }
+        .edit-form.show { display: block; animation: slideDown 0.3s ease; }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
         .form-group {
             margin-bottom: 12px;
@@ -160,18 +163,6 @@
             color: #374151;
             margin-bottom: 6px;
             font-size: 0.9rem;
-        }
-        .form-input {
-            width: 100%;
-            padding: 10px 14px;
-            border: 2px solid #E5E7EB;
-            border-radius: 12px;
-            font-family: inherit;
-            font-size: 1rem;
-        }
-        .form-input:focus {
-            outline: none;
-            border-color: #3B82F6;
         }
 
         .participants-selector {
@@ -220,6 +211,16 @@
             padding: 60px 20px;
             color: #94A3B8;
         }
+
+        .info-box {
+            background: #FEF3C7;
+            border-right: 4px solid #F59E0B;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            color: #92400E;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -251,20 +252,20 @@
 
     <div class="content-wrapper py-8 px-4">
         <div class="max-w-md mx-auto">
-            <h1 class="text-2xl font-black text-slate-800 mb-6 text-right">مصروفاتي</h1>
+            <h1 class="text-2xl font-black text-slate-800 mb-4 text-right">مصروفاتي</h1>
+            
+            <div class="info-box">
+                <i class="fas fa-info-circle ml-2"></i>
+                يمكنك تعديل المشاركين أو حذف المصروفات من هنا. سيتم إعلام جميع الأطراف بالتغييرات.
+            </div>
 
-            <!-- إحصائيات -->
             <div class="stats-card">
                 <div class="stats-label">إجمالي ما دفعته</div>
                 <div class="stats-value" id="totalPaid">0 SDG</div>
             </div>
 
-            <!-- قائمة المصروفات -->
-            <div id="expensesList">
-                <!-- سيتم ملؤها بواسطة JavaScript -->
-            </div>
+            <div id="expensesList"></div>
 
-            <!-- حالة فارغة -->
             <div id="emptyState" class="empty-state hidden">
                 <i class="fas fa-receipt" style="font-size: 4rem; margin-bottom: 16px; color: #CBD5E1;"></i>
                 <h3 class="text-xl font-bold text-gray-700 mb-2">لا توجد مصروفات</h3>
@@ -277,10 +278,6 @@
     </div>
 
     <script>
-        // ============================================================
-        // 🔄 التحكم في الواجهة
-        // ============================================================
-
         window.toggleSidebar = function() {
             document.getElementById('sidebar').classList.toggle('open');
         }
@@ -289,10 +286,6 @@
             document.getElementById('sidebar').classList.remove('open');
         }
 
-        // ============================================================
-        // 🎨 عرض المصروفات (يتم استدعاؤها من script.js)
-        // ============================================================
-
         window.renderMyExpenses = function(expenses, currentUserID, allUsers, getUserNameById) {
             const container = document.getElementById('expensesList');
             const emptyState = document.getElementById('emptyState');
@@ -300,7 +293,6 @@
             
             container.innerHTML = '';
             
-            // فلترة المصروفات التي دفعها المستخدم فقط (غير المحذوفة)
             const myExpenses = expenses.filter(e => 
                 e.payer_id === currentUserID && !e.is_deleted
             ).sort((a, b) => b.timestamp - a.timestamp);
@@ -313,7 +305,6 @@
             
             emptyState.classList.add('hidden');
             
-            // حساب الإجمالي
             let total = 0;
             myExpenses.forEach(e => {
                 total += (e.total_amount || 0);
@@ -326,7 +317,6 @@
                 const isMessenger = expense.is_messenger || false;
                 const participantsCount = expense.participants_ids ? expense.participants_ids.length : 0;
                 
-                // بناء معاينة المشاركين
                 let participantsPreview = '';
                 if (expense.participants_ids) {
                     const previewNames = expense.participants_ids
@@ -375,6 +365,9 @@
                         ` : ''}
                     </div>
                     
+                    <div style="color:#64748B; font-size:0.85rem; margin-bottom:8px;">
+                        <i class="fas fa-users ml-2"></i> المشاركون:
+                    </div>
                     <div class="participants-preview">
                         ${expense.participants_ids ? expense.participants_ids.map(uid => `
                             <span class="participant-tag">
@@ -385,23 +378,20 @@
                     
                     <div class="action-buttons">
                         <button class="btn-action btn-edit" onclick="window.editExpense('${expense.firebaseId}')">
-                            <i class="fas fa-edit ml-1"></i> تعديل المشاركين
+                            <i class="fas fa-user-edit ml-1"></i> تعديل المشاركين
                         </button>
                         <button class="btn-action btn-delete" onclick="window.deleteExpense('${expense.firebaseId}')">
                             <i class="fas fa-trash ml-1"></i> حذف
                         </button>
                     </div>
                     
-                    <!-- نموذج التعديل المخفي -->
                     <div class="edit-form" id="edit-form-${expense.firebaseId}">
                         <div class="form-group">
-                            <label class="form-label">تعديل المشاركين:</label>
-                            <div class="participants-selector" id="selector-${expense.firebaseId}">
-                                <!-- سيتم ملؤها ديناميكياً -->
-                            </div>
+                            <label class="form-label">اختر المشاركين الجدد:</label>
+                            <div class="participants-selector" id="selector-${expense.firebaseId}"></div>
                         </div>
                         <div style="display:flex; gap:8px; margin-top:12px;">
-                            <button class="btn-action btn-save" onclick="window.saveEdit('${expense.firebaseId}')">
+                            <button class="btn-action btn-save" onclick="window.saveExpenseEdit('${expense.firebaseId}')">
                                 <i class="fas fa-check ml-1"></i> حفظ التغييرات
                             </button>
                             <button class="btn-action btn-cancel" onclick="window.cancelEdit('${expense.firebaseId}')">
@@ -415,21 +405,14 @@
             });
         };
 
-        // ============================================================
-        // ✏️ دوال التعديل (يتم ربطها بـ script.js)
-        // ============================================================
-
         window.editExpense = function(expenseId) {
-            // إخفاء جميع نماذج التعديل المفتوحة
             document.querySelectorAll('.edit-form').forEach(form => {
                 form.classList.remove('show');
             });
             
-            // إظهار النموذج المطلوب
             const form = document.getElementById(`edit-form-${expenseId}`);
             if (form) {
                 form.classList.add('show');
-                // ملء قائمة المشاركين (يتم استدعاؤها من script.js)
                 if (window.populateEditSelector) {
                     window.populateEditSelector(expenseId);
                 }
@@ -443,10 +426,9 @@
             }
         };
 
-        window.saveEdit = function(expenseId) {
-            // يتم تنفيذها من script.js
-            if (window.saveExpenseEdit) {
-                window.saveExpenseEdit(expenseId);
+        window.saveExpenseEdit = function(expenseId) {
+            if (window.saveExpenseEditImpl) {
+                window.saveExpenseEditImpl(expenseId);
             }
         };
 
