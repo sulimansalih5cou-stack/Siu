@@ -43,7 +43,7 @@ let netBalances = {};
 let editingExpenseId = null;
 let originalExpenseData = null;
 
-// متغيرات السجل
+// متغيرات السجل (القديمة - للتوافق)
 let itemsPerPage = 10;
 let currentPage = 1;
 let activeFilter = '30days';
@@ -59,6 +59,11 @@ let isLoadingNotifications = false;
 let currentSettleUser = '';
 let currentSettleMaxAmount = 0;
 let currentSettleRecipientUID = '';
+
+// متغيرات السجل الجديدة (لـ history.html)
+let currentHistoryFilter = '30days';
+let filteredHistoryRecords = [];
+let currentHistoryPage = 1;
 
 // ============================================================
 // 🛠️ دوال مساعدة
@@ -769,7 +774,7 @@ function updateSummaryDisplay() {
 }
 
 // ============================================================
-// 📜 السجل - history.html (التصميم الجديد)
+// 📜 السجل - history.html (النسخة الجديدة المطابقة للتصميم)
 // ============================================================
 
 function combineAndSortHistory() {
@@ -806,6 +811,55 @@ function combineAndSortHistory() {
     return combined.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 }
 
+// 🔗 ربط history.html الجديد
+function displayHistoryNew() {
+    if (!window.renderHistoryCards) return;
+    
+    const combined = combineAndSortHistory();
+    const now = Date.now();
+    
+    filteredHistoryRecords = combined.filter(record => {
+        const recordTime = record.timestamp || 0;
+        
+        if (currentHistoryFilter === '30days') {
+            return recordTime >= now - (30 * 24 * 60 * 60 * 1000);
+        } else if (currentHistoryFilter === '3months') {
+            return recordTime >= now - (90 * 24 * 60 * 60 * 1000);
+        } else if (currentHistoryFilter === 'incoming') {
+            if (record.type === 'settlement' && record.recipient_id === currentUserID) return true;
+            if (record.type === 'expense' && record.payer_id === currentUserID) return true;
+            return false;
+        } else if (currentHistoryFilter === 'outgoing') {
+            if (record.type === 'settlement' && record.payer_id === currentUserID) return true;
+            if (record.type === 'expense' && 
+                Array.isArray(record.participants_ids) && 
+                record.participants_ids.includes(currentUserID) && 
+                record.payer_id !== currentUserID) return true;
+            return false;
+        }
+        return true;
+    });
+    
+    window.filteredHistoryRecords = filteredHistoryRecords;
+    window.currentHistoryPage = currentHistoryPage;
+    
+    window.renderHistoryCards(filteredHistoryRecords, currentUserID, allUsers, getUserNameById);
+}
+
+// دوال الربط للـ HTML
+window.filterHistoryFromJS = function(filterType) {
+    currentHistoryFilter = filterType;
+    currentHistoryPage = 1;
+    displayHistoryNew();
+};
+
+window.loadMoreFromJS = function() {
+    currentHistoryPage++;
+    window.currentHistoryPage = currentHistoryPage;
+    window.renderHistoryCards(filteredHistoryRecords, currentUserID, allUsers, getUserNameById);
+};
+
+// النسخة القديمة للتوافق مع الصفحات الأخرى
 function filterHistory(filterType) {
     const allHistory = combineAndSortHistory();
     const now = Date.now();
@@ -833,6 +887,7 @@ function filterHistory(filterType) {
     });
 }
 
+// النسخة القديمة للعرض (للصفحات الأخرى)
 function displayHistory(isAppending = false) {
     const container = document.getElementById('expensesContainer');
     if (!container || isLoadingHistory) return;
@@ -868,13 +923,11 @@ function displayHistory(isAppending = false) {
             const payerName = getUserNameById(record.payer_id);
             const share = record.share || 0;
             const totalAmount = record.total_amount || 0;
-            const participantsCount = Array.isArray(record.participants_ids) ? record.participants_ids.length : 0;
             
             let cardClass, amountClass, circleClass, amountSign, amountValue, title, subtitle;
 
             if (isPayer) {
                 if (record.is_messenger) {
-                    // مرسال
                     cardClass = 'card-messenger';
                     amountClass = 'amount-expense';
                     circleClass = 'expense';
@@ -883,7 +936,6 @@ function displayHistory(isAppending = false) {
                     title = record.title || 'بدون عنوان';
                     subtitle = `دفعت كمرسال: ${totalAmount.toLocaleString()} SDG<br>لست مشاركاً في التقسيم`;
                 } else {
-                    // دافع عادي - مستحق له (دخل)
                     cardClass = 'card-income';
                     amountClass = 'amount-income';
                     circleClass = 'income';
@@ -893,7 +945,6 @@ function displayHistory(isAppending = false) {
                     subtitle = `مشاركة في مصروف: ${record.title || ''}<br><span class="payer-name">الدافع: ${payerName}</span><br>حصتك المطلوبة`;
                 }
             } else {
-                // مشارك - عليه دين (خرج)
                 cardClass = 'card-expense';
                 amountClass = 'amount-expense';
                 circleClass = 'expense';
@@ -937,7 +988,6 @@ function displayHistory(isAppending = false) {
             `;
 
         } else {
-            // تسوية
             const isPayer = record.payer_id === currentUserID;
             const otherName = isPayer ? getUserNameById(record.recipient_id) : getUserNameById(record.payer_id);
             const amount = record.amount || 0;
@@ -945,7 +995,6 @@ function displayHistory(isAppending = false) {
             let cardClass, amountClass, circleClass, amountSign, title, subtitle;
 
             if (isPayer) {
-                // دفعت تسوية (خرج)
                 cardClass = 'card-expense';
                 amountClass = 'amount-expense';
                 circleClass = 'expense';
@@ -953,7 +1002,6 @@ function displayHistory(isAppending = false) {
                 title = 'تسوية';
                 subtitle = `دفعت لـ: <span class="payer-name">${otherName}</span><br>سداد دين`;
             } else {
-                // استلمت تسوية (دخل)
                 cardClass = 'card-income';
                 amountClass = 'amount-income';
                 circleClass = 'income';
@@ -1014,18 +1062,32 @@ function displayHistory(isAppending = false) {
 }
 
 window.setFilter = function(filterType, element) {
-    document.querySelectorAll('.filter-chip').forEach(el => el.classList.remove('active'));
-    if (element) element.classList.add('active');
-
-    activeFilter = filterType;
-    currentPage = 1;
-    filterHistory(filterType);
-    displayHistory();
+    // التحقق من وجود عناصر الفلتر الجديدة (history.html)
+    if (document.querySelector('.filter-pill')) {
+        document.querySelectorAll('.filter-pill').forEach(el => el.classList.remove('active'));
+        if (element) element.classList.add('active');
+        window.filterHistoryFromJS(filterType);
+    } else {
+        // النسخة القديمة
+        document.querySelectorAll('.filter-chip').forEach(el => el.classList.remove('active'));
+        if (element) element.classList.add('active');
+        activeFilter = filterType;
+        currentPage = 1;
+        filterHistory(filterType);
+        displayHistory();
+    }
 };
 
 window.loadMoreHistory = function() {
-    currentPage++;
-    displayHistory(true);
+    // التحقق من النسخة الجديدة
+    if (window.renderHistoryCards) {
+        window.currentHistoryPage = (window.currentHistoryPage || 1) + 1;
+        window.loadMoreFromJS();
+    } else {
+        // النسخة القديمة
+        currentPage++;
+        displayHistory(true);
+    }
 };
 
 // ============================================================
@@ -1318,8 +1380,13 @@ function loadData() {
             updateSummaryDisplay();
         }
         if (window.location.href.includes('history.html')) {
-            filterHistory(activeFilter);
-            displayHistory();
+            // استخدام النسخة الجديدة إذا كانت متوفرة
+            if (window.renderHistoryCards) {
+                displayHistoryNew();
+            } else {
+                filterHistory(activeFilter);
+                displayHistory();
+            }
         }
     });
 
@@ -1338,8 +1405,12 @@ function loadData() {
             updateSummaryDisplay();
         }
         if (window.location.href.includes('history.html')) {
-            filterHistory(activeFilter);
-            displayHistory();
+            if (window.renderHistoryCards) {
+                displayHistoryNew();
+            } else {
+                filterHistory(activeFilter);
+                displayHistory();
+            }
         }
     });
 
