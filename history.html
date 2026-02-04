@@ -6,357 +6,424 @@
     <title>كشف الحساب - Smart Dorm Expenses</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
+        :root {
+            --color-expense: #EF4444;
+            --color-expense-light: #FEE2E2;
+            --color-income: #10B981;
+            --color-income-light: #D1FAE5;
+            --color-messenger: #8B5CF6;
+            --color-messenger-light: #EDE9FE;
+            --color-settlement: #3B82F6;
+            --color-settlement-light: #DBEAFE;
+            --color-bg: #F8FAFC;
+            --color-card: #FFFFFF;
+            --color-text: #1E293B;
+            --color-text-secondary: #64748B;
+        }
+
+        * { box-sizing: border-box; }
+
         body {
-            background-color: #F3F4F6;
+            background-color: var(--color-bg);
             font-family: 'Cairo', sans-serif;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            padding-top: 64px;
-            overflow-x: hidden;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
+            padding-top: 70px;
+            color: var(--color-text);
         }
 
-        /* شريط التنقل */
+        /* شريط التنقل العائم */
         .navbar {
             position: fixed; top: 0; left: 0; right: 0;
-            z-index: 900; background-color: white;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-            height: 64px;
-            padding: 0 16px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #E2E8F0;
+            height: 70px;
+            padding: 0 20px;
         }
 
         /* القائمة الجانبية */
         .sidebar {
-            position: fixed; top: 0; right: 0; height: 100%; width: 250px;
-            background: white; z-index: 1000; box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
-            transform: translateX(100%); transition: transform 0.3s ease-out;
-            padding-top: 64px;
+            position: fixed; top: 0; right: 0; height: 100%; width: 280px;
+            background: white; z-index: 1100;
+            box-shadow: -10px 0 40px rgba(0, 0, 0, 0.1);
+            transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding-top: 80px;
         }
         .sidebar.open { transform: translateX(0); }
-        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 999; }
-        .sidebar.open + .sidebar-overlay { display: block; }
+        .sidebar-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px);
+            z-index: 1050; opacity: 0; transition: opacity 0.3s;
+        }
+        .sidebar.open + .sidebar-overlay { display: block; opacity: 1; }
         .sidebar-link {
-            display: block; padding: 15px 20px; font-weight: 600; color: #4B5563;
-            transition: background-color 0.3s, color 0.3s; border-right: 4px solid transparent;
+            display: flex; align-items: center; gap: 12px;
+            padding: 16px 24px; font-weight: 600; color: #475569;
+            transition: all 0.2s; border-right: 3px solid transparent;
+            margin: 4px 8px; border-radius: 12px;
         }
-        .sidebar-link:hover { background-color: #F3F4F6; color: #3B82F6; }
+        .sidebar-link:hover { background: #F1F5F9; color: #0F172A; }
         .sidebar-link.active-history {
-            color: #B91C1C;
-            background-color: #FEF2F2;
-            border-right-color: #B91C1C;
-        }
-        .sidebar-profile-text {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 100%;
+            background: #FEF2F2; color: #DC2626; border-right-color: #DC2626;
         }
 
-        /* المحتوى الرئيسي */
-        .content-wrapper {
-            flex-grow: 1;
-            padding: 20px;
+        /* المحتوى */
+        .content-wrapper { flex-grow: 1; padding: 20px; max-width: 900px; margin: 0 auto; width: 100%; }
+
+        /* الرصيد العلوي */
+        .balance-summary {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+            margin-bottom: 24px;
         }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
+        .balance-card {
+            background: white; border-radius: 20px; padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            text-align: center; position: relative; overflow: hidden;
         }
+        .balance-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+        }
+        .balance-card.negative::before { background: var(--color-expense); }
+        .balance-card.positive::before { background: var(--color-income); }
+        .balance-label { font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 8px; }
+        .balance-amount { font-size: 1.75rem; font-weight: 800; direction: ltr; display: inline-block; }
+        .balance-card.negative .balance-amount { color: var(--color-expense); }
+        .balance-card.positive .balance-amount { color: var(--color-income); }
 
         /* الفلاتر */
-        .filter-scroll {
-            display: flex; gap: 8px; overflow-x: auto;
-            padding: 5px 0 20px 0;
-            scrollbar-width: none;
+        .filters-container {
+            background: white; border-radius: 16px; padding: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 20px; display: flex; gap: 8px;
+            overflow-x: auto; scrollbar-width: none;
         }
-        .filter-scroll::-webkit-scrollbar { display: none; }
-        .filter-pill {
-            white-space: nowrap; padding: 8px 18px;
-            border-radius: 25px; background: white;
-            color: #4B5563; font-size: 0.85rem; font-weight: 600;
-            border: 1px solid #E5E7EB; cursor: pointer;
-            transition: all 0.2s;
+        .filters-container::-webkit-scrollbar { display: none; }
+        .filter-btn {
+            flex: 1; min-width: 100px; padding: 12px 16px;
+            border-radius: 12px; border: none; background: transparent;
+            color: #64748B; font-weight: 600; font-size: 0.875rem;
+            cursor: pointer; transition: all 0.2s; white-space: nowrap;
+            position: relative;
         }
-        .filter-pill:hover { background-color: #F9FAFB; }
-        .filter-pill.active {
-            background: #FEF2F2; color: #B91C1C; border-color: #B91C1C;
+        .filter-btn.active {
+            background: #FEF2F2; color: #DC2626;
+            box-shadow: 0 2px 4px rgba(220, 38, 38, 0.1);
+        }
+        .filter-btn.active::after {
+            content: ''; position: absolute; bottom: 4px; left: 50%;
+            transform: translateX(-50%); width: 20px; height: 3px;
+            background: #DC2626; border-radius: 2px;
         }
 
         /* تصميم كارت المعاملة الجديد */
-        .transaction-card {
-            background: white;
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            position: relative;
-            transition: transform 0.2s, box-shadow 0.2s;
+        .transaction-list { display: flex; flex-direction: column; gap: 12px; }
+
+        .tx-card {
+            background: var(--color-card); border-radius: 20px;
+            padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative; overflow: hidden;
         }
-        .transaction-card:hover {
+        .tx-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            box-shadow: 0 12px 24px -8px rgba(0,0,0,0.1);
+        }
+        .tx-card::before {
+            content: ''; position: absolute; right: 0; top: 0; bottom: 0;
+            width: 4px; transition: width 0.3s;
+        }
+        .tx-card.expense::before { background: var(--color-expense); }
+        .tx-card.income::before { background: var(--color-income); }
+        .tx-card.messenger::before { background: var(--color-messenger); }
+        .tx-card.settlement::before { background: var(--color-settlement); }
+        .tx-card:hover::before { width: 6px; }
+
+        /* رأس الكارت */
+        .tx-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 16px;
         }
 
-        /* الجزء الأيمن: الأيقونة + النصوص */
-        .card-right-section {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            flex-grow: 1;
+        /* الجزء الأيمن: الأفاتار والمعلومات */
+        .tx-main-info { display: flex; align-items: flex-start; gap: 16px; flex: 1; }
+
+        /* أفاتار الدافع */
+        .payer-avatar {
+            width: 56px; height: 56px; border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 1.25rem; color: white;
+            position: relative; flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .payer-avatar.expense { background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); }
+        .payer-avatar.income { background: linear-gradient(135deg, #10B981 0%, #059669 100%); }
+        .payer-avatar.messenger { background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); }
+        .payer-avatar.settlement { background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); }
+
+        /* عدد المشاركين */
+        .participants-count {
+            position: absolute; bottom: -4px; left: -4px;
+            background: white; color: #1E293B;
+            font-size: 0.75rem; font-weight: 700;
+            width: 24px; height: 24px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2); border: 2px solid white;
         }
 
-        /* الأيقونة الدائرية */
-        .bank-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            border: 2px solid #DC2626;
-            color: #DC2626;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 0.9rem;
-            position: relative;
-            flex-shrink: 0;
-            background: #fff;
+        /* معلومات المعاملة */
+        .tx-details { flex: 1; }
+        .tx-title {
+            font-size: 1.125rem; font-weight: 700; color: var(--color-text);
+            margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
         }
-        .bank-icon.income {
-            border-color: #059669;
-            color: #059669;
+        .tx-subtitle {
+            font-size: 0.875rem; color: var(--color-text-secondary);
+            margin-bottom: 8px; line-height: 1.5;
         }
 
-        /* السهم الصغير */
-        .icon-badge {
-            position: absolute;
-            bottom: -2px;
-            right: -2px;
-            background: white;
-            color: #DC2626;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.7rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        /* شارات الحالة */
+        .tx-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+        .badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 12px; border-radius: 20px;
+            font-size: 0.75rem; font-weight: 600;
         }
-        .bank-icon.income .icon-badge { color: #059669; }
+        .badge-edited { background: #FEF3C7; color: #B45309; }
+        .badge-messenger { background: var(--color-messenger-light); color: var(--color-messenger); }
+        .badge-settlement { background: var(--color-settlement-light); color: var(--color-settlement); }
+        .badge-share { background: #F1F5F9; color: #475569; }
 
-        /* النصوص */
-        .card-info h3 {
-            font-weight: 700;
-            color: #1F2937;
-            font-size: 1rem;
-            margin-bottom: 2px;
-            line-height: 1.2;
+        /* avatars المشاركين */
+        .participants-avatars {
+            display: flex; align-items: center; margin-top: 12px;
         }
-        .card-info p {
-            color: #6B7280;
-            font-size: 0.8rem;
-            margin-bottom: 2px;
+        .participant-mini {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: linear-gradient(135deg, #CBD5E1 0%, #94A3B8 100%);
+            color: white; font-size: 0.75rem; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            margin-left: -8px; border: 2px solid white;
+            position: relative; cursor: pointer;
+            transition: transform 0.2s;
         }
-        .share-text {
-            color: #9CA3AF;
-            font-size: 0.75rem;
+        .participant-mini:first-child { margin-left: 0; }
+        .participant-mini:hover {
+            transform: scale(1.1); z-index: 10;
+        }
+        .participant-mini.more {
+            background: #1E293B; font-size: 0.7rem;
         }
 
-        /* الجزء الأيسر: المبلغ والتاريخ */
-        .card-left-section {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            text-align: left;
-            min-width: 100px;
+        /* tooltip */
+        .participant-mini::after {
+            content: attr(data-name);
+            position: absolute; bottom: 100%; left: 50%;
+            transform: translateX(-50%) translateY(-4px);
+            background: #1E293B; color: white;
+            padding: 4px 8px; border-radius: 6px;
+            font-size: 0.75rem; white-space: nowrap;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.2s;
+        }
+        .participant-mini:hover::after { opacity: 1; }
+
+        /* الجزء الأيسر: المبلغ */
+        .tx-amount-section {
+            text-align: left; display: flex; flex-direction: column;
+            align-items: flex-end; gap: 8px;
+        }
+        .tx-amount {
+            font-size: 1.5rem; font-weight: 800; direction: ltr;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .tx-amount.expense { color: var(--color-expense); }
+        .tx-amount.income { color: var(--color-income); }
+        .tx-amount.messenger { color: var(--color-messenger); }
+        .amount-currency { font-size: 0.875rem; font-weight: 600; opacity: 0.7; }
+
+        /* تاريخ المعاملة */
+        .tx-date {
+            display: flex; align-items: center; gap: 8px;
+            color: #94A3B8; font-size: 0.875rem;
+            background: #F8FAFC; padding: 6px 12px;
+            border-radius: 10px;
         }
 
-        /* المبلغ */
-        .amount-text {
-            font-family: 'Cairo', sans-serif;
-            font-weight: 800;
-            font-size: 1.25rem;
-            direction: ltr;
-            color: #DC2626;
-            margin-bottom: 8px;
+        /* تفاصيل إضافية */
+        .tx-footer {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 16px; padding-top: 16px;
+            border-top: 1px dashed #E2E8F0;
         }
-        .amount-text.income { color: #059669; }
-        .amount-text.messenger { color: #6B7280; }
-
-        /* التاريخ والوقت */
-        .date-row {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            color: #9CA3AF;
-            font-size: 0.7rem;
-            direction: ltr;
+        .tx-meta { display: flex; gap: 16px; }
+        .tx-meta-item {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 0.875rem; color: var(--color-text-secondary);
         }
-
-        /* شارة التعديل */
-        .edited-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            background: #FEF3C7;
-            color: #B45309;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            margin-top: 4px;
-        }
-
-        /* شارة التسوية */
-        .settlement-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            background: #DBEAFE;
-            color: #1D4ED8;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            margin-top: 4px;
-        }
+        .tx-meta-item i { color: #CBD5E1; }
 
         /* حالة فارغة */
         .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #9CA3AF;
+            text-align: center; padding: 80px 20px;
+            color: #94A3B8;
         }
-        .empty-state i { font-size: 4rem; margin-bottom: 16px; color: #D1D5DB; }
+        .empty-state-icon {
+            width: 120px; height: 120px; margin: 0 auto 24px;
+            background: #F1F5F9; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 3rem; color: #CBD5E1;
+        }
 
-        /* زر تحميل المزيد */
-        .load-more-btn {
-            width: 100%;
-            padding: 12px;
-            background: white;
-            border: 1px solid #E5E7EB;
-            border-radius: 12px;
-            color: #4B5563;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 16px;
+        /* زر التحميل */
+        .load-more {
+            width: 100%; padding: 16px; margin-top: 20px;
+            background: white; border: 2px dashed #CBD5E1;
+            border-radius: 16px; color: #64748B;
+            font-weight: 600; cursor: pointer;
+            transition: all 0.2s; display: flex;
+            align-items: center; justify-content: center; gap: 8px;
         }
-        .load-more-btn:hover { background: #F9FAFB; }
+        .load-more:hover {
+            border-color: #DC2626; color: #DC2626;
+            background: #FEF2F2;
+        }
 
         /* مودال الإشعارات */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; }
-        .modal.show { display: flex; }
+        .modal {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+            align-items: center; justify-content: center; z-index: 2000;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .modal.show { display: flex; opacity: 1; }
         .modal-content {
-            background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 450px;
-            text-align: right; max-height: 90vh; overflow-y: auto;
+            background: white; border-radius: 24px;
+            width: 90%; max-width: 420px; max-height: 85vh;
+            overflow: hidden; transform: scale(0.95);
+            transition: transform 0.3s;
         }
-        .btn-secondary-action {
-            background: #E5E7EB;
-            color: #4B5563;
-            border: 1px solid #D1D5DB;
-            padding: 12px 25px;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 700;
-            width: 100%;
-            cursor: pointer;
-            transition: background 0.3s;
+        .modal.show .modal-content { transform: scale(1); }
+        .modal-header {
+            padding: 24px; border-bottom: 1px solid #F1F5F9;
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .btn-secondary-action:hover { background: #D1D5DB; }
+        .modal-body { padding: 24px; max-height: 60vh; overflow-y: auto; }
+        .modal-footer { padding: 16px 24px; background: #F8FAFC; }
+
+        @media (max-width: 640px) {
+            .balance-summary { grid-template-columns: 1fr; }
+            .tx-header { flex-direction: column; gap: 16px; }
+            .tx-amount-section { align-items: flex-start; width: 100%; }
+            .tx-amount { font-size: 1.25rem; }
+        }
     </style>
 </head>
 <body>
 
     <nav class="navbar">
-        <div class="max-w-6xl mx-auto px-4 h-full">
-            <div class="flex justify-between items-center h-full">
-                <button id="menuButton" class="text-2xl text-gray-600 hover:text-blue-500 p-2 focus:outline-none">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <div class="text-2xl font-extrabold text-blue-600 absolute right-1/2 transform translate-x-1/2 hidden sm:block">
-                    <i class="fas fa-history"></i> Smart Dorm
-                </div>
-                <div class="flex items-center">
-                    <button id="notificationButton" class="relative text-gray-500 hover:text-red-500 p-2 focus:outline-none" onclick="showNotifications()">
-                        <i class="fas fa-bell text-2xl"></i>
-                        <span id="notificationBadge" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full hidden">0</span>
-                    </button>
-                </div>
+        <div class="max-w-6xl mx-auto px-4 h-full flex justify-between items-center">
+            <button id="menuButton" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition">
+                <i class="fas fa-bars text-xl text-gray-600"></i>
+            </button>
+            <div class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <i class="fas fa-history text-red-500"></i>
+                <span>كشف الحساب</span>
             </div>
+            <button onclick="showNotifications()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition relative">
+                <i class="fas fa-bell text-xl text-gray-600"></i>
+                <span id="notificationBadge" class="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center hidden">0</span>
+            </button>
         </div>
     </nav>
 
     <div id="sidebar" class="sidebar">
-        <div class="p-4 border-b">
-            <h3 class="text-lg font-bold text-gray-800 sidebar-profile-text" id="sidebarUserName">جاري التحميل...</h3>
-            <p class="text-sm text-gray-500 sidebar-profile-text" id="sidebarUserEmail">...</p>
+        <div class="p-6 border-b border-gray-100">
+            <h3 class="text-lg font-bold text-gray-800" id="sidebarUserName">جاري التحميل...</h3>
+            <p class="text-sm text-gray-500 mt-1" id="sidebarUserEmail">...</p>
         </div>
-        <a href="index.html" class="sidebar-link"><i class="fas fa-plus-circle ml-2"></i> إضافة مصروف</a>
-        <a href="my_expenses.html" class="sidebar-link"><i class="fas fa-file-invoice-dollar ml-2"></i> مصروفاتي</a>
-        <a href="history.html" class="sidebar-link active-history"><i class="fas fa-history ml-2"></i> السجل</a>
-        <a href="summary.html" class="sidebar-link"><i class="fas fa-handshake ml-2"></i> تسوية الأرصدة</a>
-        <a href="auth.html" id="logoutSidebarButton" class="sidebar-link text-red-600 hover:text-red-800 mt-4">
-            <i class="fas fa-sign-out-alt ml-2"></i> خروج
-        </a>
+        <nav class="p-4">
+            <a href="index.html" class="sidebar-link"><i class="fas fa-plus-circle w-6"></i> إضافة مصروف</a>
+            <a href="my_expenses.html" class="sidebar-link"><i class="fas fa-file-invoice-dollar w-6"></i> مصروفاتي</a>
+            <a href="history.html" class="sidebar-link active-history"><i class="fas fa-history w-6"></i> السجل</a>
+            <a href="summary.html" class="sidebar-link"><i class="fas fa-handshake w-6"></i> تسوية الأرصدة</a>
+            <div class="border-t border-gray-100 my-4"></div>
+            <a href="auth.html" id="logoutSidebarButton" class="sidebar-link text-red-600">
+                <i class="fas fa-sign-out-alt w-6"></i> تسجيل الخروج
+            </a>
+        </nav>
     </div>
     <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
 
     <div class="content-wrapper">
-        <div class="container">
-            <h1 class="text-2xl font-extrabold text-gray-800 mb-6 text-center">
-                <i class="fas fa-file-invoice ml-2 text-red-600"></i> كشف الحساب
-            </h1>
-
-            <!-- الفلاتر -->
-            <div class="filter-scroll">
-                <div class="filter-pill active" onclick="setFilter('30days', this)">آخر 30 يوم</div>
-                <div class="filter-pill" onclick="setFilter('3months', this)">آخر 3 شهور</div>
-                <div class="filter-pill" onclick="setFilter('incoming', this)">الواردة (لك)</div>
-                <div class="filter-pill" onclick="setFilter('outgoing', this)">الصادرة (عليك)</div>
+        <!-- ملخص الرصيد -->
+        <div class="balance-summary">
+            <div class="balance-card negative">
+                <div class="balance-label">عليك</div>
+                <div class="balance-amount" id="totalOutgoing">0.00 <span class="text-sm">SDG</span></div>
             </div>
-
-            <!-- حاوية المعاملات -->
-            <div id="expensesContainer">
-                <!-- سيتم ملؤها بواسطة JavaScript -->
+            <div class="balance-card positive">
+                <div class="balance-label">لك</div>
+                <div class="balance-amount" id="totalIncoming">0.00 <span class="text-sm">SDG</span></div>
             </div>
+        </div>
 
-            <!-- زر تحميل المزيد -->
-            <button id="loadMoreButton" class="load-more-btn hidden" onclick="loadMoreHistory()">
-                <i class="fas fa-chevron-down ml-2"></i> تحميل المزيد
-            </button>
+        <!-- الفلاتر -->
+        <div class="filters-container">
+            <button class="filter-btn active" onclick="setFilter('30days', this)">آخر 30 يوم</button>
+            <button class="filter-btn" onclick="setFilter('3months', this)">آخر 3 شهور</button>
+            <button class="filter-btn" onclick="setFilter('incoming', this)">الواردة</button>
+            <button class="filter-btn" onclick="setFilter('outgoing', this)">الصادرة</button>
+        </div>
 
-            <!-- حالة فارغة -->
-            <div id="emptyState" class="empty-state hidden">
-                <i class="fas fa-inbox"></i>
-                <h3 class="text-xl font-bold text-gray-700 mb-2">لا توجد معاملات</h3>
-                <p>لم يتم العثور على أي سجلات في هذا النطاق الزمني</p>
+        <!-- قائمة المعاملات -->
+        <div id="expensesContainer" class="transaction-list">
+            <!-- سيتم ملؤها بواسطة JavaScript -->
+        </div>
+
+        <!-- زر تحميل المزيد -->
+        <button id="loadMoreButton" class="load-more hidden" onclick="loadMoreHistory()">
+            <i class="fas fa-chevron-down"></i>
+            <span>عرض المزيد</span>
+        </button>
+
+        <!-- حالة فارغة -->
+        <div id="emptyState" class="empty-state hidden">
+            <div class="empty-state-icon">
+                <i class="fas fa-receipt"></i>
             </div>
+            <h3 class="text-xl font-bold text-gray-700 mb-2">لا توجد معاملات</h3>
+            <p class="text-gray-500">لم يتم العثور على سجلات في هذا النطاق الزمني</p>
         </div>
     </div>
 
     <!-- مودال الإشعارات -->
-    <div id="notificationModal" class="modal">
-        <div class="modal-content max-w-md text-right">
-            <h2 class="text-xl font-bold mb-4 border-b pb-2"><i class="fas fa-bell ml-1"></i> الإشعارات</h2>
-            <div id="notificationsList" class="space-y-3 text-sm max-h-96 overflow-y-auto">
+    <div id="notificationModal" classmodal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="text-lg font-bold"><i class="fas fa-bell text-red-500 ml-2"></i> الإشعارات</h3>
+                <button onclick="hideNotificationModal()" class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center">
+                    <i class="fas fa-times text-gray-500"></i>
+                </button>
+            </div>
+            <div id="notificationsList" class="modal-body">
                 <!-- سيتم ملؤها بواسطة JavaScript -->
             </div>
-            <button onclick="hideNotificationModal()" class="btn-secondary-action w-full mt-6">إغلاق</button>
+            <div class="modal-footer">
+                <button onclick="hideNotificationModal()" class="w-full py-3 bg-gray-100 hover:bg-gray-200 rounded-xl font-semibold text-gray-700 transition">
+                    إغلاق
+                </button>
+            </div>
         </div>
     </div>
 
     <script>
-        // وظائف المودال والقائمة الجانبية
+        // وظائف التحكم
         window.toggleSidebar = function() {
             const sidebar = document.getElementById('sidebar');
             sidebar.classList.toggle('open');
@@ -377,33 +444,22 @@
         }
 
         window.setFilter = function(filterType, element) {
-            document.querySelectorAll('.filter-pill').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.filter-btn').forEach(el => el.classList.remove('active'));
             if (element) element.classList.add('active');
-            // سيتم استدعاء filterHistory من script.js
-            if (typeof filterHistory === 'function') {
-                filterHistory(filterType);
-            }
+            if (typeof filterHistory === 'function') filterHistory(filterType);
         };
 
         window.loadMoreHistory = function() {
-            // سيتم تنفيذه من script.js
-            if (typeof loadMoreHistoryImpl === 'function') {
-                loadMoreHistoryImpl();
-            }
+            if (typeof loadMoreHistoryImpl === 'function') loadMoreHistoryImpl();
         };
 
-        // إغلاق المودال عند الضغط خارج المحتوى
         document.querySelectorAll('.modal').forEach(modal => {
             modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.classList.remove('show');
-                }
+                if (e.target === modal) modal.classList.remove('show');
             });
         });
 
-        // منع النسخ
-        document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
-
+        document.addEventListener('contextmenu', e => e.preventDefault());
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('menuButton').addEventListener('click', window.toggleSidebar);
         });
